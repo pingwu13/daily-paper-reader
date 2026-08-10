@@ -1,0 +1,397 @@
+Title: 2026.acl-long.1805.pdf
+
+URL Source: https://aclanthology.org/2026.acl-long.1805.pdf
+
+Published Time: Thu, 11 Jun 2026 01:29:01 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+> Proceedings of the 64th Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers) , pages 38925–38935 July 2-7, 2026 ©2026 Association for Computational Linguistics
+
+# Fast and Accurate Fisher-Guided Quantization via Efficient Kronecker Factorization 
+
+Viktoriia Chekalina 1,2 , Timofey Gerasin 2,3 , Andrey Kuznetsov 1,4 , and Evgeniy Frolov 5
+
+> 1
+
+FusionBrain Lab, 2MSU, 3Russian Research Institute, 
+
+> 4
+
+Innopolis University, 5AXXX  
+
+> Correspondence: sayankotor1@gmail.com
+
+Abstract 
+
+Quantization has shown strong results in pre-serving model quality under compression. However, under aggressive bit-width reduc-tions, even quantization may require additional information to prevent performance degrada-tion. A natural source of it is the second-order curvature information, captured by the Hessian. Since the Hessian of the model layers is pro-hibitively large, direct computation is infeasi-ble, making structured parameterizations and approximations crucial in practice. In this work, we propose an efficient Kronecker-factored approximation yielding state-of-the-art performance when integrated into exist-ing quantization schemes. Evaluations on the LLaMA and Qwen model families show near-baseline quality at 4-bit compression and only a 5–6% degradation at 2-bit for mod-els with 7–8B parameters. Moreover, our method substantially accelerates the most ex-pensive component in second-order quantiza-tion – Hessian parameterization – achieving up to a 10× speedup over prior approaches. Quantized model checkpoints are available at https://huggingface.co/collections/ timo13113/fastkron-collection .
+
+1 Introduction 
+
+Large language models (LLMs) have accelerated progress across a wide range of downstream ap-plications. However, their size and computational demands remain prohibitive, making LLM com-pression a critical research direction. Within this framework, we focus on quantiza-tion as the compression method. The post-training quantization (PTQ) problem can be formulated as minimizing the second-order Taylor expansion of the loss around the optimum:          
+
+> arg min
+> W∈C≈12 (W−W⋆)T(∇2
+> W⋆L)(W−W⋆)(1)
+
+where ∇2 
+
+> W⋆
+
+L is a Hessian, W denotes the obtained low-precision layer weights after quantization, W⋆
+
+the original high-precision weights, and C the set of possible quantization algorithms. Since the first-order derivative vanishes at the optimum, effec-tiveness of compression must rely on second-order information, i.e., the Hessian of the loss. Assuming that the layer weights follow a multi-variate normal (MVN) distribution, the Fisher infor-mation matrix IF – and consequently the Hessian – can be expressed as a Kronecker product of the in-verses of the row and column covariance matrices, 
+
+Σrow and Σcol :           
+
+> ∇2
+> W⋆L≈ I F(θ) = Σ−1
+> col ⊗Σ−1
+> row =HI⊗HO(2)
+
+We can rewrite the standard layer-wise quantiza-tion algorithm Q applied to weight W ∈ Rm×n to incorporate second-order information:         
+
+> W=Q(W⋆+LO⊤∆W L I+LO⊤∆W+ ∆ W L I)(3)
+
+where ∆W = W⋆ − W corresponds to the quan-tization error of already quantized blocks, and LO
+
+and LI are the matrices obtained from the LDL decomposition of HO and HI from Eq. 2, respec-tively. In the Eq. 3 we split weight matrix W into small blocks and the quantization is performed it-eratively, block by block, until the entire matrix is quantized. As can be seen, in second-order-based quanti-zation the overall procedure naturally decomposes into two parts: (i) the computation of factor matri-ces that capture second-order information, and (ii) the rounding algorithm, which takes these matrices as parameters. Given the size of the Hessian matrix, the first part is quite time-consuming. Although quantization is typically a one-time process, in practical appli-cations, it may be performed multiple times. For 1
+
+38925 example, in continual learning scenarios, models are repeatedly updated with new data streams, ne-cessitating re-quantization after each fine-tuning stage. In addition, target-specific optimization may require applying quantization multiple times to adapt a model to different hardware platforms, each with distinct precision constraints. As a result, most second-order compression methods rely on computationally lighter diagonal-only approxima-tions (Hsu et al., 2022; Hua et al., 2022). However, some approaches (Tseng et al., 2025b) perform a full Hessian decomposition taking into account off-diagonal interactions. This raises a natural ques-tion: which decomposition of the full Hessian is optimal for LLMs in terms of convergence speed? We further investigate the following research questions: How critical is second order in quantiza-tion for different compression levels? How impor-tant are off-diagonal Hessian components, and how does their inclusion or omission affect downstream performance? In our method, we adopt a standard rounding procedure while modifying the target weights to explicitly incorporate second-order curvature infor-mation, as shown in Eq. 3. To obtain the factor matrices, we decompose the full Hessian using the Lanczos algorithm. Our factor computation explicitly accounts for off-diagonal Hessian ele-ments, which leads to improved compression qual-ity. Moreover, as shown in Section 3, the spectral structure of the Hessian allows the proposed decom-position to converge faster than those used in meth-ods that also employ generic full (off-diagonal) Hessian factorizations. The method achieved state-of-the-art (SOTA) results across LLaMA and Qwen model families of various scales, achieving a 10× reduction in the computational overhead of factor computation. Compared to existing curvature-aware baselines, it preserves downstream performance, showing neg-ligible degradation at 4-bit relative to 16-bit and only a small average performance drop at 2-bit precision. To summarize, we make the following contribu-tions: • We propose FastKron, a strong layer-wise quantization method that factorizes the Hes-sian and incorporates it into the layers’ weight rounding algorithm. • We demonstrate that the proposed factoriza-tion is optimal for LLMs in terms of con-vergence rate and has up to 10× empirical speedup among methods in the same category. Notably, faster factor computation is a drop-in improvement in second-order quantization pipelines: faster factor computation can be incor-porated into every layer-wise quantization scheme. 
+
+2 Related Work 
+
+Post-Training Quantization has become a standard approach for compressing large language mod-els. Early PTQ methods primarily relied on scalar quantization with adaptive rounding. For example, QuIP (Tseng et al., 2025a) performs per-weight scalar quantization with adaptive rounding guided by a reconstruction objective, while NWQ (Wang et al., 2022) learns rounding policies for weights by accounting for inter-layer dependencies. More recent work goes beyond scalar rounding by quantizing blocks of weights as vectors using structured or learned codebooks. QuIP# (Tseng et al., 2024) extends QuIP-style preprocessing and introduces vector quantization with lattice codebooks to improve fidelity in extreme low-bit regimes. Similarly, AQLM (Egorov et al., 2024) revisits additive multi-codebook quantization and represents weight groups as sums of codebook vec-tors, achieving strong accuracy–compression trade-offs. Methods such as TCQ (Marcellin and Fis-cher, 1990) and QTIP (Tseng et al., 2025a) inves-tigate trellis-based and structured search quantiza-tion methods, which cast quantization as a con-strained optimization or path-search problem. Regarding the use of second-order information for quantization, HAWQ and HAWQ-V2 (Yao et al., 2020) allocate mixed precision by analyzing Hessian spectra, GPTQ (Frantar et al., 2022) shows that efficient blockwise approximations of the Hes-sian are sufficient for scaling LLMs to 3–4 bits. YAQA (Tseng et al., 2025b) provides an adaptive rounding rule that consumes Kronecker-factored layerwise Hessians. Notably, obtaining a precise factorization of second-order information remains a challenging problem, as the Hessian is prohibitively large. K-FAC (Martens and Grosse, 2015) approximates Hessian as a product of two smaller diagonal co-variance matrices that capture input activations and output gradients of the layer. FWSVD (Hsu et al., 2022) and TFWSVD (Hua et al., 2022) adopt a di-agonal approximation of Hessian for low-rank com-pression, aligning the factorization objective with 238926 parameter importance. GFWSVD (Chekalina et al., 2025) extends this approach to non-diagonal part by exploiting the Hessian structure and introducing an efficient factor computation. The model (Eschen-hagen et al., 2023) proposes an optimization-driven approach for estimating factors - they are treated as learnable parameters. 
+
+3 Methodology 
+
+We compress the model via layer-wise vector quan-tization while incorporating curvature information from the loss surface. The first step of the method is to obtain full Hessian factor matrices HI and HO,including both diagonal and off-diagonal compo-nents, which capture correlations across feature and output dimensions. Specifically, second-order information is collected on a calibration dataset |D|
+
+by accumulating gradient outer products for each layer, yielding an empirical approximation of the Fisher information matrix. Following (Loan and Pitsianis, 1992), Kronecker factors can be defined as a reshaped leading triplet of a permuted IF . The leading triplet is typically computed using the Lanczos (Lanczos, 1950) al-gorithm. This procedure, which effectively per-forms an iterative SVD, is computationally expen-sive when applied to the Hessian of a linear layer. To mitigate this bottleneck, we leverage the per-mutation properties alongside the properties of the Kronecker product. The pseudocode for comput-ing HI and HO is provided in Algorithm 1. This allows us to avoid constructing the full (m2 × n2)
+
+Hessian and to reduce each SVD iteration to the se-quential multiplication of three matrices with sizes of linear layer (as in line 7,8 of Algorithm 1), mak-ing decomposition tractable for LLMs. For every considered experimental setup, per-batch gradients 
+
+Gi are collected and processed individually. This per-batch treatment is necessary because minibatch averaging does not commute with iterative SVD – these two operations cannot be interchanged. To collect gradients, we use the FineWeb calibration dataset (Penedo et al., 2024), chosen for its high quality and diversity, and batch size 128. Only a limited number of methods refine weight matrices using full non-diagonal Hessian approximations. One representative example is YAQA (Tseng et al., 2025b), which naturally as-sumes the use of the power iteration method (Golub and Van Loan, 2013) to obtain factors. However, precomputing factors in this way can require up to 
+
+Algorithm 1 FastKron Factorization                                                                                                                            
+
+> Require: List of matrices {Gi}|D|
+> i=1 ,|D|– calibration dataset,
+> K– Lanczos iterations 1: H←1
+> |D|
+> ∑|D|
+> i=1 vec( Gi)vec( Gi)T▷Never materialized 2: ˜H=RH←1
+> |D|
+> ∑|D|
+> i=1 Gi⊗GTi▷Never materialized 3: ˜Hz =1
+> |D|
+> ∑|D|
+> i=1 vec( G⊤
+> ireshape( z)Gi)▷Hto vector multiplication 4: Truncated SVD: 5: v←random unit vector, β←0,vprev ←0
+> 6: for j= 1 to Kdo
+> 7: y←1
+> |D|
+> ∑|D|
+> i=1 vec( G⊤
+> ireshape( v)Gi)▷˜Hv
+> 8: w←1
+> |D|
+> ∑|D|
+> i=1 vec( Gireshape( y)G⊤
+> i)▷˜HTy
+> 9: αj←w·v
+> 10: w←w−αjv−βvprev
+> 11: β← ∥ w∥2
+> 12: vprev ←v,v←w/β
+> 13: end for
+> 14: σ←√λmax (T), where Tis constructed from {αj, β }
+> 15: v←eigenvector corresponding to λmax (T)
+> 16: u←
+> (1
+> |D|
+> ∑|D|
+> i=1 vec( G⊤
+> ireshape( v)Gi)
+> )
+> /σ
+> 17: b←u·σ▷b= vec( HI)
+> 18: a←v▷a= vec( HO)
+> 19: HI←reshape (b,(m, m ))
+> 20: HO←reshape (a,(n, n ))
+> 21: return (HI,HO)
+
+a day for models with 7–8B parameters, rendering the approach hardly applicable for time-sensitive workflows. Both these algorithms — Power Itera-tion and Lanczos — have distinct advantages and limitations, and their efficiency varies depending on the properties of the data to which they are ap-plied. In the following Theorem, we demonstrate that the Lanczos method converges faster in norm than Power iteration. Using LLaMA-2-7B as a case study, we show that in a real-world scenario, norm convergence can be replaced by pointwise conver-gence for the majority of LLM layers. 
+
+Theorem 3.1 (Convergence of power iteration and Lanczos in LLM Curvature Estimation) . Let 
+
+A ∈ Rn×n be symmetric positive semidefinite with eigenvalues λ1 ≥ λ2 ≥ · · · ≥ λn ≥ 0 and define the normalized spectral gap q = λ2 
+
+> λ1
+
+, 0 < q < 
+
+1, q ∈ (0 , 1) .Let vk denote the k-th iterate of power iteration, and let wk denote the Ritz vector obtained after k
+
+steps of the Lanczos method, both initialized with nonzero projection onto the leading eigenvector u1.Then: 
+
+• For all k ≥ 1, the Lanczos error bound has strictly smaller L2(0 , 1) -norm: 
+
+∥fk∥L2(0 ,1) ≤ 2k+1 ∥gk∥L2(0 ,1) ,
+
+338927 where fk(q) = 
+
+( 1−q
+
+1+ q
+
+)k
+
+, g k(q) = qk.
+
+• In empirical LLM Hessians, the Lanczos method also converges faster pointwise. Proof. Step 1. Power iteration convergence. 
+
+The power iteration bound follows from stan-dard spectral decomposition arguments (Golub and Van Loan, 2013; Trefethen and Bau, 1997). 
+
+sin ∠(vk, u 1) ≤ C(v0) qk. (4) 
+
+Step 2. Lanczos convergence. The Lanczos bound follows from the theory of Krylov subspace meth-ods and Chebyshev polynomial approximation (Par-lett, 1980; Saad, 2003). 
+
+sin ∠(wk, u 1) ≤ 2
+
+( 1 − q
+
+1 + q
+
+)k
+
+. (5) 0.0 0.2 0.4 0.6 0.8 ratio s1/s0 0.0 2.5 5.0 7.5 10.0 12.5 15.0 17.5 Number of layers 
+
+> Distribution of spectral gaps in LLaMA-2-7B
+> Median = 0.34 Min = 0.02 Max = 0.92 Int point = 0.29
+
+(a) Distribution of spectral gaps. 0.0 0.2 0.4 0.6 0.8 1.0                 
+
+> q
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> Value
+> Comparison of f(q) and g(q) for q(0, 1)
+> f(q), k= 1
+> g(q), k= 1
+> f(q), k= 5
+> g(q), k= 5
+> f(q), k= 10
+> g(q), k= 10 Int point = 0.29
+
+(b) Comparison of f (q) and 
+
+g(q).
+
+Figure 1: (a) Histogram of spectral gaps across layers in LLaMA-2-7B. In more than half of the layers, the spectral gap exceeds 0.29 , and on these layers we ob-serve that f (q) < g (q). (b) Curves fk(q) and gk(q)
+
+for k ∈ { 1, 5, 10 }. As k increases, the curve f k(x) be-comes tightly compressed against the horizontal axis, causing the area under it to shrink rapidly. 
+
+Step 3. Norm comparison. We now compare the convergence rates of the two methods by analyzing the L2 norms of their respective error functions over q ∈ (0 , 1) :
+
+Ik = ∥fk∥2
+
+L2(0 ,1) =
+
+∫ 10
+
+( 1 − √q
+
+1 + √q
+
+)2k
+
+dq, (6) 
+
+Jk = ∥gk∥2
+
+L2(0 ,1) =
+
+∫ 10
+
+q2k dq = 12k + 1 . (7) With the substitutions q = t2 and u = 1−t
+
+1+ t , we obtain 
+
+Ik = 4 
+
+∫ 10
+
+u2k 1 − u
+
+(1 + u)3 du. (8) Since 1(1+ u)3 ≤ 1 for u ∈ (0 , 1) , it follows that 
+
+Ik ≤ 4(2 k + 1)(2 k + 2) = 2
+
+k + 1 12k + 1 ︸ ︷︷ ︸ 
+
+Jk
+
+. (9) Thus, 
+
+∥fk∥L2(0 ,1) ≤
+
+√ 2
+
+k + 1 ∥gk∥L2(0 ,1) . (10) Hence, 
+
+∥fk∥L2 − ∥ gk∥L2 ≤ 0 ∀ k ≥ 1, (11) and the difference between the two norms increases as k grows. This can be seen by analyzing the area under the family of curves f and g in Figure 1(b). 
+
+Step 4. Practical pointwise convergence in LLM 
+
+Figure 1(b) further indicates that the intersection point at which f becomes smaller than g occurs at approximately q ≈ 0.29 . Figure 1(a) shows the empirical distribution of q across layers of LLaMA-2-7B over one training epoch. Notably, most empir-ical values lie to the right of this intersection point, where the inequality fk(q) < g k(q) is satisfied. This implies that, for the majority of layers, Al-gorithm 1 converges faster than power iteration not only in the integral sense but also pointwise. After Hessian estimation, we perform the weight rounding algorithm. We employ vector quantiza-tion based on Trellis-Coded Quantization (TCQ), where the matrix is quantized iteratively and the current quantization step compensates for the quan-tization error of the previous ones. For a matrix 
+
+W ∈ Rm×n and a quantization block of size 
+
+td x × td y, the quantization step k is determined using the error accumulated from the previous k-1 steps: 
+
+Wk = Q(W⋆k + LO⊤∆Wk−1LI
+
++ LO⊤∆Wk−1 + ∆ Wk−1LI
+
+) (12) where Wk = W[r · td y : ( r + 1) · td y, c · td x :(c + 1) · td x] - weights quantized at the current step; 
+
+∆Wk−1 = ∆ W[0 : ( r + 1) · td y, 0 : c · td x] -the error accumulated from the previous steps; r =
+
+⌊k/ ⌈n/td x⌉⌋ is the row index of the current weight quantization block; c = k (mod ⌈n/td x⌉) is the column index of the current weight quantization block. 438928 Our TCQ implementation is based on the code provided in the QTIP repository 1. All quantiza-tion hyperparameters and the full method pipeline are available on GitHub 2. Classical TCQ does not scale well to large language models due to its high memory requirements and inherently sequential de-coding, stemming from the need to store explicit trellis structures and codebooks. Using a bitshift trellis and on-the-fly generation of random Gaus-sian codes, the codebase employed addresses these limitations. Prior to quantization, we transform the weight matrix to approximately follow a Gaussian distribu-tion as preprocessing. This satisfies the multivariate normal (MVN) assumption in Eq. 2 and enables the use of QTIP’s Fast Random Gaussian Codes for on-the-fly codebook generation. For all methods compared below, the vector quantization algorithm, TCQ hyper-parameters, and preprocessing are kept consistent and unified — only the factors HI, HO vary. 
+
+4 Experiments 
+
+To implement FastKron , we compute the Kro-necker factors using Algorithm 1 and update the model weights according to Equation (3). We choose the number of calibration tokens so that factors obtained from a calibration dataset with a fixed size yield downstream performance compara-ble to the baselines. As our primary baseline, we employ YAQA ,which similarly utilizes a full Hessian approxima-tion but differs in its algorithm for computing factor matrices. YAQA offers two calibration schemes: Sketch A (20M tokens) and Sketch B (128M to-kens). To align with fast quantization objectives, we use Sketch A, as it performs within approx-imately 1% of Sketch B while requiring signifi-cantly less convergence time. For all YAQA exper-iments, we utilize the authors’ official implementa-tion 3.We also compare our approach against methods using diagonal approximations. Specifically, the original QTIP method accounts for loss surface curvature using a diagonal Hessian approximation. To isolate the specific contribution of second-order information to compression quality, we include an additional baseline that employs TCQ but omits 
+
+> 1https://github.com/Cornell-RelaxML/qtip
+> 2https://github.com/sayankotor/FastKron_QTIP
+> 3https://github.com/Cornell-RelaxML/ yaqa-quantization
+
+curvature data entirely ( NoHess setup). We also conducted an ablation study to evaluate the sig-nificance of off-diagonal information by retaining only the diagonal elements of the Hessian factors computed via FastKron ( OnlyDiag setup). We quantized LLaMA-2-7B 4, LLaMA-3-8B (In-struct) 5, and the Qwen3 6 series (8B, 4B, 1.7B, and 0.6B) models. In all experiments, we performed one-shot quantization without any additional fine-tuning. Performance was measured via perplexity and zero-shot accuracy on common-sense reason-ing benchmarks. To further account for reasoning and instruction-following capabilities, we addition-ally validated on GSM8K (Cobbe et al., 2021) and IFEval (Zhou et al., 2023) using LLaMA-3-8B. For the LLaMA models, we employed a sequence length of 4096 tokens, for Qwen, of 2048 tokens. Runtime metrics were captured using Python’s built-in profiler. 
+
+5 Results and Discussion 
+
+The results for zero-shot downstream tasks for LLaMA-2-7B are shown in Table 1, for LLaMA-3-8B – in Table 2, for Qwen3 8B in Table 3. Results for Qwen models of different sizes are presented in Table 5. Experimental results across all evaluated mod-els demonstrate that FastKron matches or exceeds the quality of established curvature-aware methods, despite operating with a significantly lower budget for loss surface parameterization. A notable ob-servation occurs within the LLaMA family: while FastKron slightly trails YAQA in terms of perplex-ity, it consistently delivers superior performance on downstream tasks. This discrepancy vanishes for the Qwen family, where FastKron yields better perplexity across all scales. At 4-bit precision, FastKron and YAQA perform comparably; for instance, on Qwen-1.7B, FastKron shows a marginal gap of less than 0.1%. However, in the 2-bit regime, FastKron consistently outper-forms baselines, with accuracy gains ranging from 0.3% (LLaMA-2) to 12.8% (Qwen-4B) across dif-ferent architectures. This robust performance sug-gests that FastKron achieves better convergence, with the degree of improvement being highly sen-sitive to the specific model architecture and its un-derlying loss landscape. 
+
+> 4https://huggingface.co/meta-llama/Llama-2-7b
+> 5https://huggingface.co/meta-Llama/Llama-3. 1-8B-Instruct
+> 6https://huggingface.co/Qwen
+
+538929 Table 1: Zero-shot accuracy for different quantization methods on LLaMA-2-7B . Lower is better for resource usage and perplexity ( ↓), higher is better for accuracy ( ↑). “M” denotes millions and “K” denotes thousands of tokens.                                                                                                                   
+
+> Method Wiki ↓C4 ↓Arc_c ↑Boolq ↑Piqa ↑Arc_e ↑HSwag ↑AVG ↑GPU h ↓Tokens ↓
+> 16 bit 5.11 6.63 0.4325 0.7767 0.7774 0.7617 0.5721 0.6640 ––4 bit NoHess 5.25 6.74 0.4270 0.7610 0.7669 0.7609 0.5628 0.656 –04 bit QTIP 5.19 6.71 0.4351 0.7615 0.7708 0.7604 0.5686 0.659 316 M 4 bit YAQA 5.17 6.69 0.4274 0.7688 0.7752 0.7613 0.5672 0.659 50 16 M
+> 4 bit FastKron 5.18 6.71 0.4283 0.7792 0.7802 0.7610 0.5660 0.663 ↑0.6% 50.7 M ↓96% 2 bit NoHess 39.44 43.07 0.2210 0.6355 0.6306 0.5152 0.3422 0.469 –02 bit QTIP 6.55 8.50 0.3677 0.7314 0.7502 0.7113 0.5064 0.613 333 M 2 bit YAQA 6.18 8.00 0.3805 0.7333 0.7562 0.7192 0.5227 0.622 50 16 M
+> 2 bit FastKron 6.40 8.31 0.3843 0.7510 0.7600 0.7112 0.5144 0.624 ↑0.3% 61.4 M ↓92%
+
+Table 2: Zero-shot accuracy for different quantization methods on LLaMA-3-8B . Lower is better for resource usage and perplexity ( ↓), higher is better for accuracy ( ↑). "M" denotes millions and "K" denotes thousands of tokens.                                                                                                                                     
+
+> Method Wiki ↓C4 ↓Arc_c ↑Boolq ↑Piqa ↑Arc_e ↑HSwag ↑AVG ↑GPU h ↓Tokens ↓
+> 16 bit 5.11 6.63 0.5171 0.8409 0.7986 0.8177 0.5908 0.7131 –—4 bit NoHess 7.11 10.28 0.5119 0.8415 0.7959 0.8097 0.5829 0.708 –04 bit OnlyDiag 6.90 9.96 0.4958 0.8425 0.8020 0.8178 0.5856 0.708 –0.7 M 4 bit QTIP 6.93 10.05 0.5136 0.8376 0.7959 0.8118 0.5852 0.708 316 M 4 bit YAQA 5.17 6.69 0.5136 0.8443 0.7997 0.8198 0.5865 0.712 92 16 M
+> 4 bit FastKron 5.18 6.71 0.5116 0.8438 0.8025 0.8207 0.5863 0.713 ↑0.14% 9.5 0.7 M ↓96% 2 bit NoHess 44.79 51.10 0.2363 0.6336 0.6554 0.5108 0.3620 0.509 –02 bit OnlyDiag 9.96 14.40 0.3800 0.7612 0.7503 0.7445 0.5048 0.632 –0.9 M 2 bit QTIP 10.5 14.54 0.4002 0.8175 0.7492 0.7424 0.5015 0.642 316 M 2 bit YAQA 8.98 12.79 0.4312 0.7567 0.7647 0.7391 0.5259 0.643 92 16 M
+> 2 bit FastKron 9.11 12.98 0.4277 0.8088 0.7661 0.7468 0.5159 0.653 ↑1.6% 11.5 0.9 M ↓94%
+
+Furthermore, the results lead to the following conclusions. The first conclusion reflects the im-portance of curvature information in LLM com-pression. Comparing FastKron, which incorpo-rates curvature information, with NoHess, which performs quantization without it, shows that the contribution of second-order information becomes increasingly critical at higher compression levels across all evaluated models. At 4-bit precision, the performance gap between curvature-aware and curvature-agnostic methods remains narrow, with accuracy declining by only 1–3% across all tested architectures. However, at 2-bit quantization, the model sensitivity to curvature information becomes far more pronounced. Under the NoHess configuration, LLaMA models exhibit an average accuracy drop of 14–16% compared to full-factor compression, while Qwen models show a decrease of 8–12%, depending on the model scale. The second conclusion highlights the importance of off-diagonal Hessian components. We com-pare the rows in Tables 1–3 corresponding to QTIP, which employs a diagonal Hessian approximation, with those of FastKron, which incorporates the full curvature information. While QTIP can yield the best performance on individual commonsense benchmarks for certain architectures – for example, on HellaSwag for 4-bit LLaMA-2 – on average it is 0.5–2% worse than FastKron. As expected, OnlyDiag has lower performance than the full FastKron approach but still outper-forms the NoHess baseline. The most comparable setup is QTIP, which utilizes one diagonal factor and one identity matrix. While QTIP shows slightly better results, it requires a significantly larger num-ber of calibration tokens. The next aspect concerns behavior on reason-ing and instruction-following benchmarks. The Table 4 presents the results for the GSM8K and IFEval benchmarks. It demonstrates that with 4-bit quantization, the model almost entirely pre-serves its reasoning and instruction-following ca-pabilities. While a performance drop on GSM8K is observed in 2-bit quantization, the YAQA and FastKron methods perform notably better at main-taining quality compared to QTIP. This performance drop is consistent with recent findings that contextual understanding in trans-former models relies on abnormally large activa-tions at specific layer locations (Jin et al., 2025). Preserving these activations is critical for maintain-638930 Table 3: Zero-shot accuracy for different quantization methods on Qwen3-8B . Lower is better for resource usage and perplexity ( ↓), higher is better for accuracy ( ↑).                                                                                                                 
+
+> Method Wiki ↓C4 ↓Arc_c ↑Boolq ↑Piqa ↑Arc_e ↑HSwag ↑AVG ↑GPU h ↓Tokens ↓
+> 16 bit 8.99 12.48 0.5563 0.8682 0.7677 0.8354 0.5708 0.7197
+> 4 bit NoHess 9.45 13.05 0.5417 0.8604 0.4659 0.8312 0.5585 0.711 –04 bit QTIP 9.27 12.73 0.5471 0.8629 0.7598 0.8329 0.5605 0.712 316 M 4 bit YAQA 9.29 12.72 0.5503 0.8611 0.7612 0.8324 0.5601 0.713 84 16 M
+> 4 bit FastKron 9.16 12.66 0.5469 0.8667 0.7601 0.8287 0.5637 0.713 0% 42 0.7 M ↓94% 2 bit NoHess 43.00 51.74 0.2713 0.6988 0.6447 0.7003 0.3771 0.538 –02 bit QTIP 17.32 20.20 0.4263 0.8101 0.7427 0.7511 0.4575 0.638 316 M 2 bit YAQA 16.04 18.21 0.4536 0.7782 0.7435 0.7797 0.4611 0.643 84 16 M
+> 2 bit FastKron 13.36 16.86 0.4616 0.8416 0.7334 0.7702 0.4853 0.658 ↑2.3% 42 0.7 M ↓94%
+
+Table 4: Results on LLaMA-3-8B for reasoning and instruction-following benchmarks GSM8K and IFEval. Lower is better for resource usage ( ↓), higher is better for accuracy ( ↑). "M" denotes millions and "K" denotes thousands of tokens.                           
+
+> Method GSM8K ↑IFEval ↑Tokens ↓
+> 16 bit 0.7498 0.7654
+> 4 bit QTIP 0.7172 0.7412 16 M 4 bit YAQA 0.7361 0.7653 16 M
+> 4 bit FastKron 0.7385 0.7612 0.7 M 2 bit QTIP 0.3495 0.5600 16 M 2 bit YAQA 0.4546 0.6561 16 M
+> 2 bit FastKron 0.4537 0.6577 0.9 M
+
+ing the model’s contextual reasoning ability, yet none of the methods considered here are activation-aware — making degradation at extremely low bit-widths expected. As model compression is ultimately motivated by deployment efficiency, we report inference speed measurements in Table 6. 
+
+6 Impact of Calibration Dataset Size 
+
+In the previous section, we showed that FastKron achieves comparable downstream performance with a substantially smaller budget due to faster Hessian parameterization. This raises the question of how sensitive FastKron’s downstream perfor-mance is to the number of tokens used during cal-ibration, and how quickly the performance of the baseline method, YAQA, degrades as the calibra-tion token budget is reduced. Figure 2 illustrates the relationship between the calibration token count and average performance on commonsense benchmarks for the 2-bit version of LLaMA-2-7B. For each data point, Kronecker factors were computed from a calibration dataset of a given size and then applied within a fixed quantization pipeline. The complete results for perplexity and zero-shot evaluation are provided in Appendix A. YAQA degrades monotonically as the calibration budget is reduced. In contrast, FastKron reaches its peak performance at approximately 1.4 M tokens and begins to decline thereafter, with a monotonic decrease observed starting around 712 K tokens. Note that the x-axis is shown on a logarithmic scale. We attribute this non-monotonic behavior to a fundamental property of our algorithm: FastKron computes the SVD operation per mini-batch indi-vidually and averages the results across the cal-ibration set. When the number of mini-batches becomes excessively large, this procedure intro-duces an estimation bias that becomes particularly pronounced at ultra-low bit-widths. 
+
+7 Conclusion 
+
+In this work, we introduced FastKron , an effi-cient Kronecker-factored approach for incorporat-ing second-order curvature information into post-training quantization of LLMs. It preserves the structure of existing quantization algorithms while providing significantly faster factor computation — theoretically grounded for the spectral regime char-acteristic of LLM Hessians — and achieves up to a 10× empirical speedup over methods in the same category. FastKron attains the same downstream accuracy as the power iteration baseline, maintain-ing nearly identical quality at 4-bit compression and incurring only a 5–6% performance drop under 2-bit quantization. Our experimental results across the LLaMA and Qwen model families further show that second-order information becomes increasingly important as model compression becomes more aggressive. This observation indicates that highly compressed regimes require explicit and efficient parameteriza-tion of the Hessian. FastKron addresses this need by delivering the benefits of full second-order meth-738931 Table 5: Perplexity and zero-shot accuracy for various bit quantizations of Qwen3-0.6B, Qwen3-1.7B and Qwen3-4B. Method YAQA needs 16 M tokens to converge, FastKron - 0.7 M. Lower is better for Perplexity ( ↓), higher is better for accuracy ( ↑). 
+
+Model Method Wiki ↓ C4 ↓ Arc_c ↑ Boolq ↑ Piqa ↑ Arc_e ↑ HSwag ↑ AVG ↑ Tokens ↓
+
+0.6B 16 bit 19.16 23.83 0.3413 0.5585 0.6404 0.4732 0.6746 0.537 
+
+4 bit FastKron 20.21 24.75 0.3191 0.5227 0.6214 0.4591 0.6725 0.519 ↑ 1.0% 0.7 M ↓ 94% 4 bit YAQA 21.05 25.23 0.3046 0.5135 0.6358 0.4538 0.6643 0.514 16 M 4 bit NoHess 23.90 28.85 0.3131 0.4971 0.5627 0.4362 0.6627 0.494 0
+
+2 bit FastKron 63.55 64.34 0.2312 0.3695 0.6171 0.3354 0.5702 0.425 ↑ 4.4% 0.7 M ↓ 94% 2 bit YAQA 88.65 94.24 0.2244 0.3359 0.5988 0.3182 0.5622 0.407 16 M 2 bit NoHess 41292 46261 0.2568 0.2917 0.4615 0.2605 0.5223 0.358 01.7B 16 bit 15.66 18.13 0.4317 0.6957 0.7761 0.6033 0.7220 0.645 
+
+4 bit FastKron 16.24 18.60 0.4113 0.6721 0.7728 0.5927 0.7122 0.632 ↓ 0.6% 0.7 M ↓ 94% 4 bit YAQA 17.23 19.05 0.4224 0.6864 0.7765 0.5873 0.7084 0.636 16 M 4 bit NoHess 17.70 20.92 0.3771 0.5623 0.7511 0.5614 0.6986 0.590 0
+
+2 bit FastKron 28.98 32.12 0.2841 0.4920 0.6716 0.4487 0.6491 0.509 ↑ 9.7% 0.7 M ↓ 94% 2 bit YAQA 38.18 40.51 0.2645 0.4162 0.6489 0.3862 0.6088 0.464 16 M 2 bit NoHess 54399 36222 0.2534 0.2795 0.6061 0.2799 0.5381 0.391 04B 16 bit 12.43 15.45 0.5350 0.7841 0.8502 0.6838 0.7497 0.720 
+
+4 bit FastKron 12.91 15.77 0.5307 0.7816 0.8492 0.6740 0.7486 0.717 0% 0.7 M ↓ 94% 4 bit YAQA 12.54 15.64 0.5290 0.7765 0.8514 0.6727 0.7563 0.717 16 M 4 bit NoHess 13.12 16.17 0.4906 0.7269 0.8446 0.6693 0.7432 0.695 0
+
+2 bit FastKron 18.56 21.49 0.4070 0.6970 0.8015 0.5641 0.7057 0.635 ↑ 12.8% 0.7 M ↓ 94% 2 bit YAQA 16.85 20.45 0.3567 0.5787 0.6661 0.5246 0.6915 0.563 16 M 2 bit NoHess 91.61 85.49 0.2995 0.4600 0.6327 0.4391 0.6300 0.492 0
+
+Table 6: Inference speed comparison across precisions and sequence lengths. 
+
+Seq Len Bit Total Latency Latency (ms) per Token (ms) 
+
+1024 2 1225.82 1.19 4 1492.65 1.45 2048 2 1816.42 0.88 4 2088.50 1.02 
+
+ods at a substantially lower cost, making curvature-aware quantization both practical and scalable. No-tably, the proposed factor computation serves as a drop-in improvement for existing quantization pipelines. 
+
+8 Ethics statement (Potential Risks) 
+
+This work focuses on methods for improving the efficiency and practicality of post-training quan-tization of large language models. Our research does not involve human subjects, personally iden-tifiable information, or sensitive data. All experi-ments are conducted on publicly available models (LLaMA, Qwen) and benchmarks (ARC, BoolQ, PIQA, HellaSwag, WikiText, C4), ensuring repro-ducibility and transparency. We do not release any new datasets containing personal or private data. The proposed methods are intended for reducing the computational cost and energy consumption of deploying large models, which we view as a posi-tive contribution to sustainability. We are not aware of any direct negative societal impacts, though—as with any model compression technique—improved efficiency could indirectly facilitate the deployment of large models in settings where misuse is possi-ble. 475K 712K 950K 1.4M 1.9M 7M 12M 16M 
+
+> Calibration tokens
+> 0.600 0.605 0.610 0.615 0.620 0.625
+> AVG zero-shot accuracy
+> 2-bit YAQA 2-bit FastKron
+
+Figure 2: Average zero-shot accuracy versus the number of calibration tokens (logarithmic scale on the x-axis) for 2-bit quantization of LLaMA-2-7B. FastKron con-sistently outperforms YAQA at comparable or smaller calibration budgets. 
+
+Reproducibility Statement 
+
+We have made every effort to ensure that our re-sults are fully reproducible. The implementation of the proposed method is provided in the supple-838932 mentary materials. All theoretical assumptions and proofs are included in the main text. Links to the baseline repositories required to reproduce our ex-periments are provided in Section 4. Additionally, all model checkpoints used in our experiments will be released publicly in the camera-ready version of the paper. 
+
+Limitations 
+
+A key limitation of the current FastKron implemen-tation is the need to store gradients for all mini-batches when computing Kronecker factors. For a single LLaMA layer 100 micro-batches of dataset 
+
+D (which corresponds to 950 K tokens) already imposes 5.4 GB of additional memory. This stems from the fact that the core operation in the Lanczos algorithm—left and right multiplication by a vec-tor—cannot be interchanged with minibatch aver-aging without degrading downstream performance. Consequently, there is an inherent trade-off: faster computation comes at the cost of higher memory consumption. 
+
+Acknowledgements 
+
+This work was supported by the The Ministry of Economic Development of the Russian Federation in accordance with the subsidy agreement (agree-ment identifier 000000C313925P4H0002; grant No 139-15-2025-012). The authors thank Denis Kuznedelev for his in-valuable guidance on quantization algorithms, and Albert Tseng for his support in reproducing the Model-Preserving Adaptive Rounding approach. 
+
+References 
+
+Viktoriia Chekalina, Daniil Moskovskiy, Daria Cherniuk, Maxim Kurkin, Andrey Kuznetsov, and Evgeny Frolov. 2025. Generalized fisher-weighted svd: Scalable kronecker-factored fisher approx-imation for compressing large language models. 
+
+Preprint , arXiv:2505.17974. Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano, Christopher Hesse, and John Schulman. 2021. Training verifiers to solve math word prob-lems. arXiv preprint arXiv:2110.14168 .Vadim Egorov, James Hooper, Dan Alistarh, Denis Kuznedelev, and Artem Babenko. 2024. Extreme compression of large language models via additive quantization. In International Conference on Learn-ing Representations (ICLR) .Runa Eschenhagen, Alexander Immer, Richard Turner, Frank Schneider, and Philipp Hennig. 2023. Kronecker-factored approximate curvature for mod-ern neural network architectures. Advances in Neural Information Processing Systems , 36:33624–33655. Elias Frantar, Saleh Ashkboos, Torsten Hoefler, and Dan Alistarh. 2022. GPTQ: Accurate post-training compression for generative pretrained transformers. 
+
+arXiv preprint arXiv:2210.17323 .Gene H. Golub and Charles F. Van Loan. 2013. Matrix Computations , 4 edition. Johns Hopkins University Press, Baltimore, MD. Yen-Chang Hsu, Ting Hua, Sung-En Chang, Qian Lou, Yilin Shen, and Hongxia Jin. 2022. Language model compression with weighted low-rank factorization. 
+
+arXiv preprint arXiv:2207.00112 .Ting Hua, Yen-Chang Hsu, and 1 others. 2022. Numeri-cal optimizations for weighted low-rank estimation: The case of transformer language model compression. In Proceedings of EMNLP .Mingyu Jin, Kai Mei, Wujiang Xu, Mingjie Sun, Ruix-iang Tang, Mengnan Du, Zirui Liu, and Yongfeng Zhang. 2025. Massive values in self-attention mod-ules are the key to contextual knowledge understand-ing. arXiv preprint arXiv:2502.01563 .Cornelius Lanczos. 1950. An iteration method for the solution of the eigenvalue problem of linear differ-ential and integral operators. Journal of Research of the National Bureau of Standards , 45(4):255–282. Charles Van Loan and Nikos Pitsianis. 1992. Approxi-mation with kronecker products. Michael W Marcellin and Thomas R Fischer. 1990. Trellis coded quantization. IEEE Transactions on Communications , 38(1):82–93. James Martens and Roger Grosse. 2015. Optimizing neural networks with kronecker-factored approxi-mate curvature. In Proceedings of the 32nd Inter-national Conference on Machine Learning (ICML) .Beresford N. Parlett. 1980. The Symmetric Eigenvalue Problem . Prentice-Hall, Englewood Cliffs, NJ. Guilherme Penedo, Hynek Kydlícek, Loubna Ben Allal, Anton Lozhkov, Margaret Mitchell, Colin A. Raffel, Leandro von Werra, and Thomas Wolf. 2024. The fineweb datasets: Decanting the web for the finest text data at scale. In Advances in Neural Information Processing Systems 38: Annual Conference on Neu-ral Information Processing Systems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024 .Yousef Saad. 2003. Iterative Methods for Sparse Lin-ear Systems , 2nd edition. Society for Industrial and Applied Mathematics, Philadelphia, PA. Lloyd N. Trefethen and David Bau. 1997. Numerical Linear Algebra . SIAM, Philadelphia, PA. 
+
+938933 Albert Tseng, Jerry Chee, Qingyao Sun, Volodymyr Kuleshov, and Christopher De Sa. 2024. Quip#: Even better llm quantization with hadamard in-coherence and lattice codebooks. arXiv preprint arXiv:2402.04396 .Albert Tseng, Qingyao Sun, David Hou, and Christo-pher De Sa. 2025a. Qtip: Quantization with trellises and incoherence processing. Preprint ,arXiv:2406.11235. Albert Tseng, Zhaofeng Sun, and Christopher De Sa. 2025b. Model-preserving adaptive rounding. 
+
+Preprint , arXiv:2505.22988. Changbao Wang, Dandan Zheng, Yuanliu Liu, and Liang Li. 2022. Leveraging inter-layer dependency for post-training quantization. In Advances in Neural Information Processing Systems , volume 35, pages 6818–6831. Zhewei Yao, Zhen Dong, Zhangcheng Zheng, Amir Gholami, Jichao Yu, Eric Tan, Leyuan Wang, Qi-jing Huang, Yosuang Wang, and Kurt Keutzer. 2020. HAWQ-V2: Hessian aware trace-weighted quantiza-tion of neural networks. In Advances in Neural In-formation Processing Systems (NeurIPS) , volume 33, pages 18518–18529. Jeffrey Zhou, Tianhao Lu, Swaroop Mishra, Sid-dhartha Brahma, Sujoy Basu, Yi Luan, Denny Zhou, and Le Hou. 2023. Instruction-following evalu-ation for large language models. arXiv preprint arXiv:2311.07911 .
+
+10 38934 Table 7: Perplexity and zero-shot accuracy for 2-bit FastKron quantization of LLaMA-2-7B, comparing factors derived via power YAQA. Lower is better for Perplexity ( ↓), higher is better for accuracy ( ↑). 
+
+Method Wiki ↓ C4 ↓ Arc_c ↑ Boolq ↑ Piqa ↑ Arc_e ↑ HSwag ↑ AVG ↑ Steps Tokens 16 bit 5.11 6.63 0.4325 0.7767 0.7774 0.7617 0.5721 0.6640 – –2 bit YAQA 6.18 8.00 0.3805 0.7333 0.7562 0.7192 0.5227 0.6223 – 16 M 2 bit FastKron 6.59 8.69 0.3599 0.7192 0.7473 0.7030 0.5116 0.6082 35 330K 2 bit FastKron 6.44 8.40 0.3658 0.7152 0.7568 0.7032 0.5135 0.6109 50 475K 2 bit FastKron 6.44 8.30 0.3720 0.7320 0.7579 0.7112 0.5137 0.6173 70 712K 2 bit FastKron 6.43 8.36 0.3677 0.7393 0.7578 0.7128 0.5127 0.6180 100 950K 2 bit FastKron 6.40 8.31 0.3843 0.7510 0.7600 0.7112 0.5139 0.6240 150 1400K 2 bit FastKron 6.47 8.39 0.3618 0.7486 0.7540 0.7115 0.5091 0.6190 200 1900K 
+
+Table 8: Perplexity and zero-shot accuracy for 2-bit YAQA quantization of LLaMA-2-7B under different calibration token budgets (Sketch A). Lower is better for Perplexity ( ↓), higher is better for accuracy ( ↑). 
+
+Method Wiki ↓ C4 ↓ AVG ↑ Arc_c ↑ Arc_e ↑ Boolq ↑ Piqa ↑ HSwag ↑ Tokens 16 bit 5.11 6.63 0.6640 0.4325 0.7617 0.7767 0.7774 0.5721 –2 bit YAQA 6.18 8.00 0.6223 0.3805 0.7191 0.7333 0.7562 0.5227 16 M 2 bit YAQA – – 0.6156 0.3762 0.7175 0.7186 0.7538 0.5121 12 M 2 bit YAQA 6.19 8.38 0.6076 0.3626 0.7083 0.7011 0.7513 0.5145 7 M 2 bit YAQA 6.24 8.97 0.5995 0.3443 0.7008 0.7002 0.7435 0.5090 1.4 M 
+
+A Appendix A 
+
+We report extended quantization results for Token Count ablation in Tables 7, 8. 
+
+B Appendix B: LLM Usage Statement 
+
+We used large language models (LLMs) only as a general-purpose writing assistant for grammar checking and text polishing. The research ideas, implementation, analysis, and conclusions are en-tirely our own. 11 38935

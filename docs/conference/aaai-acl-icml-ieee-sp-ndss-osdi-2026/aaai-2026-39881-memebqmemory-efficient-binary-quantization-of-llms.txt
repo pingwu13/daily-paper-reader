@@ -1,0 +1,490 @@
+Title: MemeBQ:Memory Efficient Binary Quantization of LLMs
+
+URL Source: https://ojs.aaai.org/index.php/AAAI/article/download/39881/43842
+
+Number of Pages: 8
+
+Markdown Content:
+# MemeBQ: Memory Efficient Binary Quantization of LLMs 
+
+# Yuanhui Wang 1* , Kunlong Liu 1†* , Minnan Pei 2, Zhangming Li 2, Peisong Wang 2,3,4 ,Qinghao Hu 2,3,4‡ 
+
+> 1
+
+Sanya Nanhai Innovation and Development Base of Harbin Engineering University, 
+
+> 2
+
+C2DL, Institute of Automation, Chinese Academy of Sciences, 
+
+> 3
+
+Nanjing Artificial Intelligence Research of IA (AiRiA), 
+
+> 4
+
+University of Chinese Academy of Science, Nanjing 
+
+{liukunlong, wangyuanhui }@hrbeu.edu.cn, {peiminnan2023, lizhangming2023,huqinghao2014 }@ia.ac.cn, peisong.wang@nlpr.ia.ac.cn 
+
+Abstract 
+
+Recent years have witnessed growing scholarly interest in binary post-training quantization (PTQ) techniques for large language models (LLMs). While state-of-the-art (SOTA) bi-nary quantization methods significantly reduce memory foot-print and computational demands, they introduce additional memory overhead beyond binary weight tensors to mitigate performance degradation. Moreover, binary LLMs still suf-fer from substantial accuracy loss. To address these limita-tions, we propose MemeBQ, a novel binary PTQ framework for LLMs that reduces the memory overhead of auxiliary flag bitmaps in existing binary quantization methods. Specifically, we first design a greedy row clustering method, which lever-ages the similarity between the row vectors of weights to par-tition the weight rows into different groups. By sharing the common flag bitmap within each row group, we significantly mitigate the memory overhead associated with flag bitmaps. Besides, to improve the performance of binary LLMs, we propose a novel weight splitting method for each row group of weights, which determines the flag bitmap’s values in a fine-grained way. Extensive experiments on OPT, Llama-2, and Llama-3 models demonstrate that MemeBQ reduces 50% extra memory demand while achieving comparable ac-curacy compared with current SOTA methods. Alternatively, MemeBQ outperforms SOTA binary quantization methods up to 7% with the same extra bits on reasoning benchmarks. 
+
+Code — https://github.com/88099981/MemeBQ 
+
+# Introduction 
+
+In recent years, the advancement of large language models (LLMs) has significantly propelled the progress of artificial intelligence, yet the ever-expanding parameter scales (e.g., Llama-2 with 70B parameters) demand substantial com-putational resources for inference, impeding their deploy-ment on edge devices or in low-resource environments. This 
+
+> *
+
+These authors contributed equally. 
+
+> †
+
+This work was completed while the author was with the Insti-tute of Automation, Chinese Academy of Sciences. 
+
+> ‡
+
+Corresponding authors Copyright © 2026, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved. 
+
+Algorithm Weight Bits Extra Bits 
+
+PB-LLM 1.70 1.00 BiLLM 1.08 1.00 ARB-LLM RC 1.08 1.00 Table 1: Extra bits introduced by prior methods challenge promotes researchers to propose various LLMs compression methods including model quantization(Frantar et al. 2022; Lin et al. 2024), pruning(Frantar and Alistarh 2023; Ashkboos et al. 2024), knowledge distillation(Ko et al. 2024; Feng et al. 2025), and low-rank decomposition(Tian et al. 2025; Saha et al. 2024). Among these model com-pression methods, post-training quantization enables signifi-cantly faster deployment and lower computational overhead, as it directly quantizes a pre-trained model, eliminating the need for the resource-intensive retraining, fine-tuning, or ar-chitectural modifications required by other techniques. As a special case of model quantization, binary post-training quantization has attracted considerable attention in recent years due to its extremely low memory demand. However, due to the significant quantization errors inherent in binary representations, most binary quantization methods (Shang et al. 2023; Huang et al. 2024; Li et al. 2024) require additional masks or bitmaps alongside the binary weights to maintain model performance, as summarized in Table 1. For instance, PB-LLM (Shang et al. 2023) categorizes salient weights (outliers) into a separate group quantized to 8 bits, while applying binary quantization to the non-salient weights. This approach necessitates an unstructured bitmap to store the category indices. BiLLM (Huang et al. 2024) separates salient and non-salient weights structurally by col-umn. It further partitions non-salient weights into sparse and concentrated categories, requiring a binary flag bitmap to store these splitting indices. ARB-LLM (Li et al. 2024) extends this concept by partitioning weights within salient columns based on magnitude, achieving state-of-the-art re-sults but retaining the same extra bitmap requirement as The Fortieth AAAI Conference on Artificial Intelligence (AAAI-26) 
+
+26715 BiLLM. The additional overhead introduced by these flag bitmaps remains non-negligible, leading to increased mem-ory and storage consumption. To alleviate the above issue, we analyzed the extra flag bitmap and the non-salient weights splitting mechanism, and found the following two observations: • A row of weight matrix has a high degree of similarity as other rows of weight matrix. Specifically, the cosine sim-ilarity between a row of weight and its most similar row reaches at least 85% for Llama2-7b model. This indicates that the flag bitmap has redundancy in similar rows. • Previous binary LLMs splits the non-salient weights us-ing a global threshold for the whole weight matrix. The global threshold may work well in similar rows of weights, yet it will cause more quantization errors for those dissimilar rows of weights. A fine-grained splitting method for weight rows may lower down the quantiza-tion error. Based on these observations and analyses, we propose a novel binary post-training quantization framework called MemeBQ to reduce the additional overhead issue of the bitmap mask. MemeBQ consists of two main modules called similarity search(SimS) and group bitmap splitting(GBS). Specifically, SimS leverages a greedy search algorithm to group the rows of weights according to the cosine similarity. The rows of weights within the same group share the same flag bitmap which reduces the flag bitmap size by a factor of groupsize. Concurrently, GBS splits the non-salient weights via applying k-means clustering within each row group that is clustered by SimS, this fine-grained row-group level split-ting mechanism aligns with the local weight distribution. Our key contributions are summarized as follows: • We propose a novel bitmap reducing method named SimS algorithm via clustering rows of weights with sim-ilar direction into groups, where the rows of weights within the same group share the same bitmap mask. • We propose a fine-grained non-salient weight splitting method, i.e., the GBS algorithm, which ensures the shared bitmap mask within each group is more congru-ent with the original weight distribution of grouped rows of weights, thereby significantly improving model per-formance. • We conduct extensive experiments on OPT, Llama-2, and Llama-3 models, demonstrating that MemeBQ achieves performance comparable to SOTA binary PTQ methods while requiring 50% less extra memory demand. Alterna-tively, MemeBQ outperforms SOTA binary quantization methods up to 7% with the same extra bits on reasoning benchmarks. 
+
+# Related Work 
+
+Quantization is the process of transforming model weights or activations into discrete values. Post-training quantization (PTQ) is a widely adopted method for quantizing large lan-guage models. 8-bit quantization was the main method in the early phase. For instance, the LLM.int8 method (Dettmers et al. 2022) employs vector quantization to simultaneously reduce the bit width of model activations and weights to 8 bits. ZeroQuant (Yao et al. 2022) introduces a flexible multi-bit quantization approach that accommodates mixed precision with 4-bit and 8-bit configurations. In the context of quantizing weights in large models, the GPTQ method (Frantar et al. 2022) proposes a quantization compensation strategy grounded in the Hessian matrix, the bit width of each weight can be reduced to 3 or 4 bits with minimal im-pact on accuracy. AWQ (Lin et al. 2024) has demonstrated that the weight values associated with channels exhibiting higher activation levels are more crucial. SpQR (Dettmers et al. 2023) takes this a step further by storing weight out-liers in a higher bit width while quantizing the remaining weights to lower bit widths. In the realm of lower-bit quantization, QuIP (Chee et al. 2023) employs an adaptive rounding process aimed at min-imizing a quadratic proxy objective function. Ultimately achieving 2-bit quantization for large model weights. PB-LLM (Shang et al. 2023) proposes organizing the original weight matrix based on sensitivity, categorizing outliers into 8-bit quantization group while applying 1-bit quantization to others. BiLLM (Huang et al. 2024) applies 2-bit residual quantization to the salient weights and employs a grouped 1-bit algorithm for the non-salient weights, ultimately achiev-ing an overall PTQ quantization of 2.08 bits. Furthermore, ARB-LLM (Li et al. 2024) introduces a method to enhance the accuracy of the scaler and zero-point through iterative refinement. However, this method also necessitates the addi-tional storage of a 1-bit flag bitmap. 
+
+# Method 
+
+Overview 
+
+As shown in Figure 1, to reduce the extra storage overhead of the bitmap mask, we design the SimS algorithm to search and group similar rows of weights, reducing the extra flag bitmap by sharing mask in the same group. Additionally, we propose the GBS algorithm to ensure the shared bitmap mask better aligns with the original weight distribution. 
+
+Similarity Search(SimS) 
+
+The SimS algorithm is introduced to eliminate redundant storage overhead caused by bitmap masks in prior binary quantization methods (e.g., BiLLM/ARB-LLM), which pre-viously incurred an unavoidable 1-bit-per-parameter extra storage penalty. Through visualizing the bitmap mask gen-erated by BiLLM as Figure 2, we observed the presence of similar row vector patterns, indicating that the corre-sponding original weights exhibit high similarity in distri-bution across rows, which provide the foundational insight for the SimS algorithm. The core idea of SimS is to reduce storage overhead by grouping rows of weights with similar distributions and allowing them to share the same bitmap mask. Specifically, we first divide the weights into salient weights and non-salient weights structurally following prior work(Huang et al. 2024; Li et al. 2024). Given the weight matrix W ∈ Rn×m with n out-channels and m in-channels, we compute the quantization sensitivity of each element us-26716 Row-wise    
+
+> Cosine Similarity
+> 1.00 0.27 0.94 0.27 1.00 0.15 0.94 0.15 1.00 0.18 0.99 0.45 0.18 0.99 0.45 1.00
+> 1234
+> Clustered
+> 1.00 0.27 0.94 0.27 1.00 0.15 0.94 0.15 1.00 0.18 0.99 0.45 0.18 0.99 0.45 1.00
+
+# SimS            
+
+> 1234
+> 0.1 0.9 4.7 2.1 0.3 0.5 1.1 0.1 3.4 5.2 0.4 0.8
+> Original Weights
+
+# GBS 1 3 2 40.1 0.9 4.7 2.1 0.3 0.5 1.1 0.1 3.4 5.2 0.4 0.8 
+
+> Reordered Weights
+
+Reshape         
+
+> 0.1 0.9 4.7 1.1 0.1 3.4 2.1 0.3 0.5 5.2 0.4 0.8
+> K-means
+
+Batched Weights 
+
+Wmin Wmax Smin Smax Used tensor Bitmap 
+
+# Calibration 
+
+Bitmap 
+
+Access 0 0 11 0 00 0 11 0 00 0 11 0 0
+
+Grouped Bitmap Bitmap mask         
+
+> 0.1 0.9 4.7 2.1 0.3 0.5 1.1 0.1 3.4 5.2 0.4 0.8
+
+Original Weights 
+
+Next Pair 
+
+Store Group Index    
+
+> 1212
+
+Store Reorder Index 
+
+Similarity Matrix 
+
+> Visualization
+
+Reorder       
+
+> 1234Clustered
+> 1234
+
+Figure 1: Overview of our MemeBQ method Bitmap mask                   
+
+> 0100111010100111111001100100010001
+
+Salient weights Partition label 
+
+similar 
+
+> In_Channel Out_Channel
+> Value
+> similar
+
+similar 
+
+Figure 2: Bitmap mask of BiLLM method, the number 0&1 are results of weights partition, similar inter-row labels mean similar original weights distribution ing the Hessian matrix H ∈ Rm×m:
+
+ei = w2
+
+> i
+
+[H−1]2
+
+> ii
+
+, where H = XX T. (1) Then weight columns with the highest l sensitivity are iden-tified as salient weights, representing the salient weight col-umn index by e idx ∈ Rm, while the remainder are identi-fied as non-salient weights. Salient weights undergo residual binary quantization to minimize quantization error follow-ing (Li et al. 2024). Due to significant distributional differences between salient and non-salient components, similarity search is per-formed separately. For weight matrix W ∈ Rn×m, we use the salient column indice e idx to get Wsalient ∈
+
+Rn×land Wnon −salient ∈ Rn×(m−l). SimS algorithm firstly forms two reconstructed matrices Ssalient ∈ Rn×n
+
+and Snon −salient ∈ Rn×n based on Wsalient and 
+
+Wnon −salient :
+
+sij = Wi· · WTj·
+
+|| Wi·|| 2 · || Wj·|| 2
+
+, i, j ∈ { 1, . . . , n }. (2) where Wi· denotes the i row of Wsalient or Wnon −salient .Subsequently, the greedy algorithm is used to find the most similar yet ungrouped tensors in the similarity matrix S. For each row i in Ssalient and Snon −salient , we find the index 
+
+col of maximum similarity for g times where g denotes the groupsize: 
+
+col = arg max 
+
+> j
+
+Si,j , j ∈ { 1, . . . , n } (3) then update S and store group information in ˜mg ∈ Rn×1.
+
+g idx is used to indicate the number of current group: 
+
+Si· = S·j = −inf (4) 
+
+˜mgi = ˜mgj = g idx, g idx ∈ { 1, . . . , ng } (5) What’s more, we store ˜mr ∈ Rn×1 for a better access through sub-tensor indexing in the latter GBS module, r idx 
+
+shows the current index in g, ˜mr is updated by: 
+
+˜mrg×g idx = ˜mrg×g idx +r idx = col 
+
+where g idx ∈ { 1, . . . , ng }, r idx ∈ { 1, . . . , g } (6) All rows of weights within a group share a single bitmap mask. The detailed algorithm is presented in Algorithm 1. 
+
+Group Bitmap Search (GBS) 
+
+Previous algorithms partitioned the bitmap mask by ap-proximating weights as a Gaussian distribution and finding the globally optimal threshold. Specifically, they first sorted the absolute values of all original weights, then iteratively searched for the best threshold within this sorted list, using the loss function: 
+
+L = || W − cW|| 2 
+
+> F
+
+, where cW = αB + μ . (7) 26717 Algorithm 1: SimS algorithm func SimS (W, g)
+
+Input : W ∈ Rn×m - full-precision weight 
+
+g - group size 
+
+Output : ˜mg ∈ Rn
+
+˜mr ∈ Rn
+
+1: ˜dnorm ← W.norm (p = 2 , dim = 1) 
+
+2: Wnorm ← W/˜dnorm ▷ per-row normalization 
+
+3: S ← Wnorm · WTnorm 
+
+4: U ← ∅ ▷ Set of used vectors 
+
+5: ˜mg ← zeros (n) ▷ Index for inference 
+
+6: ˜mr ← zeros (n) ▷ Index for GBS 
+
+7: g idx ← 0
+
+8: for i = 0 , 1, 2, . . . , S.shape (0) − 1 do 
+
+9: if i ∈ U then 
+
+10: continue 11: end if 
+
+12: U ← U ∪ { i}
+
+13: C ← { i} ▷ Initialize current group 
+
+14: while |C| < g and |U| < n do 
+
+15: j ← arg max j / ∈U S[i, j ] ▷ Find most similar unused vector 
+
+16: U ← U ∪ { j}
+
+17: C ← C ∪ { j}
+
+18: ˜mg [j] ← g idx ▷ Store current group 
+
+19: end while 
+
+20: g idx ← g idx + 1 
+
+21: ˜mr[i · g : ( i + 1) · g] ← C ▷ Store current group 
+
+22: end for 
+
+23: return ˜mg , ˜mr
+
+Our research revealed that bitmap generated by this method does not necessarily align with weight distribution within groups during quantization. To address this issue, we pro-pose GBS algorithm, which finds the most suitable bitmap mask by performing k-means clustering within each group. During our study of the bitmap mask, we gained the fol-lowing insight : the essence of group quantization in pre-serving original model performance lies in finding a set of weights with similar values, which is particularly crucial for binary quantization. Since quantization is performed row-wise, the distribution of weight magnitudes within a row is paramount. The method of grouping via a globally optimal threshold clearly fails to account for the data distribution within individual rows. The most straightforward solution would be to search for a row-wise optimal threshold directly per row. However, ex-perimental results showed this method to be extremely inef-ficient, taking approximately 79 hours to quantize a Llama2-7b model, rendering it impractical. Additionally, this method is incompatible with the grouped tensors obtained by SimS. SimS algorithm groups tensors based on their direction vec-tors and requires all tensors within a group to share the same bitmap mask, which means vectors within a group having consistent direction but inconsistent magnitudes. For certain column channels within a group, it’s highly likely that some values exceed the optimal threshold while others fall below it. However, this intra-column variation in magnitude does not affect their original distribution within the row. Based on those observations, we conclude that methods determin-ing the bitmap mask solely based on weight magnitude are not well-suited for SimS. Building upon the above factors, we employ the k-means algorithm to determine the weight partitioning. Specifically, We first reorder the Wsalient and 
+
+Wnon −salient with their own ˜mr. Then process batches based on group size g to obtain ¯Wsalient ∈ R ng ×l×g and 
+
+¯Wnon salient ∈ R ng ×(m−l)×g . For example, matrix ¯W ∈
+
+R ng ×m×g is gained from matrix W ∈ Rn×m with group size g by: 
+
+Wri· = W ˜mr[i]· (8) 
+
+Wb = reshape (Wr, ( ng , g, m )) (9) 
+
+¯Wi,j,k = Wbi,k,j , ¯W ∈ R ng ×m×g (10) The GBS algorithm applies a Euclidean distance-based batched k-means clustering to each intra-column element within a group, where n/g denotes batch size, m means the number of samples in k-means, g means feature dimension. The original weights are then partitioned based on cluster-ing labels. We initialize two cluster centers for each batch k:
+
+C(k) = [ μ(k)1 , μ(k)2 ]⊤ ∈ R2×g , for k = 1 , . . . , ng . For each batch, whose cluster centers are μj , Mj include all wi close to μj . Objective function of our algorithm is: 
+
+J =
+
+> ng
+
+X
+
+> k=1 2
+
+X
+
+> j=1
+
+X
+
+> wi∈M(k)
+> j
+
+∥wi − μ(k) 
+
+> j
+
+∥2 (11) We update cluster centers t times by: 
+
+μ(k,t +1)  
+
+> j
+
+= 1
+
+|M(k,t ) 
+
+> j
+
+|
+
+X
+
+> wi∈M(k,t )
+> j
+
+wi (12) Finally we get two sets of cluster centers C ∈ R ng ×2×g
+
+for salient weights and non-salient weights and cluster la-bels Msalient ∈ R ng ×l and Mnon −salient ∈ R ng ×(m−l).We obtain the final bitmap mask M ∈ R ng ×m by: 
+
+M broadcast 
+
+⊙ e idx = Msalient , (13) 
+
+M broadcast 
+
+⊙ (¬e idx ) = Mnon −salient (14) This design ensures that values with similar magnitudes within each row are assigned the same label as much as pos-sible. After that, we follow ARB-LLM RC methods to get re-fined scaler αrefine and zero-point μrefine , then we performed residual quantization on the important columns, obtaining 
+
+B1 ∈ Rn×l and B2 ∈ Rn×l, and conducted 1-bit quantiza-tion on the remaining columns to get B ∈ Rn×(m−l). More details are included in the Appendix, quantified matrix cW is obtained as below: 
+
+Brefine = sign( W − μrefine ), cW = αrefine · Brefine + μrefine 
+
+(15) In terms of calibration time, GBS replaced the previous global search with row-wise k-means clustering and was accelerated by batching. On LLaMA2-7B, ArbLLM takes 11,902s, while MemeBQ takes 12,975s; on LLaMA2-13B, ArbLLM takes 24,924s, and MemeBQ takes 25,196s. The increased time is less than 10%. We quantized the model layer by layer, so a single A800(80GB) is enough. 26718 Method Block Size Weight Bits Extra Bits 1.3B 6.7B 66B 
+
+Full Precision - 16.00 0.00 14.62 10.86 9.34 RTN - 3.00 0.00 13,337.38 5,797.32 6,126.09 GPTQ 128 3.00 0.00 16.45 11.31 10.55 RTN - 2.00 0.00 11,272.65 28,363.14 1,165,864.25 GPTQ 128 2.00 0.00 121.64 20.81 46.38 PB-LLM 128 1.70 1.00 239.81 144.25 27.66 BiLLM 128 1.11 1.00 69.05 47.65 12.05 ARB-LLM RC 128 1.11 1.00 26.63 14.92 10.30 
+
+MemeBQ 128 1.11 1.00 19.14 13.08 9.91 MemeBQ 128 1.11 0.50 27.25 16.29 11.30 Table 2: Perplexity of RTN, GPTQ, PB-LLM, BiLLM, ARB-LLM and our methods on OPT family. The columns represent the perplexity results on WikiText2 datasets with different model sizes. 
+
+Memory Cost 
+
+For W ∈ Rn×m, block size b, group size g, salient columns number l, we introduce ˜mg to store group information, each elements in ˜mg will be stored as FP8, when values are less than superior limit of FP8. The memory of cW after standard row-wise binarization is as follows: 
+
+Mnon −salient =
+
+> multiple blocks
+
+z }| { 
+
+⌈m/b ⌉ ×(   
+
+> FP16 αand μ
+
+z }| {
+
+2 × n × 16 +  
+
+> FP8 ˜mg
+
+z }| { 
+
+8 × n )+
+
+> bitmap mask
+
+z }| {
+
+(n/g ) × (m − l) + 
+
+> B
+
+z }| { 
+
+n × m
+
+(16) Moreover, second-order row-wise binarization can be rep-resented as 
+
+Msalient =
+
+> multiple blocks
+
+z }| { 
+
+⌈m/b ⌉ ×(   
+
+> FP16 αand μ
+
+z }| {
+
+3 × n × 16 +  
+
+> FP8 ˜mg
+
+z }| { 
+
+8 × n )+
+
+> bitmap mask
+
+z }| {
+
+(n/g ) × l +  
+
+> B1and B2
+
+z }| {
+
+2 × n × m
+
+(17) since row-wise μ1 and μ2 can be combined together as μ =
+
+μ1 + μ2. We totally reduce (n − n/g ) × m − m/b × 8n
+
+bits compared to ARB-LLM RC . Real storage of MemeBQ is 2.22GB while ArbLLM’s is 2.69GB. 
+
+# Experiments 
+
+Setup 
+
+The experiments of MemeBQ were primarily conducted using PyTorch framework (Paszke et al. 2019) and Hug-ging Face library (Wolf et al. 2019). As a PTQ approach, MemeBQ requires leveraging datasets for model weight cal-ibration. By deploying the model layer-by-layer on a GPU, even large models like Llama-3-70B can be quantized on a single 80GB NVIDIA A800. 
+
+Models and Datasets We conducted extensive experi-ments on existing open-source models, including the Llama-2 (Touvron et al. 2023) and Llama-3 (Grattafiori et al. 2024) series, as well as a representative subset of OPT (Zhang et al. 2022) models. For the calibration dataset, we selected the more comprehensive C4 dataset (Raffel et al. 2020). Due to the large size of the C4 dataset, we constructed the cal-ibration set by randomly sampling 128 sentences from c4-train.00000-of-01024 located in the en/ subdirectory. To val-idate the effectiveness of the quantization method, we used the Wikitext2 (Merity et al. 2016) and C4 datasets to con-struct the validation set for testing model perplexity(PPL), which has been proven to be the most stable metric for eval-uating LLMs. Furthermore, we evaluated the accuracy for 7 zero-shot QA datasets including PIQA (Bisk et al. 2020), BoolQ (Clark et al. 2019), OBQA (Mihaylov et al. 2018), Wino-grande (Sakaguchi et al. 2021), ARC-e (Clark et al. 2018), ARC-c (Clark et al. 2018), and Hellaswag (Zellers et al. 2019). The results on these tasks provide robust evidence of the PTQ quantization method. For baseline comparisons, we primarily evaluated against existing binary LLMs like PB-LLM, BiLLM, and ARB-LLM. 
+
+Main Results 
+
+Comparison results We conducted extensive experiments on major bitmap-using methods under the uniform condi-tion of a 128 block size. The results for OPT models can be found in Table 2. From the table, it can be observed that MemeBQ achieves a new state-of-the-art (SOTA) un-der the same bitmap size. Notably, on the OPT-66B model, MemeBQ with an overall bitwidth of 2.01 bits even outper-forms the GPTQ method using 3 bits. Table 3 lists the re-sults of MemeBQ on the Llama series models. The table shows that MemeBQ significantly outperforms the previ-ous SOTA method ARB-LLM at the same bitwidth. Specif-ically, MemeBQ surpasses the 3-bit RTN method on both Llama-2-13B and Llama-2-70B. Furthermore, on Llama-3-8B, MemeBQ outperforms the 3-bit GPTQ method and emerges as the new SOTA.Additionally, on the Llama-2-7B model, MemeBQ with 1.58 bits achieves a perplexity (PPL) of 16.73—merely 0.3 higher than ARB-LLM with 2.08 bits. Overall, at the same bitwidth, MemeBQ significantly outper-forms previous SOTA methods. Furthermore, while achiev-ing comparable performance, MemeBQ reduces the bitmap 26719 Model Method Block Size Weight Bits Extra Bits 7B/8B* 13B 70B 
+
+Full Precision - 16.00 0.00 5.47 4.88 3.32 
+
+Llama-2 
+
+RTN - 3.00 0.00 542.80 10.68 7.53 GPTQ 128 3.00 0.00 6.44 5.46 3.88 RTN - 2.00 0.00 17788.93 51145.61 26066.13 GPTQ 128 2.00 0.00 60.45 24.48 8.18 PB-LLM 128 1.70 1.00 66.41 236.40 28.37 BiLLM 128 1.08 1.00 32.48 21.77 13.32 ARB-LLM RC 128 1.08 1.00 16.44 11.85 6.16 
+
+MemeBQ 128 1.08 1.00 8.77 7.42 4.93 MemeBQ 128 1.08 0.50 16.73 14.38 7.67 
+
+Llama-3 
+
+Full Precision - 16.00 0.00 6.14 N/A 2.86 RTN - 3.00 0.00 2194.98 N/A 13592.69 GPTQ 128 3.00 0.00 18.68 N/A 6.65 RTN - 2.00 0.00 1335816.13 N/A 481927.66 GPTQ 128 2.00 0.00 1480.43 N/A 82.23 PB-LLM 128 1.70 1.00 73.08 N/A 22.96 BiLLM 128 1.06 1.00 55.80 N/A 66.30 ARB-LLM RC 128 1.06 1.00 27.42 N/A 11.10 
+
+MemeBQ 128 1.06 1.00 13.38 N/A 8.07 MemeBQ 128 1.06 0.50 32.31 N/A 12.67 
+
+> The table gives the average bit-width of the Llama family. N/A: Llama-3 do not have 13B version. *: Llama-2 has 7B version and Llama-3 has 8B version.
+
+Table 3: Perplexity of RTN, GPTQ, PB-LLM, BiLLM, ARB-LLM and our method on Llama Family. The columns represent the perplexity results on WikiText2 datasets with different model sizes. mask overhead. 
+
+Zero-Shot results We conducted comprehensive experi-ments on 7 zero-shot Question Answering benchmarks us-ing similarly sized models including Llama-2-7B, Llama-3-8B, and OPT-6.7B. The results shown in Table 4 demon-strate that MemeBQ delivers significant improvements: at identical bitwidths, it substantially outperforms prior SOTA ARB-LLM, achieving a 7.27% accuracy gain on Llama-3-8B; while using fewer bits, MemeBQ maintains near-competitive accuracy with only a 0.4% margin on Llama-2-7B. Furthermore, all MemeBQ variants surpass existing SOTA methods on OPT-6.7B by 5.77% and 2.83%. These findings collectively validate MemeBQ’s robustness across architectures and bitwidth configurations. 
+
+Ablation Study 
+
+Effectiveness of modules To validate the effectiveness of individual components within MemeBQ, we conducted an ablation study for each module on the Llama-2-7B model using ARB-LLM as baseline. Table 5 reveals that while the SimS algorithm effectively reduces bitmap mask overhead, it incurs performance degradation (perplexity in-creased from 16.44 to 21.67)—consistent with the no free lunch principle. Crucially, our proposed GBS algorithm compensates for this performance loss. Notably, GBS alone substantially improves model performance (perplexity re-duced from 16.44 to 8.77). Ultimately, combining both al-gorithms, MemeBQ achieves comparable results to prior SOTA (16.73 vs. 16.44 PPL) with reduced memory over-head. 
+
+Ablation study on SimS module To achieve optimal ef-fect, we investigated BiLLM algorithm equipped with SimS method on the Llama-2-7B model, with results detailed in Table 6.SimS is designed to minimize loss caused by bitmap reduction. With no prior mask compression baselines, we use merge-to-nearest (MTN) method as the baseline. As in Table 6, shrinking bitmaps without SimS leads to model col-lapse. Compared to direct MTN approaches, grouping de-termined by original weight distribution proved significantly effective. We evaluated k-means versus greedy clustering al-gorithms across datasets, revealing that the greedy method yielded superior results due to k-means’ suboptimal cen-troid distribution for grouping. Furthermore, our exploration of similarity metrics demonstrated higher sensitivity to row vector’s directionality than their magnitude. Consequently, we adopted greedy clustering with cosine similarity between row vectors as final grouping strategy. 
+
+Groupsize of SimS We systematically evaluated perfor-mance on Llama-2-7B model across varying groupsizes de-fined as the number of row vectors per group in the SimS module. As Table 7 demonstrates, significant performance degradation occurs at groupsize of 0 (bitmap disabled, 0 ex-26720 Model Method Weight Bits Extra Bits PIQA ↑ BoolQ ↑ OBQA ↑ WinoG ↑ ARC-e ↑ ARC-c ↑ Hellaswag ↑ Average ↑
+
+Llama2-7B 
+
+Full Precision 16.00 0.00 79.11 77.71 44.20 69.06 76.30 46.25 75.99 66.95 BiLLM 1.08 1.00 60.39 59.42 29.80 51.93 39.98 23.72 35.90 43.02 ARB-LLM RC 1.08 1.00 66.59 66.33 29.60 57.85 51.01 27.56 48.33 49.61 
+
+MemeBQ 1.08 1.00 72.74 68.07 34.40 64.64 62.96 31.57 55.91 55.76 MemeBQ 1.08 0.50 65.61 66.42 29.40 58.48 51.22 27.30 46.12 49.22 
+
+Llama-3-8B 
+
+Full Precision 16.00 0.00 80.58 81.10 45.00 72.93 80.22 53.50 79.18 70.36 BiLLM 1.08 1.00 57.51 58.50 29.20 52.25 33.71 22.70 35.17 41.29 ARB-LLM RC 1.08 1.00 71.11 62.60 33.40 59.27 57.28 28.75 53.54 52.27 
+
+MemeBQ 1.08 1.00 73.29 74.95 38.40 68.27 65.45 35.58 60.86 59.54 MemeBQ 1.08 0.50 62.84 65.84 26.60 57.46 49.07 26.45 43.27 47.36 
+
+OPT-6.7B 
+
+Full Precision 16.00 0.00 76.44 66.12 37.40 65.43 65.66 34.73 67.21 59.00 BiLLM 1.08 1.00 58.60 62.14 13.20 53.12 33.75 18.26 22.83 38.27 ARB-LLM RC 1.08 1.00 72.47 62.87 22.20 60.62 59.09 26.79 42.08 49.45 
+
+MemeBQ 1.08 1.00 73.67 63.73 36.80 60.62 61.20 31.23 59.30 55.22 MemeBQ 1.08 0.50 71.11 62.60 33.40 59.27 57.28 28.75 53.54 52.28 Table 4: Accuracy on 7 data sets, from binarization Llama-2, Llama-3 and OPT, and we also compare the results among BiLLM, ARB-LLM and our method to validate the quantization effect. 
+
+Algorithm Total Bits SimS GBS Wikitext2 ↓ C4 ↓
+
+ARB-LLM RC 2.08 ✗ ✗ 16.44 20.12 MemeBQ 2.08 ✗ ✓ 8.77 11.42 
+
+MemeBQ 1.58 ✓ ✗ 21.67 25.80 MemeBQ 1.58 ✓ ✓ 16.73 20.38 Table 5: Ablation study on Llama-2-7B 
+
+Method Mode Wikitext2 ↓ C4 ↓
+
+MTN - 70,99 48.77 Kmeans euclidean 39.42 39.14 Kmeans cosine 37.68 38.51 Greedy Search euclidean 35.19 36.15 Greedy Search cosine 31.91 37.24 
+
+> MTN: Merge-to-nearest method, which groups tensors with the nearest one
+
+Table 6: Ablation study on SimS without GBS , Llama-2-7B model and BiLLM algorithm are chosen tra bit). MemeBQ with groupsize of 1 maintains prior meth-ods’ overhead while delivering optimal accuracy. By set-ting groupsize to 2, MemeBQ achieves comparable perfor-mance to ARB-LLM with only 0.5-bit overhead (1.58-bit to-tally). And MemeBQ with groupsize of 4 matches 2.08-bit BiLLM’s accuracy at just 0.25-bit overhead (1.25-bit total). Overall, MemeBQ achieves comparable results to previous algorithms with less bit overhead. 
+
+Algorithm Extra Bits Groupsize Wikitext2 ↓ C4 ↓
+
+BiLLM 1.00 1 32.48 39.38 ARB-LLM RC 1.00 1 16.44 20.12 MemeBQ 0.00 0 377.97 160.08 MemeBQ 0.25 4 33.81 37.74 MemeBQ 0.50 2 16.73 20.64 MemeBQ 1.00 1 8.77 11.42 
+
+Table 7: Ablation study on different groupsize, Llama-2-7B model are chosen 
+
+# Conclusion 
+
+In this paper, we propose MemeBQ, a novel binary PTQ framework that deals with the extra memory overhead problem. By introducing a greedy row similarity search algorithm, MemeBQ groups similar weight tensors to share bitmap mask, reducing extra memory by 50%. The group bitmap search further optimizes quantization fidelity through fine-grained k-means clustering within groups, en-suring alignment with local weight distributions. Extensive experiments demonstrate that MemeBQ achieves compara-ble accuracy to SOTA methods with half the extra bits and outperforms them under equivalent bit constraints. 
+
+# Acknowledgments 
+
+This work was supported by National Key R&D Program of China (2022ZD0116406), Beijing Natural Science Foun-dation (L244046), CCF-Baidu Open Fund and the Key Research and Development Program of Jiangsu Province (Grants No. BE2023016). 26721 References 
+
+Ashkboos, S.; Croci, M. L.; Nascimento, M. G. d.; Hoefler, T.; and Hensman, J. 2024. Slicegpt: Compress large lan-guage models by deleting rows and columns. arXiv preprint arXiv:2401.15024 .Bisk, Y.; Zellers, R.; Gao, J.; Choi, Y.; et al. 2020. Piqa: Rea-soning about physical commonsense in natural language. In Proceedings of the AAAI conference on artificial intel-ligence , volume 34, 7432–7439. Chee, J.; Cai, Y.; Kuleshov, V.; and De Sa, C. M. 2023. Quip: 2-bit quantization of large language models with guaran-tees. Advances in Neural Information Processing Systems ,36: 4396–4429. Clark, C.; Lee, K.; Chang, M.-W.; Kwiatkowski, T.; Collins, M.; and Toutanova, K. 2019. BoolQ: Exploring the surpris-ing difficulty of natural yes/no questions. arXiv preprint arXiv:1905.10044 .Clark, P.; Cowhey, I.; Etzioni, O.; Khot, T.; Sabharwal, A.; Schoenick, C.; and Tafjord, O. 2018. Think you have solved question answering? try arc, the ai2 reasoning challenge. 
+
+arXiv preprint arXiv:1803.05457 .Dettmers, T.; Lewis, M.; Belkada, Y.; and Zettlemoyer, L. 2022. Gpt3. int8 (): 8-bit matrix multiplication for trans-formers at scale. Advances in neural information processing systems , 35: 30318–30332. Dettmers, T.; Svirschevski, R.; Egiazarian, V.; Kuznedelev, D.; Frantar, E.; Ashkboos, S.; Borzunov, A.; Hoefler, T.; and Alistarh, D. 2023. Spqr: A sparse-quantized representation for near-lossless llm weight compression. arXiv preprint arXiv:2306.03078 .Feng, Q.; Li, W.; Lin, T.; and Chen, X. 2025. Align-KD: Distilling Cross-Modal Alignment Knowledge for Mobile Vision-Language Large Model Enhancement. In Proceed-ings of the Computer Vision and Pattern Recognition Con-ference , 4178–4188. Frantar, E.; and Alistarh, D. 2023. Sparsegpt: Massive lan-guage models can be accurately pruned in one-shot. In In-ternational conference on machine learning , 10323–10337. PMLR. Frantar, E.; Ashkboos, S.; Hoefler, T.; and Alistarh, D. 2022. Gptq: Accurate post-training quantization for generative pre-trained transformers. arXiv preprint arXiv:2210.17323 .Grattafiori, A.; Dubey, A.; Jauhri, A.; Pandey, A.; Kadian, A.; Al-Dahle, A.; Letman, A.; Mathur, A.; Schelten, A.; Vaughan, A.; et al. 2024. The llama 3 herd of models. arXiv preprint arXiv:2407.21783 .Huang, W.; Liu, Y.; Qin, H.; Li, Y.; Zhang, S.; Liu, X.; Magno, M.; and Qi, X. 2024. Billm: Pushing the limit of post-training quantization for llms. arXiv preprint arXiv:2402.04291 .Ko, J.; Kim, S.; Chen, T.; and Yun, S. Y. 2024. DistiLLM: Towards Streamlined Distillation for Large Language Mod-els. Li, Z.; Yan, X.; Zhang, T.; Qin, H.; Xie, D.; Tian, J.; Kong, L.; Zhang, Y.; Yang, X.; et al. 2024. Arb-llm: Alternating re-fined binarizations for large language models. arXiv preprint arXiv:2410.03129 .Lin, J.; Tang, J.; Tang, H.; Yang, S.; Chen, W.-M.; Wang, W.-C.; Xiao, G.; Dang, X.; Gan, C.; and Han, S. 2024. Awq: Activation-aware weight quantization for on-device llm compression and acceleration. Proceedings of machine learning and systems , 6: 87–100. Merity, S.; Xiong, C.; Bradbury, J.; and Socher, R. 2016. Pointer sentinel mixture models. arXiv preprint arXiv:1609.07843 .Mihaylov, T.; Clark, P.; Khot, T.; and Sabharwal, A. 2018. Can a suit of armor conduct electricity? a new dataset for open book question answering. arXiv preprint arXiv:1809.02789 .Paszke, A.; Gross, S.; Massa, F.; Lerer, A.; Bradbury, J.; Chanan, G.; Killeen, T.; Lin, Z.; Gimelshein, N.; Antiga, L.; et al. 2019. Pytorch: An imperative style, high-performance deep learning library. Advances in neural information pro-cessing systems , 32. Raffel, C.; Shazeer, N.; Roberts, A.; Lee, K.; Narang, S.; Matena, M.; Zhou, Y.; Li, W.; and Liu, P. J. 2020. Explor-ing the limits of transfer learning with a unified text-to-text transformer. The Journal of Machine Learning Research ,21(1): 5485–5551. Saha, R.; Sagan, N.; Srivastava, V.; Goldsmith, A. J.; and Pi-lanci, M. 2024. Compressing Large Language Models using Low Rank and Low Precision Decomposition. Sakaguchi, K.; Bras, R. L.; Bhagavatula, C.; and Choi, Y. 2021. Winogrande: An adversarial winograd schema chal-lenge at scale. Communications of the ACM , 64(9): 99–106. Shang, Y.; Yuan, Z.; Wu, Q.; and Dong, Z. 2023. Pb-llm: Partially binarized large language models. arXiv preprint arXiv:2310.00034 .Tian, J.; Solgi, R.; Lu, J.; Yang, Y.; Li, H.; and Zhang, Z. 2025. FLAT-LLM: Fine-grained Low-rank Activation Space Transformation for Large Language Model Compression. 
+
+arXiv preprint arXiv:2505.23966 .Touvron, H.; Martin, L.; Stone, K.; Albert, P.; Almahairi, A.; Babaei, Y.; Bashlykov, N.; Batra, S.; Bhargava, P.; Bhosale, S.; et al. 2023. Llama 2: Open foundation and fine-tuned chat models. arXiv preprint arXiv:2307.09288 .Wolf, T.; Debut, L.; Sanh, V.; Chaumond, J.; Delangue, C.; Moi, A.; Cistac, P.; Rault, T.; Louf, R.; Funtowicz, M.; et al. 2019. Huggingface’s transformers: State-of-the-art natural language processing. arXiv preprint arXiv:1910.03771 .Yao, Z.; Yazdani Aminabadi, R.; Zhang, M.; Wu, X.; Li, C.; and He, Y. 2022. Zeroquant: Efficient and affordable post-training quantization for large-scale transformers. Advances in neural information processing systems , 35: 27168–27183. Zellers, R.; Holtzman, A.; Bisk, Y.; Farhadi, A.; and Choi, Y. 2019. Hellaswag: Can a machine really finish your sen-tence? arXiv preprint arXiv:1905.07830 .Zhang, S.; Roller, S.; Goyal, N.; Artetxe, M.; Chen, M.; Chen, S.; Dewan, C.; Diab, M.; Li, X.; Lin, X. V.; et al. 2022. Opt: Open pre-trained transformer language models. arXiv preprint arXiv:2205.01068 .26722

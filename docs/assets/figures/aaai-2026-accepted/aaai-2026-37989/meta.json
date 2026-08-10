@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "extractor": "papercropper",
+  "figures": [
+    {
+      "url": "assets/figures/aaai-2026-accepted/aaai-2026-37989/fig-001.webp",
+      "caption": "",
+      "page": 0,
+      "index": 1,
+      "width": 1826,
+      "height": 704,
+      "label": "Figure"
+    }
+  ]
+}

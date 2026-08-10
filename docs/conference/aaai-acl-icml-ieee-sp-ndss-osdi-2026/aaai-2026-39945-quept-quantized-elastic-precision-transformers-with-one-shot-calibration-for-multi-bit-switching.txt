@@ -1,0 +1,477 @@
+Title: QuEPT: Quantized Elastic Precision Transformers with One-Shot Calibration for Multi-Bit Switching
+
+URL Source: https://ojs.aaai.org/index.php/AAAI/article/download/39945/43906
+
+Number of Pages: 9
+
+Markdown Content:
+# QuEPT: Quantized Elastic Precision Transformers with One-Shot Calibration for Multi-Bit Switching 
+
+## Ke Xu 1,2 , Yixin Wang 2, Zhongcheng Li 4, Hao Cui 4, Jinshui Hu 4, Xingyi Zhang 1,3 
+
+> 1
+
+State Key Laboratory of Opto-Electronic Information Acquisition and Protection Technology, Anhui University, Hefei, China 
+
+> 2
+
+School of Artificial Intelligence, Anhui University, Hefei, China 
+
+> 3
+
+School of Computer Science and Technology, Anhui University, Hefei, China 
+
+> 4
+
+iFLYTEK Research, Hefei, China xuke@ahu.edu.cn, yxwang@stu.ahu.edu.cn, {zcli19, haocui, jshu }@iflytek.com, xyzhanghust@gmail.com 
+
+Abstract 
+
+> Elastic precision quantization enables multi-bit deployment via a single optimization pass, fitting diverse quantization scenarios. Yet, the high storage and optimization costs asso-ciated with the Transformer architecture, research on elas-tic quantization remains limited, particularly for large lan-guage models. This paper proposes QuEPT, an efficient post-training scheme that reconstructs block-wise multi-bit er-rors with one-shot calibration on a small data slice. It can dynamically adapt to various predefined bit-widths by cas-cading different low-rank adapters, and supports real-time switching between uniform quantization and mixed precision quantization without repeated optimization. To enhance accu-racy and robustness, we introduce Multi-Bit Token Merging (MB-ToMe) to dynamically fuse token features across differ-ent bit-widths, improving robustness during bit-width switch-ing. Additionally, we propose Multi-Bit Cascaded Low-Rank adapters (MB-CLoRA) to strengthen correlations between bit-width groups, further improve the overall performance of QuEPT. Extensive experiments demonstrate that QuEPT achieves comparable or better performance to existing state-of-the-art post-training quantization methods.
+
+Code — https://github.com/xuke225/QuEPT 
+
+## Introduction 
+
+Model quantization reduces computational and memory re-quirements by representing weights and activations using low-bit fixed-point numbers, enabling deep neural networks to run efficiently on resource-constrained devices. However, most quantization methods (Nagel et al. 2020; Liu et al. 2023b; Lin et al. 2024b; Sun et al. 2025; Li et al. 2025c) are only able to achieve a single predefined bit-width for quantization, and modifying the bit-width necessitates re-optimization. Elastic precision quantization can jointly op-timize multiple predefined bit widths while sharing the orig-inal weights. This approach enables a quantized model to dynamically adapt to various bit-widths through one-shot calibration, offering flexible precision-efficiency trade-offs while supporting real-time switching between uniform and mixed-precision configurations without requiring separate optimizations for each bit setting. 
+
+> Copyright © 2026, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved.
+
+While multi-bit quantization has yielded impressive gains for Convolutional Neural Networks (CNNs) (Shkolnik et al. 2020; Yu et al. 2021; Xu et al. 2023, 2024a; Kim et al. 2025), its benefits do not readily carry over to Transformers. Com-pared with CNNs, Transformers exhibit dense inter-token dependencies, attention-driven dynamic sparsity and expan-sive activation ranges, all of which magnify quantization noise and make per-layer bit-width sensitivity highly het-erogeneous. Consequently, existing efforts to adapt multi-bit techniques to Transformers remain scarce, with most studies still anchored to fixed-bit-width schemes. Only very recently have a handful of works begun to explore multi-bit quantiza-tion for Transformer-based LLMs, including Any-Precision LLM (Park et al. 2024), which leverages truncated bit-widths and incremental upscaling, and MatQuant (Nair et al. 2025), which employs co-training and co-distillation regu-larization. However, these methods still underperform state-of-the-art single-bit-width quantization methods (Ashkboos et al. 2024; Liu et al. 2025; Sun et al. 2025) at low precision. Any-Precision LLM only implements weight quantization and does not consider activation quantization. Current ap-proaches also fail to address how aggressive low-bit quanti-zation negatively impacts medium and high-bit representa-tions, resulting in overall performance being constrained by the lowest precision configuration. To address the above challenges, we propose a novel post-training elastic quantization framework, QuEPT, as shown in Figure 1. QuEPT introduces Multi-Bit Token Merging (MB-ToMe), which addresses competitive conflicts between bit-widths by selectively preserving robust high-precision to-ken features while fusing less stable representations across precision levels to maintain balanced performance during multi-bit optimization. Complementarily, we propose Multi-Bit Cascaded Low-Rank Adapters (MB-CLoRA), redesign-ing the parameter-update pathway into a cascaded low-rank flow that lets gradients harvested at high precision gently diffuse into their low-precision counterparts, turning con-flict into synergy. Our method provides a unified multi-bit width quantization solution for various transformer models, including ViTs, LLMs, and Multi-modal LLM (MLLM) ar-chitectures such as LLaVA (Liu et al. 2023a; Li et al. 2025a). This approach only requires one-shot calibration and can be deployed in real time to any target bit-width by selecting the appropriate LoRA, completely eliminating re-optimization. The Fortieth AAAI Conference on Artificial Intelligence (AAAI-26) 
+
+> 27287
+
+𝑋 𝐻 
+
+𝑋 𝐿 
+
+MB -ToMe    
+
+> 𝑋 𝑘
+> 𝐻 𝑋 𝑘
+> 𝐿 𝑋 𝑘 𝐻
+> 𝑋 𝑘
+> 𝐻 𝑋 𝑘 𝐿 𝑋 𝑘 𝑀
+> AVG
+> 𝑋 𝑘
+> ′
+
+𝑋 ′  
+
+> Token
+> Similarity
+> Step 1: Caculate Token Similarity Step 2: Selective Token Merge Step 3: Feature Reshape
+> …
+> High Similarity
+> Low Similarity
+> 𝑾 ∈ ℝ 𝒑×𝒒
+> Pretrained Weights
+
++ 
+
+> 𝒓 𝒍 𝒓 𝒎 𝒓 𝒉
+
+# .
+
+clip ×
+
+MB -CLoRA 
+
+𝑆 𝑤 
+
+𝑆 𝑤 
+
+𝑩  𝑨 
+
+> Low Bit
+> Group
+> Middle
+> Bit Group
+> High Bit
+> Group
+> FP
+> Block
+
+Block k -1
+
+𝑋 𝐿 
+
+𝑋 𝑀 
+
+𝑋 𝐻 
+
+𝑋 𝐹𝑃 
+
+𝑿 ′ 
+
+> MAE
+> MB -ToMe
+> 𝑸(𝑾 + 𝑹 𝑳 )
+> 𝑊
+
+𝑅 
+
+𝑆 𝑤  𝑆 𝑎 
+
+𝛼  𝛽 
+
+> Low Bit
+> Group
+> Middle
+> Bit Group
+> High Bit
+> Group
+> FP
+> Block
+
+Block k 
+
+𝑋 𝐿 
+
+𝑋 𝑀 
+
+𝑋 𝐻 
+
+𝑋 𝐹𝑃 
+
+𝑿 ′ 
+
+> MAE
+> MB -ToMe
+> 𝑊
+
+𝑅 
+
+𝑆 𝑤  𝑆 𝑎 
+
+𝛼  𝛽       
+
+> Trainable Frozen Bit Shared Bit Partially
+> Shared 𝑊 Weight
+
+𝑋  Activation  𝑆 𝑤  
+
+> Weight
+> Scale
+
+𝑆 𝑎  
+
+> Activation
+> Scale
+
+𝛼  𝛽  Clip 
+
+> Parameters
+
+𝑹 𝑯 = 𝑩 [:,:𝒓 𝒉 ]𝑨 [:𝒓 𝒉 ,:]  𝑹 𝑴 = 𝑩 [:,:𝒓 𝒉 +𝒓 𝒎 ] 𝑨 [:𝒓 𝒉 +𝒓 𝒎 ,:]  𝑹 𝑳 = 𝑩 [:,:𝒓 𝒉 +𝒓 𝒎 +𝒓 𝒍 ] 𝑨 [:𝒓 𝒉 +𝒓 𝒎 +𝒓 𝒍 ,:] 𝑅  Cascaded     
+
+> LoRA
+> 𝑹 𝑯
+> 𝑹 𝑴
+> 𝑹 𝑳
+> 𝑹 𝑴 = 𝑹 𝑯 +∆𝑹 𝒎
+> 𝑹 𝑳 = 𝑹 𝑴 +∆𝑹 𝒍
+> 𝑸(𝑾 + 𝑹 𝑴 )
+> 𝑸(𝑾 + 𝑹 𝑯 )
+> 𝑸(𝑾 + 𝑹 𝑳 )
+> 𝑸(𝑾 + 𝑹 𝑴 )
+> 𝑸(𝑾 + 𝑹 𝑯 )
+
+Figure 1: Overview of our proposed QuEPT. QuEPT calibrates the low-rank compensation matrix R and weight clipping parameters α and β in block-wise reconstruction, weights W and quantization scale S are frozen. The reconstruction process consists of two stages: (1) merging multiple bit-width features from different bit groups by Multi-Bit Token Merging (MB-ToMe); (2) optimizing multi-bit quantization loss using a Multi-Bit Cascaded Low-Rank Adapters (MB-CLoRA). Moreover, it can be seamlessly converted to a training-free mixed-precision scheme by utilizing layer sensitivity data to assign different bit widths across layers. Our contributions are summarized as follows: • We present QuEPT, an efficient elastic quantization framework for transformers. The elastic quantized model supports real-time configuration of different bit widths without the need to repeatedly optimize parameters. • We propose the Multi-Bit Token Merging (MB-ToMe) to reconstruct the mixed quantization error in each block by fusing tokens of different precision levels, thereby allevi-ating the contention conflict between different bit-widths and improving quantization robustness. • We introduce the Multi-Bit Cascaded Low-Rank Adapters (MB-CLoRA) to enhance the correlation be-tween different bit-width groups, thereby improving the overall quantization performance of QuEPT. • Extensive experiments on ViT, LLM, and MLLM models verify that the performance of QuEPT is comparable to or even better than the current PTQ methods. 
+
+## Related Works 
+
+Multi-Bit Quantization. Early multi-bit quantization are typically based on Quantization-Aware Training (QAT). For instance, RobustQuant (Shkolnik et al. 2020) discovered that uniformly distributed weights are more robust to vary-ing bit-widths and introduced kurtosis regularization to en-courage a more uniform distribution during training; Any-Precision (Yu et al. 2021) flexibly converts a high-precision parent model into lower-bit-width models through trun-cation; EQ-Net (Xu et al. 2023) employs both skewness and kurtosis regularization to constrain the weight distri-bution, combining them with a group guidance distillation loss to improve robustness across different bit widths. How-ever, the training overhead of these QAT-based methods is prohibitive, making them unsuitable for modern large-scale Transformer models. Recently, several PTQ-based multi-bit quantization methods have emerged. Among them, PTMQ (Xu et al. 2024a) absorbs multi-bit errors through rounding and validates its effectiveness on CNNs and ViTs by combining feature mixing with group-wise distillation. Despite being a PTQ method, its quantization overhead re-mains substantial for LLMs and ViTs. Another approach, Any-Precision LLM (Park et al. 2024), proposed a Non-uniform Quantization-based incremental upscaling to adapt the Any-Precision method for LLMs; however, its perfor-mance at low bit-widths is limited, and it fails to account for activation quantization. MatQuant (Nair et al. 2025) intro-duced a training approach using co-distillation regulariza-tion, but it is suboptimal as it does not consider the compet-itive relationship between different bit widths. Our method 27288 improves robustness across different bit widths by integrat-ing multi-bit token merging method and a cascaded LoRA strategy. This approach is designed to account for the im-portance of each bit width. 
+
+LoRA-based Quantization. The Low-Rank Adaptation (LoRA) (Hu et al. 2022) method reduces the overhead of model fine-tuning by training two low-rank matrices that are added to the frozen pre-trained weights. Recent ap-proaches (Dettmers et al. 2023; Xu et al. 2024b; Guo et al. 2024; Li et al. 2024; Lee et al. 2024) combine LoRA with quantized models, which compensate for quantization er-rors and achieve the effect of fine-tuning on the downstream dataset. LR-QAT (Yelysei et al. 2024) adds LoRA to the pre-trained weights directly within the clipping operator, allowing the trained LoRA adapters to fuse back into the main weights after training. Furthermore, LoRA can also be used with PTQ. CBQ (Ding et al. 2025) replaces the weight-rounding matrix in AdaRound (Nagel et al. 2020) with LoRA, reducing the overhead of the AdaRound ap-proach in LLM. SVDQuant (Li et al. 2025b) ingeniously combines SmoothQuant (Xiao et al. 2023) and LoRA, task-ing LoRA with learning an outlier branch to make the re-maining weights easier to quantize. Our method is a PTQ approach that places the LoRA module inside the clipping operator. This ensures that the LoRA branch incurs no addi-tional overhead during inference. Furthermore, we employ a cascaded LoRA training method for LoRA that are robust across all bit widths. 
+
+## Method 
+
+Post-Training Elastic Quantization Modeling 
+
+We formulate QuEPT as a block-wise optimization task for post-training quantization. Specifically, given the target set of quantization bit-widths B = {b|b ∈ Z+, m ≤ b ≤
+
+n}, |B| ≥ 3, the optimization objective of Elastic Quanti-zation can be expressed by the following formula: 
+
+min 
+
+> A,B,α,β
+
+X
+
+> b∈B
+
+E[( F l(W ; X) − F lb ( ˆWb|Ab, Bb, αb, βb; ˆX)] .
+
+(1) Here, A and B are the LoRA parameters, α and β are the weight clipping parameters, which include all target bit widths. F l and F lb denote the output of the l-th block of the full-precision model and the output of the b-bit quantized model, respectively. The complete Low-Rank-based quan-tization includes weight and activation quantization, which can be represented as follows: 
+
+ˆWb = sb
+
+> w
+
+·(clip (⌊ W + BA sb
+
+> w
+
+⌉+zb
+
+> w
+
+, −2b−1, 2b−1−1) −zb
+
+> w
+
+),
+
+(2) 
+
+ˆXb = sb 
+
+> a
+
+· clip (⌊ Xsb
+
+> a
+
+⌉, −2b−1, 2b−1 − 1) , (3) where b represents a quantization bit width in the set B, sw,
+
+sa represents the weight and activation quantization scales respectively, and zw denotes the corresponding weight zero-point. clip () refers to a truncated operation. The operator 
+
+⌊·⌉ rounds the continuous numbers to the nearest integers. Unlike QLoRA, we place the low-rank parameters directly into the quantization formula. Compared to rounding-based methods, the low-rank parameters are much smaller than the full parameter size and do not need to be restricted to the 0-1 range. However, during the LoRA parameter up-date process, the quantized weight ˆW undergoes continuous changes. To accommodate these dynamic adjustments, we propose a method that optimizes the weight clipping thresh-old concurrently with the low-rank parameter. The formula of the b-bit weight quantization scale is expressed as follows: 
+
+sbw = αb × max (W + BbAb) − βb × min (W + BbAb)2b−1 ,
+
+(4) 
+
+zbw = −⌊ βb × min (W + BbAb)
+
+sbw
+
+⌉. (5) By concurrently training the clipping parameters, we en-able the LoRA parameters to be optimized more effectively. The clipping mechanism handles the large-magnitude errors from weight outliers, creating a smoother and more manage-able error signal for the low-rank adaptation to correct. 
+
+The Pipeline of QuEPT 
+
+As shown in Figure 1, QuEPT conducts a block-wise re-construction that starts by initializing the weight-clipping parameters and cascaded LoRA adapters jointly with the frozen full-precision weights. Throughout the pipeline, we partition the target bit-width set B into three tiers: low-bit (BL), mid-bit ( BM ) and high-bit ( BH ). At each step, one bit-width is randomly sampled from each tier, exposing the current block to a diverse combination of quantization gran-ularities. The input to the block is produced by the preced-ing Multi-Bit Token Merging, which fuses the token-wise features from already reconstructed blocks while selectively anchoring the most robust high-bit tokens and softly merg-ing the rest. The block’s forward pass is evaluated under the three sampled bit widths and the reconstruction loss, aggre-gated across all of them and measured with MAE, is back-propagated only into the corresponding slice of the cascaded LoRA adapters and the clipping thresholds. This simultane-ous exposure to low-, mid- and high-bit quantization errors forces the adapters to co-optimize across the entire precision range, turning potential inter-bit conflicts into synergy and allowing a single calibration run to yield a model that can be deployed at any predefined bit-width simply by selecting the matching LoRA slice, without any further optimization. 
+
+Multi-Bit Token Merging (MB-ToMe) 
+
+MB-ToMe aims to design a token fusion strategy that main-tains balanced performance across different bit-widths dur-ing multi-bit optimization, without favoring any specific pre-cision level. We explored two key design dimensions: the merge operation (selection vs. fusion) and the merge policy (uniform vs. selective). Figure 2 demonstrates the three pri-mary cases that were examined: • Case 1: Random Selection. For each token, we ran-domly select one feature representation from the en-tire set of available bit-widths. This represents a pure 27289 …𝑋 𝐻 
+
+> …
+
+# 𝑋 𝑀 
+
+> …
+
+# 𝑋 𝐿 
+
+# 𝑋 ′
+
+> Random Select
+> …
+> Case 1
+> …
+> …
+> …
+> Uniform Fusion
+> …
+> Case 2
+> …
+> …
+> …
+> …
+> Case 3
+> Selective Merge
+
+Figure 2: Three cases of multi-bit token merging strategy. selection-based approach with a uniform policy, as every token and bit-width is treated with equal probability. • Case 2: Uniform Fusion. We explicitly divide the var-ious bit width sets into three groups: low, medium, and high. After randomly selecting one bit-width from each group, we perform a weighted fusion of the correspond-ing feature outputs using a 1:1:1 ratio. This strategy shifts from discrete token selection to feature-level fusion, yet maintains a uniform fusion policy across all groups. • Case 3: Selective Merge. This strategy employs a selec-tive mechanism to preserve high-precision information by identifying foundational tokens based on their quanti-zation robustness, measured as the cosine similarity be-tween their 8-bit and 4-bit representations. Tokens with high similarity are considered stable and are retained in their high-precision form, providing structural integrity to the feature map. This data-driven selection is more effective than random sampling. The remaining tokens are fused through a weighted average to maintain overall feature continuity. The hybrid approach thus preserves critical information via selective retention while ensur-ing smooth representation through fusion. In multi-bit quantization, Case 1 with its random replace-ment strategy fails to produce well-integrated mixed fea-tures, leading to suboptimal representation quality. Case 2 mixes features from different bit-widths, retaining continu-ity but losing detailed information from high-bit-width to-kens. Case 3 effectively combines both concepts, aiming to preserve the information from high-bit-width tokens as much as possible while also maintaining continuity between the different features. Table 5 confirms that Case 3 is the most effective. This method can be formalized as follows: 
+
+X′ 
+
+> k
+
+=
+
+XHk , if k in set Φ
+
+λ1XHk + λ2XMk + λ3XLk , else . (6) Here, Φ is a set of indices. We first pre-calculate the token-wise cosine similarity between the features of the high-bit group XHk , and those of the low-bit group, XLk . By sort-ing the similarity scores for all tokens, we then save the indices corresponding to the top p% of similarities as Φ.
+
+{λ1, λ 2, λ 3} are hyperparameters that control the fusion ra-tio. Finally, all the X′ 
+
+> k
+
+are re-concatenated to form a feature map of the same size as the original one, which then serves as the quantization input for the next block. Figure 3 shows that merging dissimilar tokens leads to a more uniform nu-merical distribution that is more robust to varying bit-widths. 47 71 25 39     
+
+> Token Index
+> −0.10 −0.05 0.00 0.05 0.10
+> Feature Value ([-0.1, 0.1])  K-S=0.26 K-S=0.12 K-S=0.12 K-S=0.10
+> MB-ToMe W4A4
+
+Figure 3: Feature distribution comparison for top 4 divergent tokens on the input of block 1 of LLaMA2-7b. Token sorted by Kolmogorov-Smirnov (K-S) statistic. 
+
+Multi-Bit Cascaded LoRA (MB-CLoRA) 
+
+Cascaded low-rank adaptation structure enables efficient and hierarchical parameter sharing across multiple bit-widths. Rather than maintaining separate LoRA parameters for each bit-width, we construct a unified parameter space where the LoRA matrices A ∈ Rr×q and B ∈ Rp×r serve all bit-widths through a hierarchical structure. The key insight is that lower bit-widths, which suffer greater quantization error, can leverage the adaptation capacity optimized for higher bit-widths while adding specialized compensation. Formally, for any given bit-width b ∈ B , the corresponding low-rank compensation matrix R(b) is defined as: 
+
+R(b) = B[: ,:rb]A[: rb,:] , (7) where rb represents the effective rank for bit-width b . Cru-cially, the rank allocation follows a cascaded pattern where 
+
+rb increases monotonically as bit-width group decreases: 
+
+rb =
+
+
+
+rh if b ∈ B H
+
+rh + rm if b ∈ B M
+
+rh + rm + rl if b ∈ B L
+
+. (8) This structure establishes a natural inheritance mechanism: when processing low-bit-width b ∈ BL, the compensa-tion matrix RL = B[: ,:rh+rm+rl]A[: rh+rm+rl,:] will con-tain all parameters of medium and high bitwidth, because 
+
+RH = B[: ,:rh]A[: rh,:] and RM = B[: ,:rh+rm]A[: rh+rm,:] 
+
+will appear as leading submatrices. During each training iteration, we simultaneously opti-mize across multiple bit-widths to ensure balanced adapta-tion. Specifically, we sample one bit-width from each tier: 
+
+bH ∼ B H , bM ∼ B M , and bL ∼ B L. We then sequentially optimize the shared parameters A and B using each of these three bit-widths in turn. The unified optimization objective is to minimize the expected reconstruction error across all sampled bit-widths: 
+
+min 
+
+> A,B,α,β
+
+X  
+
+> b∈{ bL,b M,b H}
+
+W X − \(W + R(b))X′
+
+> 1
+
+, (9) 27290 where \(W + R(b)) denotes the joint quantization of the weight and its compensated LoRA, while X′ are the merged features from the previous block, obtained via MB-ToMe. It is worth noting that we use Mean Absolute Error (MAE) loss instead of MSE loss, as our experiments (Table 6) show that MAE generally yields superior results. 
+
+## Experiments 
+
+Models and Evaluations. We evaluated our method on the Vision Transformer family such as ViT (Dosovitskiy et al. 2021), DeiT (Touvron et al. 2021), and Swin (Liu et al. 2021); the LLaMA (Dubey et al. 2024) family of large language models; and the LLaVA-OneVision (Li et al. 2025a) multimodal model. For the Vision Transformer mod-els, we evaluated accuracy on ImageNet. For the LLaMA models, we assessed perplexity on the WikiText2 (Merity et al. 2017) and C4 (Raffel et al. 2020) datasets. Addition-ally, we evaluated accuracy on several zero-shot tasks, in-cluding the PIQA (Bisk et al. 2020), ARC-C (Clark et al. 2018), ARC-E (Clark et al. 2018), HellaSwag (Zellers et al. 2019), and WinoGrande (Sakaguchi et al. 2019) datasets. For the multi-modal model evaluation, we selected the rep-resentative LLaVA-OV model and assessed its accuracy on the MMLU (Yue et al. 2024), TextVQA (Singh et al. 2019), VizWiz (Gurari et al. 2018), OCRBench (Liu et al. 2023c), and SEED (Li et al. 2023a) datasets. 
+
+Calibration Datasets. For training the Vision Trans-former models, we randomly selected 1024 unlabeled im-ages from ImageNet as the calibration dataset; for the LLaMA family models, we used 128 samples from C4 (Raf-fel et al. 2020) datasets for calibration; and for the LLaVA-OV model, we followed the same setup with MBQ (Li et al. 2025c), also using 128 image-caption pairs sampled from the improved COCO Caption dataset proposed by ShareGPT4V (Chen et al. 2023) as the calibration dataset. 
+
+Baselines. We compare with PTQ methods on Vision Transformers, such as PTQ4ViT (Yuan et al. 2021), PDQuant (Liu et al. 2023b), RepQ-ViT (Li et al. 2023b), ERQ (Zhong et al. 2024), and PTMQ (Xu et al. 2024a). For LLMs, we considered the quantization methods AWQ (Lin et al. 2024b), GPTQ (Frantar et al. 2023), Om-niQuant (Shao et al. 2024), AffineQuant (Ma et al. 2024), SmoothQuant (Xiao et al. 2023), QLLM (Liu et al. 2024), QuaRot (Ashkboos et al. 2024), and DuQuant (Lin et al. 2024a). For multi-modal models, our primary comparison was with the MBQ (Li et al. 2025c) method. 
+
+Main Results 
+
+Quantization of Vision Transformer Models. For weight-activation quantization on ViTs, we partition the bit-widths {4,5,6,7,8 } into a low-bit group {4}, a mid-bit group {5,6 }, and a high-bit group {7,8 }. This same weight-activation quantization configuration is applied to other models, including LLMs and MLLMs. We use the reparameterization technique (Li et al. 2023b) to initialize the activation quantizer. The quantization results for Vision Transformers under both single-bit and multi-bit scenarios are compared and summarized in Table 1. For the ViT-S model, it achieves 6.2% higher accuracy than ERQ on the W4A4 setting and a 1.46% higher average accuracy across the five bit-widths. Unlike single-bit-width methods, which require five separate optimizations, our approach necessitates only one training run. As a result, the total training time is reduced to less than half of that required by ERQ. Our method is both more effective and significantly faster to train than the multi-bit quantization method PTMQ. For instance, on the ViT-B model, our method outperforms PTMQ by 6.1%, 5.6%, and 5.2% on the W6A6, W7A7, and W8A8 settings, respectively. Compared to PTMQ, our method has significantly lower training overhead because it discards the computationally expensive rounding values, while requiring only 1/26 of the time overhead on a single Nvidia RTX 3090 GPU. 
+
+Weight-Act Quantization of LLaMA Series Models. 
+
+Our method also demonstrates competitive performance in weight-activation quantization for the LLaMA family of models, as shown in Table 2. Since LLMs have out-liers, we first apply a smoothing process with a Hadamard matrix (Ashkboos et al. 2024) before quantization. On LLaMA2-7B with W4A4 quantization, our approach not only yields lower PPL on WikiText2 and C4 but also outper-forms QuaRot and SpinQuant by 7.07% and 0.28%, respec-tively, in average accuracy across five benchmarks (PIQA, ARC-E, ARC-C, HellaSwag, and WinoGrande). 
+
+Quantization of LLaVA-OneVision Model. Notably, for the weight-only quantization of LLaVA-OV and LLaMA, we explore a bit-width range of 2 to 8. The detailed set-tings are provided in the Appendix. In the multimodal model LLaVA-OneVision-7B, QuEPT achieves better re-sults than the current SOTA method MBQ, as shown in Table 3. In a comparison of average accuracy across five datasets (MMMU, OCRBench, TextVQA, VizWiz, and SEED), QuEPT is 1.5% higher than MBQ under W3A16 quantization and 4.3% higher under W4A8 quantization. 
+
+Results of Mixed Precision of LLaMA2-7B Model. As our method is an elastic quantization approach, it can be seamlessly transformed into a mixed-precision quantization method by simply modifying the LoRA configuration for each layer. To achieve this, we first use KL divergence to evaluate the per-layer sensitivity of the model. We then em-ploy a DP algorithm to determine the optimal per-layer bit-width allocation that minimizes the total sensitivity, with our bit-widths ranging from 2 to 8 bits. As shown in Figure 4, we compare the PPL of our method on the LLaMA2-7B model against several weight mixed-precision and non-uniform quantization methods, including SKIM (Bai, Liu, and Liu 2025), SqueezeLLM (Kim et al. 2024), and QuIP# (Tseng et al. 2024). The results indicate that with average bit-widths of 2.25/3.00/4.00, our method achieves a perplexity of only 8.97/5.93/5.54, respectively, on WikiText2. 
+
+Ablation Studies 
+
+The Effectiveness of Multi-Bit Cascaded LoRA. To val-idate the Effectiveness of MB-CLoRA, we designed two 27291 Model Method Opti. Uniform Criterion Bit-Width Time (min) FP32 W4A4 W5A5 W6A6 W7A7 W8A8 ViT-S PTQ4ViT ✗ ✗
+
+Single-Bit 42.6 72.7 78.6 80.5 81.0 7×N 81.3 PD-Quant ✓ ✓ 21.2 65.1 71.4 – – 110×N RepQ-ViT ✗ ✗ 65.1 78.4 80.4 80.8 81.2 4×N ERQ ✓ ✗ 68.9 78.8 80.5 80.9 81.2 9×N PTMQ ✓ ✓ Multi-Bit – – 76.1 77.1 78.2 430 
+
+QuEPT ✓ ✓ 75.1 79.7 80.6 81.0 81.2 17 ViT-B PTQ4ViT ✗ ✗
+
+Single-Bit 30.7 72.3 81.7 83.7 84.3 13×N 84.5 PD-Quant ✓ ✓ 34.9 58.4 63.1 – – 230×N RepQ-ViT ✗ ✗ 68.5 82.0 83.6 84.3 84.4 8×N ERQ ✓ ✗ 76.6 82.8 83.9 84.3 84.4 17×N PTMQ ✓ ✓ Multi-Bit – – 77.7 78.6 79.1 950 
+
+QuEPT ✓ ✓ 80.7 83.3 83.8 84.2 84.3 36 DeiT-S PTQ4ViT ✗ ✗
+
+Single-Bit 34.1 70.3 76.3 79.0 79.5 7×N 79.8 PD-Quant ✓ ✓ 64.9 74.9 77.6 – – 110×N RepQ-ViT ✗ ✗ 69.0 77.0 78.9 79.5 79.7 4×N ERQ ✓ ✗ 72.6 77.6 79.0 79.5 79.6 9×N PTMQ ✓ ✓ Multi-Bit – – 78.7 79.3 79.5 430 
+
+QuEPT ✓ ✓ 75.3 78.1 79.3 79.7 79.7 17 Swin-S PTQ4ViT ✗ ✗
+
+Single-Bit 76.1 80.9 82.4 82.9 83.1 17×N 83.2 PD-Quant ✓ ✓ 70.4 81.3 82.3 – – 270×N RepQ-ViT ✗ ✗ 79.5 82.1 82.8 83.0 83.0 8×N ERQ ✓ ✗ 80.7 82.4 82.9 83.1 83.2 20×N 
+
+QuEPT ✓ ✓ Multi-Bit 81.9 82.8 82.9 83.1 83.2 38 
+
+Table 1: Comparison of the top-1 accuracy across various ViTs on ImageNet.“Opti.” indicates whether a method is optimization-based, and “Uniform” indicates whether it uses a uniform quantizer. The best results are highlighted in bold. 2.00 2.25 2.50 2.75 3.00 3.25 3.50 3.75 4.00 
+
+> Bit-width
+> 5678910 12 14 16
+> Perplexity
+> LLaMA2-7B
+> Method (Shape) / Dataset (Color) QuEPT(Mixed) QuEPT(Uniform) SqueezeLLM OmniQuant QuIP# SKIM Wikitext2 C4 FP16 Baseline
+
+Figure 4: Results of Mixed Precision of LLaMA2-7B. sets of experiments. We evaluated the accuracy of the ViT-S model on ImageNet and the average accuracy of the LLaMA2-7B model across five benchmarks. We compared three LoRA sharing strategies: (1) Case 1 (Fully Shared): All bit-widths share a single LoRA module. The LoRA rank was set to 12 for ViT-S and 48 for LLaMA2-7B. (2) Case 2 (Inde-pendent): The LoRA is partitioned by bit-width into a low-bit group {4}, a mid-bit group {5, 6 }, and a high-bit group 
+
+{7, 8 }. For the ViT-S model, the rank for each group was 4, and for the LLaMA2-7B model, it was 16. (3) Case 3 (MB-CLoRA): This approach maintains the same total LoRA rank as the other settings but employs the cascaded shar-ing strategy described in the methods section. The results in Table 4 demonstrate that our proposed MB-CLoRA per-forms better at lower bit-widths. For instance, on LLaMA2-7B with W4A4, MB-CLoRA’s accuracy is 2.4% and 0.7% higher than that of the Independent and Fully Shared strate-gies, respectively. At higher bit-widths, the performance of MB-CLoRA is comparable to the Independent strategy. 
+
+The Effectiveness of Multi-Bit Token Merging. We compared the performance of several multi-bit-width feature fusion strategies. The results in Table 5 confirm that Case 3 achieves the best performance across all bit-widths. Com-pared to Case 1, Case 3 prevents random feature selection from affecting the results. In contrast to Case 2, Case 3 pre-serves high-bit features as much as possible, leading to more accurate feature information. Therefore, Case 3 yields the best results. For instance, on the LLaMA2-7B model, MB-ToMe shows performance gains of 5.9%, 0.8%, and 0.2% over the Case 1 method at 4, 6, and 8 bits, respectively. 27292 Model Bits Method Wiki.( ↓) C4( ↓) 0-shot 5 Avg.( ↑)                                                                                                            
+
+> L2-7B FP16 -5.47 6.97 65.71 W4A4 OmniQ 14.26 18.02 49.13 QLLM 11.75 13.26 51.60 QuaRot 9.66 11.98 54.55 DuQuant 6.28 7.90 59.11
+> QuEPT 6.33 7.86 61.62
+> W5A5 QuEPT 5.66 7.17 64.42 W6A6 SmoothQ 6.20 7.76 61.40 OmniQ 5.87 7.48 58.56
+> QuEPT 5.53 7.03 65.48
+> W8A8 QuEPT 5.48 6.98 66.23 L2-13B FP16 -4.88 6.46 69.35 W4A4 OmniQ 12.30 14.55 53.13 QLLM 9.09 11.13 54.31 DuQuant 5.42 7.05 62.84
+> QuEPT 5.53 7.16 66.05
+> W5A5 QuEPT 5.10 6.69 68.39 W6A6 SmoothQ 5.18 6.76 64.30 OmniQ 5.14 6.74 64.71
+> QuEPT 5.00 6.59 68.72
+> W8A8 QuEPT 4.94 6.53 69.09 L3-8B FP16 -6.14 8.88 72.65 W4A4 OmniQ 3.64e3 2.80e3 35.70 AffineQ 2.12e4 3.46e4 35.44 QuaRot 10.41 14.33 57.16 DuQuant 8.56 11.98 65.05
+> QuEPT 8.25 11.67 67.04
+> W5A5 QuEPT 6.76 9.72 70.99 W6A6 SmoothQ 7.07 9.57 70.50 OmniQ 7.24 9.82 69.51 AffineQ 7.35 9.99 69.22
+> QuEPT 6.34 9.12 71.56
+> W8A8 QuEPT 6.20 8.96 72.87
+
+Table 2: Weight-Activation quantization results of LLaMA models. We report the perplexity on WikiText2 and C4 ( ↓
+
+indicates lower is better), and the average accuracy (Avg.) denotes the average accuracy across 5 datasets.                                                       
+
+> Bits Method mmmu ocrbench textvqa vizwiz seed
+> FP16 -48.0 62.2 76.1 60.4 72.6 W2 QuEPT 32.2 47.8 64.0 55.2 67.0 W3 AWQ 36.6 59.3 70.0 56.4 51.5 MBQ 42.0 61.1 73.3 60.7 66.4
+> QuEPT 44.6 60.6 74.1 60.3 71.6
+> W4A4 QuEPT 33.9 49.1 64.4 59.8 66.5 W4A8 SmoothQ 30.9 32.0 56.9 56.7 41.6 MBQ 42.6 52.3 68.3 58.9 64.4
+> QuEPT 43.4 61.2 71.5 61.3 70.7
+
+Table 3: Weight-only and weight-activation quantization re-sults of LLaVA-OneVision-7B model. 
+
+The Effectiveness of Different Modules. As presented in Table 6, we evaluated combinations of different modules.                                     
+
+> Model Method W4A4 W5A5 W6A6 W7A7 W8A8
+> ViT-S Case 1 73.7 78.6 80.6 79.9 81.1 Case 2 73.5 78.9 80.7 81.1 81.2 Case 3 74.7 79.4 80.6 81.0 81.1 L2-7B Case 1 60.9 64.2 64.9 65.2 65.5 Case 2 59.2 64.4 65.3 65.7 65.7 Case 3 61.6 64.5 65.5 65.6 65.6
+
+Table 4: Ablation studies for Multi-Bit Cascaded LoRA. 
+
+Model Method W4A4 W5A5 W6A6 W7A7 W8A8 
+
+ViT-S Case 1 74.5 79.4 80.3 80.5 80.9 Case 2 74.9 79.3 80.2 80.6 80.8 
+
+Case 3 75.1 79.7 80.6 81.0 81.2 
+
+L2-7B Case 1 55.7 63.8 64.7 64.9 65.4 Case 2 60.2 64.4 65.2 65.5 65.5 
+
+Case 3 61.6 64.5 65.5 65.6 65.6 
+
+Table 5: Ablation studies for Multi-Bit Token Merging. Our baseline uses 3 independent LoRAs ( r=4) with MSE loss to compensate for low, medium, and high bit-width groups. With MB-CLoRA, W4A4 accuracy increased, while W6A6 and W8A8 accuracy dropped. This is because MB-CLoRA boosts the effective rank for low bit-widths via rank sharing, but this optimization harms the LoRA compensa-tion for medium and high bit-widths. The combination of MB-CLoRA and MB-ToMe led to an improvement in low-bit-width performance. Clip MB-CLoRA MB-ToMe MAE W4A4 W6A6 W8A8                                     
+
+> ✗✗✗✗69.2 80.1 81.1
+> ✔✗✗✗70.1 80.2 81.1
+> ✔✔✗✗72.2 79.2 80.7
+> ✔✗✔✗73.0 80.1 80.9
+> ✔✔✔✗73.6 80.1 81.0
+> ✔✔✔✔74.7 80.7 81.1
+
+Table 6: QuEPT modules ablation study on ViT-S model. 
+
+## Conclusion 
+
+This paper presents QuEPT, the first multi-bit-width PTQ method validated on ViTs, LLMs, and MLLMs. First, we in-troduce MB-CLoRA, which uses a cascaded LoRA to enable efficient parameter collaboration across bit-widths. Second, we propose MB-ToMe, a selective feature retention and fu-sion mechanism that safeguards performance from the neg-ative impact of low-bit quantization. Finally, we have val-idated our method on various models, establishing it as a state-of-the-art multi-bit-width quantization approach. Nev-ertheless, our approach is not without its limitations. We have not explicitly handled outliers in LLMs, meaning that integrating our implementation with outlier mitigation tech-niques (e.g., SpinQuant (Liu et al. 2025)) would likely yield better results. Additionally, our method’s performance re-mains constrained at extremely low bit-widths, which re-quires further exploration in the future. 27293 Acknowledgments 
+
+This work was supported in part by the National Natural Sci-ence Foundation of China (No. 62576001, No. 62206003, No. U21A20512) and the National Key Research and De-velopment Project (NO. 2018AAA0100105). 
+
+## References 
+
+Ashkboos, S.; Mohtashami, A.; Croci, M. L.; Li, B.; Jaggi, M.; Alistarh, D.; Hoefler, T.; and Hensman, J. 2024. QuaRot: Outlier-Free 4-Bit Inference in Rotated LLMs. In NeurIPS .Bai, R.; Liu, B.; and Liu, Q. 2025. SKIM: Any-bit Quan-tization Pushing The Limits of Post-Training Quantization. In ICML .Bisk, Y.; Zellers, R.; Le bras, R.; Gao, J.; and Choi, Y. 2020. PIQA: Reasoning about Physical Commonsense in Natural Language. In AAAI .Chen, L.; Li, J.; wen Dong, X.; Zhang, P.; He, C.; Wang, J.; Zhao, F.; and Lin, D. 2023. ShareGPT4V: Improving Large Multi-Modal Models with Better Captions. In ECCV .Clark, P.; Cowhey, I.; Etzioni, O.; Khot, T.; Sabharwal, A.; Schoenick, C.; and Tafjord, O. 2018. Think you have Solved Question Answering? Try ARC, the AI2 Reasoning Chal-lenge. ArXiv .Dettmers, T.; Pagnoni, A.; Holtzman, A.; and Zettlemoyer, L. 2023. QLoRA: Efficient Finetuning of Quantized LLMs. In NeurIPS .Ding, X.; Liu, X.; Tu, Z.; Zhang, Y.; Li, W.; Hu, J.; Chen, H.; Tang, Y.; Xiong, Z.; Yin, B.; and Wang, Y. 2025. CBQ: Cross-Block Quantization for Large Language Models. In 
+
+ICLR .Dosovitskiy, A.; Beyer, L.; Kolesnikov, A.; Weissenborn, D.; Zhai, X.; Unterthiner, T.; Dehghani, M.; Minderer, M.; Heigold, G.; Gelly, S.; Uszkoreit, J.; and Houlsby, N. 2021. An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale. In ICLR .Dubey, A.; Jauhri, A.; Pandey, A.; and Abhishek Kadian, e. a. 2024. The Llama 3 Herd of Models. ArXiv .Frantar, E.; Ashkboos, S.; Hoefler, T.; and Alistarh, D. 2023. OPTQ: Accurate Quantization for Generative Pre-trained Transformers. In ICLR .Guo, H.; Greengard, P.; Xing, E.; and Kim, Y. 2024. LQ-LoRA: Low-rank plus Quantized Matrix Decomposition for Efficient Language Model Finetuning. In ICLR .Gurari, D.; Li, Q.; Stangl, A.; Guo, A.; Lin, C.; Grauman, K.; Luo, J.; and Bigham, J. P. 2018. VizWiz Grand Challenge: Answering Visual Questions from Blind People. In CVPR .Hu, E. J.; yelong shen; Wallis, P.; Allen-Zhu, Z.; Li, Y.; Wang, S.; Wang, L.; and Chen, W. 2022. LoRA: Low-Rank Adaptation of Large Language Models. In ICLR .Kim, J.; Yoon, S.; Lee, T.; Lee, J. C.; Jeon, K. E.; and Ko, J. H. 2025. TruncQuant: Truncation-Ready Quantization for DNNs with Flexible Weight Bit Precision. ArXiv .Kim, S.; Hooper, C.; Gholami, A.; Dong, Z.; Li, X.; Shen, S.; Mahoney, M. W.; and Keutzer, K. 2024. SqueezeLLM: Dense-and-Sparse Quantization. In ICML .Lee, C.; Jin, J.; Kim, T.; Kim, H.; and Park, E. 2024. OWQ: Lessons learned from activation outliers for weight quanti-zation in large language models. In AAAI .Li, B.; Wang, R.; Wang, G.; Ge, Y.; Ge, Y.; and Shan, Y. 2023a. SEED-Bench: Benchmarking Multimodal LLMs with Generative Comprehension. ArXiv , abs/2307.16125. Li, B.; Zhang, Y.; Guo, D.; Zhang, R.; Li, F.; Zhang, H.; Zhang, K.; Zhang, P.; Li, Y.; Liu, Z.; and Li, C. 2025a. LLaVA-OneVision: Easy Visual Task Transfer. Transactions on Machine Learning Research .Li, M.; Lin, Y.; Zhang, Z.; Cai, T.; Li, X.; Guo, J.; Xie, E.; Meng, C.; Zhu, J.-Y.; and Han, S. 2025b. SVDQuant: Ab-sorbing Outliers by Low-Rank Component for 4-Bit Diffu-sion Models. In ICLR .Li, S.; Hu, Y.; Ning, X.; Liu, X.; Hong, K.; Jia, X.; Li, X.; Yan, Y.; Ran, P.; Dai, G.; Yan, S.; Yang, H.; and Wang, Y. 2025c. MBQ: Modality-Balanced Quantization for Large Vision-Language Models. In CVPR .Li, Y.; Yu, Y.; Liang, C.; Karampatziakis, N.; He, P.; Chen, W.; and Zhao, T. 2024. LoftQ: LoRA-Fine-Tuning-aware Quantization for Large Language Models. In ICLR .Li, Z.; Xiao, J.; Yang, L.; and Gu, Q. 2023b. RepQ-ViT: Scale Reparameterization for Post-Training Quantization of Vision Transformers. In ICCV .Lin, H.; Xu, H.; Wu, Y.; Cui, J.; Zhang, Y.; Mou, L.; Song, L.; Sun, Z.; and Wei, Y. 2024a. DuQuant: Distributing Out-liers via Dual Transformation Makes Stronger Quantized LLMs. In NeurIPS .Lin, J.; Tang, J.; Tang, H.; Yang, S.; Dang, X.; and Han, S. 2024b. AWQ: Activation-aware Weight Quantization for LLM Compression and Acceleration. In MLSys .Liu, H.; Li, C.; Wu, Q.; and Lee, Y. J. 2023a. Visual Instruc-tion Tuning. In NeurIPS .Liu, J.; Gong, R.; Wei, X.; Dong, Z.; Cai, J.; and Zhuang, B. 2024. QLLM: Accurate and Efficient Low-Bitwidth Quan-tization for Large Language Models. In ICLR .Liu, J.; Niu, L.; Yuan, Z.; Yang, D.; Wang, X.; and Liu, W. 2023b. PD-Quant: Post-Training Quantization Based on Prediction Difference Metric. In CVPR .Liu, Y.; Li, Z.; Huang, M.; Yang, B.; Yu, W.; Li, C.; Yin, X.; lin Liu, C.; Jin, L.; and Bai, X. 2023c. OCRBench: on the hidden mystery of OCR in large multimodal models. Sci. China Inf. Sci. 
+
+Liu, Z.; Lin, Y.; Cao, Y.; Hu, H.; Wei, Y.; Zhang, Z.; Lin, S.; and Guo, B. 2021. Swin Transformer: Hierarchical Vision Transformer Using Shifted Windows. In ICCV .Liu, Z.; Zhao, C.; Fedorov, I.; Soran, B.; Choudhary, D.; Kr-ishnamoorthi, R.; Chandra, V.; Tian, Y.; and Blankevoort, T. 2025. SpinQuant: LLM Quantization with Learned Rota-tions. In ICLR .Ma, Y.; Li, H.; Zheng, X.; Ling, F.; Xiao, X.; Wang, R.; Wen, S.; Chao, F.; and Ji, R. 2024. AffineQuant: Affine Transfor-mation Quantization for Large Language Models. In ICLR .Merity, S.; Xiong, C.; Bradbury, J.; and Socher, R. 2017. Pointer Sentinel Mixture Models. In ICLR .27294 Nagel, M.; Amjad, R. A.; Van Baalen, M.; Louizos, C.; and Blankevoort, T. 2020. Up or Down? Adaptive Rounding for Post-Training Quantization. In ICML .Nair, P. A.; Datta, P.; Dean, J.; Jain, P.; and Kusupati, A. 2025. Matryoshka Quantization. In ICML .Park, Y.; Hyun, J.; Cho, S.; Sim, B.; and Lee, J. W. 2024. Any-Precision LLM: Low-Cost Deployment of Multiple, Different-Sized LLMs. In ICML .Raffel, C.; Shazeer, N.; Roberts, A.; Lee, K.; Narang, S.; Matena, M.; Zhou, Y.; Li, W.; and Liu, P. J. 2020. Exploring the Limits of Transfer Learning with a Unified Text-to-Text Transformer. JMLR .Sakaguchi, K.; Bras, R. L.; Bhagavatula, C.; and Choi, Y. 2019. An Adversarial Winograd Schema Challenge at Scale. 
+
+Communications of the ACM .Shao, W.; Chen, M.; Zhang, Z.; Xu, P.; Zhao, L.; Li, Z.; Zhang, K.; Gao, P.; Qiao, Y. J.; and Luo, P. 2024. Omni-Quant: Omnidirectionally Calibrated Quantization for Large Language Models. In ICLR .Shkolnik, M.; Chmiel, B.; Banner, R.; Shomron, G.; Nahshan, Y.; Bronstein, A. M.; and Weiser, U. C. 2020. Robust Quantization: One Model to Rule Them All. In 
+
+NeurIPS .Singh, A.; Natarajan, V.; Shah, M.; Jiang, Y.; Chen, X.; Ba-tra, D.; Parikh, D.; and Rohrbach, M. 2019. Towards VQA Models That Can Read. In CVPR .Sun, Y.; Liu, R.; Bai, H.; Bao, H.; Zhao, K.; Li, Y.; Hu, J.; Yu, X.; Hou, L.; Yuan, C.; et al. 2025. FlatQuant: Flatness Matters for LLM Quantization. In ICML .Touvron, H.; Cord, M.; Douze, M.; Massa, F.; Sablayrolles, A.; and Jegou, H. 2021. Training data-efficient image trans-formers & distillation through attention. In ICML .Tseng, A.; Chee, J.; Sun, Q.; Kuleshov, V.; and Sa, C. D. 2024. QuIP$ \#$: Even Better LLM Quantization with Hadamard Incoherence and Lattice Codebooks. In ICML .Xiao, G.; Lin, J.; Seznec, M.; Wu, H.; Demouth, J.; and Han, S. 2023. SmoothQuant: Accurate and Efficient Post-Training Quantization for Large Language Models. In 
+
+ICML .Xu, K.; Han, L.; Tian, Y.; Yang, S.; and Zhang, X. 2023. EQ-Net: Elastic Quantization Neural Networks. In ICCV .Xu, K.; Li, Z.; Wang, S.; and Zhang, X. 2024a. PTMQ: Post-training Multi-Bit Quantization of Neural Networks. AAAI .Xu, Y.; Xie, L.; Gu, X.; Chen, X.; Chang, H.; Zhang, H.; Chen, Z.; ZHANG, X.; and Tian, Q. 2024b. QA-LoRA: Quantization-Aware Low-Rank Adaptation of Large Lan-guage Models. In ICLR .Yelysei, B.; Chiaro, D.; Riccardo; and Markus, N. 2024. Low-Rank Quantization-Aware Training for LLMs. arXiv preprint arXiv:2406.06385 .Yu, H.; Li, H.; Shi, H.; Huang, T. S.; and Hua, G. 2021. Any-Precision Deep Neural Networks. In AAAI .Yuan, Z.; Xue, C.; Chen, Y.; Wu, Q.; and Sun, G. 2021. PTQ4ViT: Post-training Quantization for Vision Transform-ers with Twin Uniform Quantization. In ECCV .Yue, X.; Ni, Y.; Zhang, K.; and et al. 2024. MMMU: A Mas-sive Multi-Discipline Multimodal Understanding and Rea-soning Benchmark for Expert AGI. In CVPR .Zellers, R.; Holtzman, A.; Bisk, Y.; Farhadi, A.; and Choi, Y. 2019. HellaSwag: Can a Machine Really Finish Your Sentence? In ACL .Zhong, Y.; Hu, J.; Huang, Y.; Zhang, Y.; and Ji, R. 2024. ERQ: Error Reduction for Post-Training Quantization of Vi-sion Transformers. In ICML .27295

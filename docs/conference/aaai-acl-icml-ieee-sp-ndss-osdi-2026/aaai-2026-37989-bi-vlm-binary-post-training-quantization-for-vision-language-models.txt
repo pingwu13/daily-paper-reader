@@ -1,0 +1,872 @@
+Title: Bi-VLM: Binary Post-Training Quantization for Vision-Language Models
+
+URL Source: https://ojs.aaai.org/index.php/AAAI/article/download/37989/41951
+
+Number of Pages: 9
+
+Markdown Content:
+# Bi-VLM: Binary Post-Training Quantization for Vision-Language Models 
+
+# Xijun Wang *, Rayyan Abdalla *, Junyun Huang *, Chengyuan Zhang, Ruiqi Xian, Dinesh Manocha 
+
+University of Maryland, College Park, USA 
+
+{xijun, rsabdall, jhuang34, czhang35, rxian, dmanocha }@umd.edu 
+
+Abstract  
+
+> We address the critical gap between the computational de-mands of vision-language models and the possible ultra-low-bit weight precision (bitwidth ≤2 bits) we can use for higher efficiency. Our work is motivated by the substantial com-putational cost and memory requirements of VLMs, which restrict their applicability in hardware-constrained environ-ments. We propose Bi-VLM, which separates model weights non-uniformly based on the Gaussian quantiles. Our formula-tion groups the model weights into outlier and multiple inlier subsets, ensuring that each subset contains a proportion of weights corresponding to its quantile in the distribution. We propose a saliency-aware hybrid quantization algorithm and use it to quantize weights by imposing different constraints on the scaler and binary matrices based on the saliency metric and compression objective. We have evaluated our approach on different VLMs. For the language model part of the VLM, our Bi-VLM outperforms the SOTA by 3%-47% on the vi-sual question answering task in terms of four different bench-marks and three different models. For the overall VLM, our Bi-VLM outperforms the SOTA by 4%-45%.
+
+# Introduction 
+
+In recent years, vision-language models (VLMs) have emerged as powerful tools for performing multi-modal tasks by combining visual and textual information. The pretrained VLMs, LLaVA (Liu et al. 2024b) and Qwen (Bai et al. 2025), have demonstrated remarkable performance on a wide range of benchmarks, including single-image anal-ysis, multi-image interpretation, and video understanding. These achievements are achieved by their vast model pa-rameters and extensive training data, enabling high accu-racy and generalization across diverse tasks. However, they have high computational demands and high memory us-age, which pose significant challenges for deployment on resource-constrained devices such as wearables, mobile de-vices, and FPGAs (Zeng et al. 2024). Post-training quantization (PTQ) (Nagel et al. 2019, 2020; Krishnamoorthi 2018) has gained significant trac-tion for VLMs due to its efficiency and practicality. Unlike quantization-aware training (QAT) (Jacob et al. 2017; Gupta 
+
+> *These authors contributed equally. Copyright © 2026, Association for the Advancement of Artificial Intelligence (www.aaai.org). All rights reserved.
+
+et al. 2015), which requires access to the training datasets, PTQ operates on frozen network parameters and uses a small calibration set to determine optimal rounding functions. Re-cently, PTQ methods (Frantar et al. 2022; Lin et al. 2024) have achieved promising results by reducing the bitwidths for weights and activations. Despite notable advances in 8-bit and 4-bit quantiza-tion for VLMs (Dettmers et al. 2023; Xiao et al. 2023; Wang et al. 2024), the increasing size and complexity of these models require more aggressive quantization strate-gies. Neural network binarization, which reduces the bit width of the weight to a single bit, is a promising direc-tion to achieve ultra-low bit quantization (Helwegen et al. 2019; Qin et al. 2020, 2023). However, existing PTQ meth-ods may not work in terms of ultra-low-bit quantization ( ≤2bits), leading to substantial performance degradation. State-of-the-art binary PTQ approaches, such as PB-LLM (Shang et al. 2023), provide limited performance levels with sig-nificant trade-offs in accuracy. We need better ultra-low-bit quantization methods for VLMs that can preserve the task performance. 
+
+Main Results: We present a novel approach that uses ultra-low-bit precision for VLMs. Our empirical analysis re-veals that most weight values exhibit a near-Gaussian dis-tribution. Furthermore, outlier density varies across layers, necessitating an adaptive quantization approach that assigns higher precision to critical weights while aggressively bi-narizing most of the model to maximize compression effi-ciency. Additionally, outliers, constitute about 5% of Vision Model weights and 1% of Language Model weights have a substantial impact on the model’s performance. As a result, any uniform quantization strategy may not work well. We design an efficient quantization strategy for VLMs that analyzes key weight distribution properties, including saliency, sparsity, and outliers. In particular, we present a saliency-aware hybrid quantization algorithm, where salient weights receive higher bit precision and unsalient weights are binarized, ensuring a balance between storage effi-ciency and quantization error minimization. Our approach, Bi-VLM, separates model weights non-uniformly based on Gaussian quantiles. Model weights are grouped into out-lier (salient) and multiple inlier (unsalient) subsets, ensur-ing each subset contains a proportion of weights correspond-ing to its respective quantile in the distribution. We use our The Fortieth AAAI Conference on Artificial Intelligence (AAAI-26) 
+
+> 10207
+
+saliency-aware hybrid quantization algorithm to quantize the weights, where we solve the quantization problem by impos-ing different constraints on the scaler and binary matrices based on the saliency metric and compression objective. To the best of our knowledge, we are the first work to ex-plore the ultra-low-bit post training quantization ( ≤2 bits) for VLMs. We also present strategies for achieving aggres-sive bit-width reduction while maintaining robust perfor-mance across diverse benchmarks. Some of the key contri-butions of our work include: 1. We propose Bi-VLM which separates weights non-uniformly based on Gaussian quantiles and then use our proposed saliency-aware hybrid quantization to quantize the weights. 2. We push post-training quantization to bit-level for large VLMs in terms of four different benchmarks and three different model series. From our experiments, our Bi-VLM outperforms the SOTA by 3%-47% on the lan-guage model part of the VLM and 4%-45% for the over-all VLMs. 
+
+# Related Works 
+
+Post-Quantization on VLM 
+
+Post-training quantization (PTQ) has become a practical solution for efficiently deploying Vision-Language Mod-els (VLMs), as it replaces full-precision tensors with low-precision values, significantly reducing storage require-ments and computational overhead. Unlike quantization-aware training (QAT), which demands costly retraining and access to the training dataset, PTQ methods leverage small calibration sets to optimize rounding functions with reduced data requirements and computational costs. GPTQ (Frantar et al. 2022) employs Hessian-based second-order error compensation to minimize block-wise quantization errors, achieving excellent performance at ultra-low bit-widths (e.g., 4-bit quantization). Techniques such as AWQ (Lin et al. 2024) and OWQ (Lee et al. 2023) further enhance PTQ by preserving critical weight chan-nels and scaling them appropriately for activation features, thereby retaining information representation capacity. Ad-ditionally, methods like PB-LLM(Shang et al. 2023) and SpQR (Dettmers et al. 2023) adopt feature segmentation strategies, selectively quantizing non-critical components to mitigate performance loss while maintaining low bit-width. QLoRA (Dettmers et al. 2024) introduces a memory-efficient fine-tuning method by backpropagating through frozen 4-bit quantized models using Low Rank Adapters (LoRA) and proposes innovations like 4-bit NormalFloat (NF4), double quantization, and paged optimizers to min-imize memory usage without sacrificing performance. Q-VLM (Wang et al. 2024) proposes a post-training quanti-zation approach for large vision-language models (LVLMs) that optimizes cross-layer dependency using activation en-tropy as a proxy, enabling block-wise partitioning to reduce discretization errors and search costs while maintaining per-formance efficiency. While these methods demonstrate success in efficiently quantizing VLMs, they often rely on layer-wise or block-wise optimization, which overlooks dependencies across layers or components of the model. Addressing these cross-layer interactions remains a key challenge for achieving op-timal quantization performance in large-scale VLMs. 
+
+Network Binarization 
+
+Binarization reduces neural network parameters to a sin-gle bit, significantly decreasing storage requirements and computational costs. This is achieved by converting full-precision weights into binary values using the sign function, combined with a scaling factor to minimize binarization er-rors. Typically, the scaling factor is applied in a channel-wise manner to better preserve information (Rastegari et al. 2016; Qin et al. 2023). Most existing binarization methods rely on quantization-aware training (QAT), where the training process ac-counts for quantization effects. Straight Through Estimator (STE) (Bengio, L´ eonard, and Courville 2013) is often used to overcome gradient vanishing issues caused by the non-differentiable nature of the binarization function. Binary Weight Network (BWN) (Rastegari et al. 2016) was among the first to demonstrate binarized weights while maintain-ing full-precision activations, whereas XNOR-Net (Raste-gari et al. 2016) extended this approach by binarizing both weights and activations for higher efficiency. Methods like DoReFa-Net (Zhou et al. 2016) further improved the train-ing speed by introducing quantized gradients. Recent advancements have explored group-wise bina-rization strategies, where network weights are divided into smaller groups to minimize binarization errors (Faraone et al. 2018). Notably, binarization techniques have been suc-cessfully applied to Transformers (Wang et al. 2023) and BERT models (Qin et al. 2022), demonstrating the feasibil-ity of deploying binarized networks in real-world scenarios. For large language models (LLMs), PB-LLM (Shang et al. 2023) investigates the use of binarized QAT and post-training quantization (PTQ) strategies. However, it reveals the challenge of retaining a significant portion of weights, typically over 30%, at INT8 precision to maintain acceptable performance. BiLLM (Huang et al. 2024) aims to push the boundaries of PTQ-based binarization for LLMs. By mini-mizing reliance on higher bit-widths while ensuring perfor-mance, these methods make significant strides toward fully binarized LLMs, offering a promising solution for resource-efficient deployment in large-scale applications. 
+
+# Our Approach 
+
+Statistical Analysis of Weights: Histograms and Gaussian Fit 
+
+Understanding weight matrix statistics is essential for de-signing an efficient group-wise post-training quantization strategy. We analyze weight distributions through his-tograms, validating their tendency toward a Gaussian dis-tribution. This supports our Gaussian assumption and high-lights the effectiveness of a quantile-based approach for partitioning weights into consistent subsets. Since weight values vary significantly, saliency analysis is crucial for identifying critical weights. Our findings, observed across 10208 Histogram with Fitted Gaussian Distribution 
+
+> Language Model
+> Histogram with Fitted Gaussian Distribution
+> Vision Model
+
+Figure 1: Histogram Analysis and Fitted Gaussian Curve of Layer 10 (other layers share the same pattern) of the Language/Vi-sion Model (Llama 3.2-Vision). The curve represents the fitted Gaussian distribution over the histogram bar plot. both Vision and Language Models, inform our post-training quantization approach. 
+
+Key Observations We analyze the element-wise weight histograms of both Vision and Language Models, using varying bin sizes based on layer dimensions. Our focus is on the key, query, and value projection layers in self-attention, as well as the final output layer. To approximate the weight distribution, we fit the closest Gaussian curve us-ing the sample mean and variance. As shown in Figures 1, for both Vision and Language models, most weights exhibit a Gaussian-like distribution with a near-zero mean, consis-tent with prior findings on deep learning architectures and LLMs(Fang et al. 2020; Yu et al. 2020; Cholakov, Guo, and Kim 2023). This suggests that weights remain close to their initial values, reinforcing the assumption that large-scale models preserve their initialized weight structure. Therefore, we adopt Gaussian assumption on layer weights distribution for both Vision and Language models. 
+
+Binarization Formulation 
+
+Network binarization is a quantization technique that re-stricts weight values to discrete binary levels, typically 
+
+{− 1, 1}. The purpose is to reduce memory footprint and computational complexity while maintaining accuracy. To enhance expressiveness, it is often combined with low-bit quantization, where more sensitive weights are assigned higher precision. We propose a generalized formulation of the weight quan-tization process that unifies both binarization and low-bit quantization as a discrete optimization problem, aiming to find the best binary representation of weights while intro-ducing a row-wise scaling factor to preserve reconstruction accuracy. Given a weight matrix W ∈ Rm×n, we minimize the reconstruction error: 
+
+∥W − AB ∥2 
+
+> F
+
+, (1) where A ∈ Rm×m is a diagonal scaling matrix, defined as A = diag (a11 , a 22 , ..., a mm ), ensuring row-wise scaling. The binary matrix B ∈ Rm×n contains discrete elements 
+
+bij constrained to take Nb discrete values within the range 
+
+[−1, 1] . For storage purposes, each bij is later mapped to a set of quantized values {0, 1, ..., 2Nb − 1}, where Nb repre-sents the number of bits assigned per weight element. The objective function in Equation (1) is minimized with respect to the Frobenius norm ∥ · ∥ F , which reduces the element-wise squared differences between W and AB , pro-viding an optimal approximation by minimizing residual en-ergy. This formulation is particularly effective when out-liers are not dominant, as confirmed by empirical analy-sis. For Nb = 1 , the constraints in Equation (1) reduce to 
+
+bij ∈ {− 1, 1}, corresponding to the standard binarization process. 
+
+Bi-VLM 
+
+Quantile-Based Weight Partitioning A major challenge in quantizing large models, such as LLMs and VLMs, is identifying salient weights—those whose quantization may significantly impact performance. Saliency is typically as-sessed using either magnitude or the Hessian-based metric, though the latter is computationally expensive with limited benefits (Shang et al. 2023). We use a magnitude-based criterion to classify model weights within each layer into distinct subsets. Instead of linear partitioning, we divide the weights non-uniformly based on Gaussian quantiles. Specifically, weights are grouped into outlier (salient) and multiple inlier (unsalient) subsets, ensuring each subset contains a proportion of weights corresponding to its respective quantile in the dis-tribution. Given a model with Nl layers, where each layer is indexed by l = 1 , 2, . . . , N l, we analyze the weight values of each layer l and define the set of all weights as Wl. We partition 10209 Wl into salient weights Sl and unsalient weights Scl , such that: 
+
+Wl = Sl ∪ S cl , Sl ∩ S cl = ∅. (2) Furthermore, we divide the unsalient set Scl into Nuns dis-joint subsets Sc(k) 
+
+> l
+
+, indexed by k = 1 , . . . , N uns , such that: 
+
+Scl =
+
+> Nuns
+
+[
+
+> k=1
+
+Sc(k) 
+
+> l
+
+. (3) Our classification, guided by Gaussian quantiles, partitions the weights into Scl and Sc(k) 
+
+> l
+
+for k = 1 , . . . , N uns . This par-titioning is based on the layer-specific mean μl and standard deviation σl and assumes, based on empirical evidence, that the weight distribution in each layer is symmetric about its mean. Consequently, quantile analysis is performed on the right side of the distribution and mirrored to the left. We define the percentile psal  
+
+> l
+
+as the proportion of the highest-magnitude weights classified as salient. This corre-sponds to the upper quantile of the Gaussian distribution. Consequently, the total quantile of the unsalient region is 
+
+1 − psal  
+
+> l
+
+. Since this region is divided into Nuns subsets, each subset corresponds to a quantile of size: 
+
+puns l = 1 − psal l
+
+Nuns 
+
+, (4) In order to determine the magnitude cutoff values for salient and unsalient subsets, we compute the z-scores from the standard normal distribution corresponding to the respective quantiles. These are given by: 
+
+z(k) = Φ −1
+
+ 1 + k · puns 
+
+> l
+
+2
+
+
+
+, k = 1 , 2, . . . , N uns , (5) where Φ−1(·) is the probit function , i.e., the inverse cumula-tive distribution function (CDF) of the Gaussian distribution. Therefore, the salient and non-salient subsets for layer l are defined as: 
+
+Sl = {w ∈ W l | | w| > μ l + σlz(Nuns )}Sc(k) 
+
+> l
+
+= {w ∈ W l | μl + σlz(k−1) < |w| ≤ μl + σlz(k)},
+
+(6) where μl, σ l are the mean and standard deviation of the weight distribution in layer l, and zk is the z-score cor-responding to the upper magnitude boundary of the non-salient region indexed k = 1 , 2, . . . , N uns . Overall, our ap-proach enables independent analysis of layer weights while parameterizing the proportion of salient weights and the number of non-salient partitions to optimize the accuracy-compression tradeoff. 
+
+Saliency-Aware Hybrid Quantization We present a hy-brid quantization method applied independently to each model layer. The weight matrix Wl of layer l is decomposed into a salient weight matrix W sal  
+
+> l
+
+∈ Rm×n and multiple un-salient weight component matrices W uns (k) 
+
+> l
+
+∈ Rm×n for Algorithm 1: Row-wise Quantization with Scale and Binary Matrix 
+
+Require: Weight matrix W ∈ Rm×n, iterations iters, bits 
+
+Nb
+
+Ensure: Scale factors a ∈ Rm, quantized matrix B ∈
+
+Rm×n
+
+1: Initialize: B ← sign (W ), a ← 0
+
+2: for iter = 1 to iters do 
+
+3: aold ← a
+
+4: a ←   
+
+> P
+> jWij Bij
+> P
+> jB2
+> ij
+
+where P 
+
+> j
+
+B2 
+
+> ij
+
+> 0, else ai = 0 
+
+5: B ← clip 
+
+ Wa[: ,N one ] , −1, 1
+
+
+
+6: end for 
+
+7: Adaptive Quantization Step: 
+
+8: Compute μB , σ B from nonzero elements of B
+
+9: Compute quantization levels using (14) 
+
+10: rcenters ← rlevels [: −1]+ rlevels [1:] 2
+
+11: B ← rcenters [arg min |B − rcenters |]
+
+12: return a, Bk = 1 , 2, . . . , N uns , enabling distinct processing strategies for quantization. 
+
+Wl = [ wij ]1≤i≤m, 1≤j≤n = W sal  
+
+> l
+
++
+
+> Nuns
+
+X
+
+> k=1
+
+W uns (k) 
+
+> l
+
+, (7) where W sal  
+
+> l
+
+and W uns (k) 
+
+> l
+
+are defined as: 
+
+W sal  
+
+> l
+
+= {wsal  
+
+> l,ij
+
+| wl,ij = wij if wij ∈ S , else 0}, (8) 
+
+W uns (k) 
+
+> l
+
+= {wuns (k) 
+
+> l,ij
+
+| w(k) 
+
+> l,ij
+
+= wij if wij ∈ S c(k) 
+
+> l
+
+, else 0}.
+
+(9) In order to optimize compression while preserving accu-racy, we solve the quantization problem in Equation (1) separately for the salient and unsalient components, impos-ing different constraints on the matrices A and B based on the saliency metric and compression objective. Specifically, salient weights, which are highly sensitive and impact the model’s performance, are quantized using two bits, whereas unsalient weights within the inlier subsets are binarized us-ing a single bit. 
+
+Salient Weights Two-Bit Quantization: The salient weight matrix W sal  
+
+> l
+
+(Equation 8) is quantized into a binary matrix Bsal  
+
+> l
+
+using Nb = 2 bits, along with a row-wise scaling vector a ∈ Rm, yielding: 
+
+W sal,quantized  
+
+> l
+
+= a ⊙ Bsal  
+
+> l
+
+. (10) Here, ⊙ denotes row-wise multiplication. The optimization problem (Equation 1) is solved with B = Bsal  
+
+> l
+
+, where ele-ments take 2Nbit discrete values in [−1, 1] and are mapped to the set {0, 1, 2, 3}, binary represented for storage. The scal-ing matrix is: 
+
+Asal  
+
+> l
+
+= diag (asal  
+
+> 1
+
+, . . . , a sal  
+
+> m
+
+). (11) Thus, the quantization problem is formulated as: 
+
+∥W sal  
+
+> l
+
+− a ⊙ Bsal  
+
+> l
+
+∥2 
+
+> F
+
+. (12) 10210 We analyze the convexity of Equation (12) by reformulating it as a row-wise optimization: 
+
+∥wsal  
+
+> l,ij
+
+− asal  
+
+> i
+
+bsal  
+
+> l,ij
+
+∥22, ∀ 1 ≤ j ≤ n. (13) Since the ℓ2-norm is convex, the optimization formulation is convex with respect to the scaling parameter asal  
+
+> i
+
+. How-ever, the discrete nature of Bsal  
+
+> l
+
+, constrained to 2Nb values, results in a discrete optimization problem where gradient-based solvers fail due to the discontinuous solution space. To address this, we relax bsal  
+
+> l,ij
+
+to the continuous interval [−1, 1] ,enabling an iterative quadratic programming approach that alternates between optimizing asal  
+
+> i
+
+and updating Bsal  
+
+> l
+
+, ensur-ing a feasible quantization solution. After convergence, Bsal 
+
+> l
+
+is mapped back to a discrete set of 2Nb values, correspond-ing to the midpoints of 2Nb + 1 quantization levels, as de-scribed in Algorithm 1. Our empirical analysis reveals that outlier weights con-tribute unevenly to the tails of the Gaussian distribution, ne-cessitating adaptive quantization resolution. To address this, we apply an exponential adaptation to the 2Nb + 1 linearly spaced levels d ∈ [−1, 1] after convex optimization: 
+
+rlevels (d) = μoptimal 
+
+> Bsal
+> l
+
++ σoptimal 
+
+> Bsal
+> l
+
+· sign (d) · (α × exp( |d|) − 1) ,
+
+(14) where rlevels is the adaptively defined quantization level cor-responding to the linearly defined level d. Quantization cen-ters, rcenters , representing the midpoints between each sub-sequent level, encode mapped values from Bsal  
+
+> l
+
+as a bi-nary value of length Nb = 2 . The parameters μoptimal 
+
+> Bsal
+> l
+
+and 
+
+σoptimal 
+
+> Bsal
+> l
+
+denote the mean and standard deviation of the op-timized Bsal  
+
+> l
+
+, respectively. The term sign (d) ensures sym-metric quantization. The parameter α, empirically set to 1.4, adjusts the mapping to provide finer resolution for small weights and coarser representation for larger values. Algorithm 2: Unsalient Weights Binarization 
+
+Require: Weight matrix W uns (k) 
+
+> l
+
+∈ Rm×n
+
+Ensure: Binary matrix Buns (k) 
+
+> l
+
+∈ {− 1, 1}m×n and scaling factor auns (k) 
+
+> l
+
+∈ R
+
+1: Step 1: Compute Binary Matrix 
+
+2: Compute Buns (k) 
+
+> l
+
+using Equation (19) 
+
+3: Step 2: Compute Scaling Factor 
+
+4: Compute auns (k) 
+
+> l
+
+using Equation (18) 
+
+5: return Buns (k) 
+
+> l
+
+, auns (k)
+
+> l
+
+Unsalient Weights Binarization: With salient weights quantized and separated, the remaining components of the weight matrix in layer l correspond to the unsalient weights. We apply strict binarization by mapping each ma-trix W uns (k) 
+
+> l
+
+to a binary matrix Buns (k) 
+
+> l
+
+and a scalar factor 
+
+auns (k) 
+
+> l
+
+, such that: 
+
+W uns,quantized (k) 
+
+> l
+
+= auns (k) 
+
+> l
+
+× Buns (k) 
+
+> l
+
+. (15) Reformulating the optimization problem in (1), we set B =
+
+Buns (k) 
+
+> l
+
+and A = auns (k) 
+
+> l
+
+Im×m, where Buns (k) 
+
+> l
+
+∈ {− 1, 1}.The resulting binarization problem can be expressed as: 
+
+∥W uns (k) 
+
+> l
+
+− auns (k) 
+
+> l
+
+Buns (k) 
+
+> l
+
+∥2 
+
+> F
+
+. (16) Since buns (k) 
+
+> l,ij
+
+is restricted to {− 1, 1}, an element-wise thresholding strategy minimizes the squared error, yielding the optimal binary values: 
+
+buns (k)∗ 
+
+> l,ij
+
+=
+
+(
+
+sign (wuns (k) 
+
+> l,ij
+
+) if auns (k) 
+
+> l
+
+> 0,
+
+−sign (wuns (k) 
+
+> l,ij
+
+) if auns (k) 
+
+> l
+
+< 0. (17) With Buns (k) 
+
+> l
+
+now predetermined, a solution to the convex optimization formulation of the quadratic program in (12) with respect to auns (k) 
+
+> l
+
+gives an optimal solution: 
+
+auns (k)∗ 
+
+> l,ij
+
+= ⟨W uns (k) 
+
+> l
+
+, B uns (k) 
+
+> l
+
+⟩∥Buns (k) 
+
+> l
+
+∥2
+
+> F
+
+, (18) where the inner product is ⟨W uns (k) 
+
+> l
+
+, B uns (k) 
+
+> l
+
+⟩ =
+
+tr 
+
+
+
+W uns (k)⊤ 
+
+> l
+
+Buns (k)
+
+> l
+
+
+
+. This guarantees that auns (k) 
+
+> l,ij
+
+is always positive, ensuring optimal binary matrix: 
+
+Buns (k)∗ 
+
+> l,ij
+
+= sign (W uns (k) 
+
+> l,ij
+
+). (19) Algorithm 3: Our Overall Method 
+
+Require: Wl ∈ Rm×n, Nuns , Nb, psal ,max 
+
+> l
+
+Ensure: W quantized 
+
+> l
+
+1: Step 1: Initialize psal  
+
+> l
+
+= psal ,max 
+
+> l
+
+2: Step 2: Optimize Minimize J : Hybrid Quantization 
+
+(Wl, N uns , N b, p sal  
+
+> l
+
+) over psal  
+
+> l
+
+∈ [0 , p sal ,max  
+
+> l
+
+], find psal, opt 
+
+> l
+
+3: Step 3: Quantize Run Hybrid Quantization 
+
+(Wl, N uns , N b, p sal, opt  
+
+> l
+
+)
+
+4: Step 4: Reconstruct 
+
+W quantized  
+
+> l
+
+= W sal,quantized  
+
+> l
+
++
+
+> Nuns
+
+X
+
+> k=1
+
+W uns,quantized (k)
+
+> l
+
+5: return W quantized 
+
+> l
+
+Hybrid Quantization (Wl, N uns , N b, p sal  
+
+> l
+
+)
+
+6: Partition Wl into W sal  
+
+> l
+
+and W uns (k) 
+
+> l
+
+(Eqs. (8), (9)) 
+
+7: Quantize W sal  
+
+> l
+
+into Bsal  
+
+> l
+
+, a (Algorithm 1) 
+
+8: for k = 1 to Nuns do 
+
+9: Quantize W uns (k) 
+
+> l
+
+into Buns (k) 
+
+> l
+
+, a uns (k) 
+
+> l
+
+(Algorithm 2) 
+
+10: end for 
+
+11: return Bsal  
+
+> l
+
+, a, {(auns (k) 
+
+> l
+
+, B uns (k) 
+
+> l
+
+)}Nuns 
+
+> k=1
+
+10211 Benchmark FP AWQ-L BiLLM-L Bi-VLM-L (Ours) AWQ-all BiLLM-all Bi-VLM-all (Ours) 
+
+MME Perception 1446.81 0.00 1096.67 1315.84 ( 219.17 ↑) - 781.51 1308.40 ( 526.89 ↑)MME Cognition 341.42 0.00 248.21 171.43 ( 76.78 ↓) - 222.85 196.07 ( 26.78 ↓)ScienceQA-IMG 85.82 0.00 11.01 58.75 ( 47.74 ↑) - 17.40 58.35 ( 45.95 ↑)MMMU 42.78 24.33 25.56 36.42 ( 10.86 ↑) - 24.56 33.27 ( 8.71 ↑)VizWiz-VQA 59.72 0.00 35.36 39.33 ( 3.97 ↑) - 22.93 47.18 ( 24.25 ↑)Table 1: SOTA comparison on Llama 3.2-Vision instruction 11B with weight 1 to 1.1 bit . For the language model part, our Bi-VLM outperforms the SOTA by 4%-47%. For the overall VLM, our Bi-VLM outperforms the SOTA by 8%-45%. FP: Full precision. L: Language model, all: the whole VLM model. 
+
+Benchmark FP AWQ-L BiLLM-L Bi-VLM-L (Ours) AWQ-all BiLLM-all Bi-VLM-all (Ours) 
+
+MME Perception 1578.39 0.00 1024.15 1457.68 ( 433.53 ↑) - 813.89 1063.07 ( 249.18 ↑)MME Cognition 418.21 0.00 150.36 340.71 ( 190.35 ↑) - 178.57 272.21 ( 93.64 ↑)ScienceQA-IMG 95.84 0.00 72.83 93.55 ( 20.72 ↑) - 63.81 83.43 ( 19.62 ↑)MMMU 49.56 25.33 31.11 44.33 ( 13.22 ↑) - 28.78 39.12 ( 10.34 ↑)VizWiz-VQA 60.38 0.00 56.91 60.10 ( 3.19 ↑) - 52.81 57.36 ( 4.55 ↑)Table 2: SOTA comparison on Llava-One-Vision 7B with weight 1 to 1.1 bit . For the language model part, our Bi-VLM outperforms the SOTA by 3%-20%. For the overall VLM, our Bi-VLM outperforms the SOTA by 4%-19%. FP: Full precision. L: Language model, all: the whole VLM model. 
+
+Adaptive Saliency Search via Optimization Salient weights deviate significantly from the typical weight distri-bution, making them unsuitable for binarization. Their in-clusion in the unsalient subset Scl leads to rectification, de-grading model performance (Shang et al. 2023), while se-lecting too many salient weights in Sl increases storage re-quirements, reducing compression efficiency. In order to balance the performance and compression, we formulate salient weight selection as a numerical opti-mization problem that determines the optimal salient per-centile psal  
+
+> l
+
+. The optimized saliency region is constrained by a compression threshold set by the maximum proportion of salient weights quantized with Nb bits and the number of binarized unsalient quantiles Nuns . Given a specific layer l
+
+with weight matrix Wl, a predefined unsalient region parti-tion count Nuns , and a maximum allowable salient percentile 
+
+psal ,max  
+
+> l
+
+, we minimize the following objective function based on normalized reconstruction error: 
+
+min 
+
+> psal
+> l
+
+J (psal  
+
+> l
+
+; Wl, N uns , N b) = (20) 
+
+∥W sal  
+
+> l
+
+− a ⊙ Bsal  
+
+> l
+
+∥2 
+
+> F
+
++ PNuns  
+
+> k=1
+
+∥W uns (k) 
+
+> l
+
+− auns (k) 
+
+> l
+
+Buns (k) 
+
+> l
+
+∥2
+
+> F
+
+∥Wl∥2
+
+> F
+
+,
+
+s.t. psal  
+
+> l
+
+∈ [0 , p sal ,max  
+
+> l
+
+].
+
+Here, W sal  
+
+> l
+
+and W uns (k) 
+
+> l
+
+are obtained from Equations (8) and (9), respectively, while the pairs {a, B sal  
+
+> l
+
+} and 
+
+{auns (k) 
+
+> l
+
+, B uns (k) 
+
+> l
+
+} are computed using Algorithms 1 and 2. Since the Frobenius norm ∥ · ∥ 2 
+
+> F
+
+is convex and our hy-brid quantization approach relaxes the discrete space of Bsal 
+
+> l
+
+and Buns (k) 
+
+> l
+
+, the objective function J ensures a global min-imum for given Wl, Nuns , and Nb. For computational ef-ficiency, we employ bounded numerical optimization us-ing Brent’s method, a gradient-free approach that combines golden-section search for robustness and parabolic interpo-lation for fast convergence (Brent 2013). Once the optimal salient percentile psal ,opt  
+
+> l
+
+is determined, we apply the full quantization process to layer Wl, as outlined in Algorithm 3. 
+
+# Results and Comparisons 
+
+Baseline Model and Datasets 
+
+To demonstrate the effectiveness of our proposed method, we compare our algorithm with the state-of-the-art (SOTA) methods on 4 dataset benchmarks and 3 models. Datasets include: MME (Fu et al. 2024) that focuses on perception and cognition abilities; MMMU (Yue et al. 2024) that fo-cuses on college-level subject knowledge and deliberate rea-soning, Science Question Answering (ScienceQA) (Lu et al. 2022) that focuses on science topics, and VizWiz-VQA (Gu-rari et al. 2018) that on predicting the answer to a visual question and predict whether a visual question cannot be an-swered. Models include Llama 3.2-Vision instruction 11B, Llava-One-Vision 7B (Liu et al. 2024a; Li et al. 2024), and Qwen2.5-VL-7B-Instruct (Bai et al. 2025). For all the ex-periments, we use 64 samples for calibration. We use 2 bits for salient weights and 1 bit for non-salient weights. Salient weights account up to 5% of the total weights. Quantized weights storage and bitwidth calculation, saliency threshold determination, please refer to the Supplementary. 10212 Benchmark FP AWQ-L BiLLM-L Bi-VLM-L (Ours) AWQ-all BiLLM-all Bi-VLM-all (Ours) 
+
+MME Perception 1683.88 0.00 1204.31 1690.67 ( 486.36 ↑) - 828.54 1458.70 ( 630.16 ↑)MME Cognition 653.21 0.00 341.07 621.79 ( 280.72 ↑) - 195.36 559.64 ( 364.28 ↑)ScienceQA-IMG 77.29 0.00 62.62 68.32 ( 5.70 ↑) - 59.49 64.01 ( 4.52 ↑)MMMU 51.00 25.44 35.33 46.00 ( 10.67 ↑) - 30.89 42.89 ( 12.00 ↑)VizWiz-VQA 70.43 0.00 59.85 66.20 ( 6.35 ↑) - 52.72 62.96 ( 10.24 ↑)Table 3: SOTA comparison on Qwen2.5-VL-7B-Instruct with weight 1.1 bit . For the language model part, our Bi-VLM outperforms the SOTA by 5%-10%. For the overall VLM, our Bi-VLM outperforms the SOTA by 4%-12%. FP: Full precision. L: Language model, all: the whole VLM model. 
+
+Comparison with SOTA Methods 
+
+For Llama 3.2-Vision instruction 11B, Table 1 summarizes the quantization performance of our Bi-VLM method (under both language-only and whole-model quantization) com-pared to the state-of-the-art AWQ and BiLLM approaches. Notably, our Bi-VLM outperforms SOTA by 4%-47% on all settings. Although Bi-VLM shows somewhat lower performance on MME Cognition compared with BiLLM, the overall results confirm that Bi-VLM consistently pre-serves most of the full-precision accuracy across diverse benchmarks—frequently improving upon competing low-bit methods—while substantially reducing model size and computational overhead. For Llava-One-Vision 7B (Liu et al. 2024a; Li et al. 2024), as shown in Table 2, our Bi-VLM outperforms SOTA by 3%-20% on all settings, these results underscore that our Bi-VLM quantization strategy substantially narrows the gap to full-precision performance—often beating previous low-bit methods by a large margin—across diverse vision-language tasks. For Qwen2.5-VL-7B-Instruct (Bai et al. 2025), as shown in Table 3, our Bi-VLM outperforms SOTA by 4.5%-12% on all settings. Overall, these results demonstrate that our Bi-VLM quantization strategy consistently outperforms prior low-bit methods across diverse vision-language tasks based on aggressive bitwidth reduction.          
+
+> Method Performance Average bit width Quant Speed
+> BiLLM 17.4 1.11 139.8 Mins Bi-VLM (Ours) 58.35 1.014 9.6 Mins
+
+Table 4: More comparisons w.r.t. different aspects. With model Llama 3.2-Vision-instruction-11B on ScienceQA-IMG dataset. We get considerable improvements and our quantization speed is much more efficient than BiLLM.             
+
+> Benchmark Full precision Vision adaptor Language
+> BiLLM 85.82 71.44 85.87 12.99 Bi-VLM (Ours) 85.82 85.23 85.86 58.75
+
+Table 5: Llama 3.2-Vision 11B, 1 to 1.1 bit, on ScienceQA-IMG dataset. The language model has the highest sensitivity.         
+
+> Components BB+HQ B+HQ+AS B+HQ+AS+MUS
+> Accuracy 6.33 13.74 49.51 58.35
+
+Table 6: Ablation study on Bi-VLM Components on Llama 3.2-Vision 11B, ScienceQA-IMG. B: Fixed binary only. HQ: Hybrid precision quantization. AS: Adaptive saliency search. MUS: Multiple unsalient search. 
+
+Ablation Study 
+
+We conducted more comparisons across various method-ological aspects using the LLaMA 3.2-Vision-Instruction-11B model on the ScienceQA-IMG dataset. Our proposed Bi-VLM framework demonstrates substantial performance improvements over BiLLM. Notably, our quantization pro-cess is significantly more efficient than that of BiLLM. As reported in Table 4, Bi-VLM achieves superior accuracy with lower bit precision and exhibits a 14.6 × speedup in quantization. To further investigate ablation studies on quantization sensitivity of different VLM components, we performed ab-lation studies on Vision model, Adaptor module, and Lan-guage model, as presented in Table 5. The results indicate moderate sensitivity to the vision encoder, minimal sensitiv-ity to the adaptor/projector, and considerable sensitivity to the language model. To explore the contributions of different components to quantization performance, we conducted ablations on the in-ternal components of Bi-VLM, as shown in Table 6. Each module contributes meaningfully to the overall system per-formance, validating the design choices of our architecture. 
+
+# Conclusions, Limitations, and Future Work 
+
+We present a novel ultra-low-bit quantization method for VLMs. Our approach successfully bridges the gap between the computational demands of vision-language models and the practical limitations of ultra-low-bit precision. Our re-sults demonstrate that Bi-VLM outperforms the state-of-the-art methods on both language and overall vision-language models. Our approach has some limitations. We did not explore our method on large bitwidth, like 4 bits or 8 bits. It may be useful to explore combinations of different bitwidths. We would like to evaluate the performance on more tasks and in hardware-constrained environments. 10213 References 
+
+Bai, S.; Chen, K.; Liu, X.; Wang, J.; Ge, W.; Song, S.; Dang, K.; Wang, P.; Wang, S.; Tang, J.; Zhong, H.; Zhu, Y.; Yang, M.; Li, Z.; Wan, J.; Wang, P.; Ding, W.; Fu, Z.; Xu, Y.; Ye, J.; Zhang, X.; Xie, T.; Cheng, Z.; Zhang, H.; Yang, Z.; Xu, H.; and Lin, J. 2025. Qwen2.5-VL Technical Report. arXiv preprint arXiv:2502.13923 .Bengio, Y.; L´ eonard, N.; and Courville, A. 2013. Estimat-ing or propagating gradients through stochastic neurons for conditional computation. arXiv preprint arXiv:1308.3432 .Brent, R. P. 2013. Algorithms for minimization without derivatives . Courier Corporation. Cholakov, R.; Guo, H.; and Kim, Y. 2023. Distributional Quantization of Large Language Models. Dettmers, T.; Pagnoni, A.; Holtzman, A.; and Zettlemoyer, L. 2024. Qlora: Efficient finetuning of quantized llms. Ad-vances in Neural Information Processing Systems , 36. Dettmers, T.; Svirschevski, R.; Egiazarian, V.; Kuznedelev, D.; Frantar, E.; Ashkboos, S.; Borzunov, A.; Hoefler, T.; and Alistarh, D. 2023. Spqr: A sparse-quantized representation for near-lossless llm weight compression. arXiv preprint arXiv:2306.03078 .Fang, J.; Shafiee, A.; Abdel-Aziz, H.; Thorsley, D.; Geor-giadis, G.; and Hassoun, J. H. 2020. Post-training piecewise linear quantization for deep neural networks. In Computer Vision–ECCV 2020: 16th European Conference, Glasgow, UK, August 23–28, 2020, Proceedings, Part II 16 , 69–86. Springer. Faraone, J.; Fraser, N.; Blott, M.; and Leong, P. H. 2018. Syq: Learning symmetric quantization for efficient deep neural networks. In Proceedings of the IEEE conference on computer vision and pattern recognition , 4300–4309. Frantar, E.; Ashkboos, S.; Hoefler, T.; and Alistarh, D. 2022. Gptq: Accurate post-training quantization for generative pre-trained transformers. arXiv preprint arXiv:2210.17323 .Fu, C.; Chen, P.; Shen, Y.; Qin, Y.; Zhang, M.; Lin, X.; Yang, J.; Zheng, X.; Li, K.; Sun, X.; Wu, Y.; and Ji, R. 2024. MME: A Comprehensive Evaluation Benchmark for Multi-modal Large Language Models. arXiv:2306.13394. Gupta, S.; Agrawal, A.; Gopalakrishnan, K.; and Narayanan, P. 2015. Deep learning with limited numerical precision. In 
+
+International conference on machine learning , 1737–1746. PMLR. Gurari, D.; Li, Q.; Stangl, A. J.; Guo, A.; Lin, C.; Grauman, K.; Luo, J.; and Bigham, J. P. 2018. Vizwiz grand challenge: Answering visual questions from blind people. In Proceed-ings of the IEEE conference on computer vision and pattern recognition , 3608–3617. Helwegen, K.; Widdicombe, J.; Geiger, L.; Liu, Z.; Cheng, K.-T.; and Nusselder, R. 2019. Latent weights do not ex-ist: Rethinking binarized neural network optimization. Ad-vances in neural information processing systems , 32. Huang, W.; Liu, Y.; Qin, H.; Li, Y.; Zhang, S.; Liu, X.; Magno, M.; and Qi, X. 2024. Billm: Pushing the limit of post-training quantization for llms. arXiv preprint arXiv:2402.04291 .Jacob, B.; Kligys, S.; Chen, B.; Zhu, M.; Tang, M.; Howard, A. G.; Adam, H.; and Kalenichenko, D. 2017. Quantiza-tion and Training of Neural Networks for Efficient Integer-Arithmetic-Only Inference. 2018 IEEE/CVF Conference on Computer Vision and Pattern Recognition , 2704–2713. Krishnamoorthi, R. 2018. Quantizing deep convolutional networks for efficient inference: A whitepaper. arXiv preprint arXiv:1806.08342 .Lee, C.; Jin, J.; Kim, T.; Kim, H.; and Park, E. 2023. OWQ: Outlier-Aware Weight Quantization for Efficient Fine-Tuning and Inference of Large Language Models. In 
+
+AAAI Conference on Artificial Intelligence .Li, B.; Zhang, Y.; Guo, D.; Zhang, R.; Li, F.; Zhang, H.; Zhang, K.; Zhang, P.; Li, Y.; Liu, Z.; et al. 2024. Llava-onevision: Easy visual task transfer. arXiv preprint arXiv:2408.03326 .Lin, J.; Tang, J.; Tang, H.; Yang, S.; Chen, W.-M.; Wang, W.-C.; Xiao, G.; Dang, X.; Gan, C.; and Han, S. 2024. AWQ: Activation-aware Weight Quantization for On-Device LLM Compression and Acceleration. Proceedings of Machine Learning and Systems , 6: 87–100. Liu, H.; Li, C.; Li, Y.; Li, B.; Zhang, Y.; Shen, S.; and Lee, Y. J. 2024a. LLaVA-NeXT: Improved reasoning, OCR, and world knowledge. Liu, H.; Li, C.; Wu, Q.; and Lee, Y. J. 2024b. Visual in-struction tuning. Advances in neural information processing systems , 36. Lu, P.; Mishra, S.; Xia, T.; Qiu, L.; Chang, K.-W.; Zhu, S.-C.; Tafjord, O.; Clark, P.; and Kalyan, A. 2022. Learn to explain: Multimodal reasoning via thought chains for sci-ence question answering. Advances in Neural Information Processing Systems , 35: 2507–2521. Nagel, M.; Amjad, R. A.; Van Baalen, M.; Louizos, C.; and Blankevoort, T. 2020. Up or down? adaptive rounding for post-training quantization. In International Conference on Machine Learning , 7197–7206. PMLR. Nagel, M.; Baalen, M. v.; Blankevoort, T.; and Welling, M. 2019. Data-free quantization through weight equalization and bias correction. In Proceedings of the IEEE/CVF Inter-national Conference on Computer Vision , 1325–1334. Qin, H.; Ding, Y.; Zhang, M.; Yan, Q.; Liu, A.; Dang, Q.; Liu, Z.; and Liu, X. 2022. Bibert: Accurate fully binarized bert. arXiv preprint arXiv:2203.06390 .Qin, H.; Gong, R.; Liu, X.; Shen, M.; Wei, Z.; Yu, F.; and Song, J. 2020. Forward and backward information reten-tion for accurate binary neural networks. In Proceedings of the IEEE/CVF conference on computer vision and pattern recognition , 2250–2259. Qin, H.; Zhang, M.; Ding, Y.; Li, A.; Cai, Z.; Liu, Z.; Yu, F.; and Liu, X. 2023. Bibench: Benchmarking and analyz-ing network binarization. In International Conference on Machine Learning , 28351–28388. PMLR. Rastegari, M.; Ordonez, V.; Redmon, J.; and Farhadi, A. 2016. Xnor-net: Imagenet classification using binary convo-lutional neural networks. In European conference on com-puter vision , 525–542. Springer. 10214 Shang, Y.; Yuan, Z.; Wu, Q.; and Dong, Z. 2023. Pb-llm: Partially binarized large language models. arXiv preprint arXiv:2310.00034 .Wang, C.; Wang, Z.; Xu, X.; Tang, Y.; Zhou, J.; and Lu, J. 2024. Q-VLM: Post-training Quantization for Large Vision-Language Models. arXiv preprint arXiv:2410.08119 .Wang, H.; Ma, S.; Dong, L.; Huang, S.; Wang, H.; Ma, L.; Yang, F.; Wang, R.; Wu, Y.; and Wei, F. 2023. Bitnet: Scaling 1-bit transformers for large language models. arXiv preprint arXiv:2310.11453 .Xiao, G.; Lin, J.; Seznec, M.; Wu, H.; Demouth, J.; and Han, S. 2023. Smoothquant: Accurate and efficient post-training quantization for large language models. In International Conference on Machine Learning , 38087–38099. PMLR. Yu, H.; Wen, T.; Cheng, G.; Sun, J.; Han, Q.; and Shi, J. 2020. Low-bit quantization needs good distribution. In Pro-ceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition Workshops , 680–681. Yue, X.; Ni, Y.; Zhang, K.; Zheng, T.; Liu, R.; Zhang, G.; Stevens, S.; Jiang, D.; Ren, W.; Sun, Y.; Wei, C.; Yu, B.; Yuan, R.; Sun, R.; Yin, M.; Zheng, B.; Yang, Z.; Liu, Y.; Huang, W.; Sun, H.; Su, Y.; and Chen, W. 2024. MMMU: A Massive Multi-discipline Multimodal Understanding and Reasoning Benchmark for Expert AGI. In Proceedings of CVPR .Zeng, S.; Liu, J.; Dai, G.; Yang, X.; Fu, T.; Wang, H.; Ma, W.; Sun, H.; Li, S.; Huang, Z.; et al. 2024. Flightllm: Effi-cient large language model inference with a complete map-ping flow on fpgas. In Proceedings of the 2024 ACM/SIGDA International Symposium on Field Programmable Gate Ar-rays , 223–234. Zhou, S.; Wu, Y.; Ni, Z.; Zhou, X.; Wen, H.; and Zou, Y. 2016. Dorefa-net: Training low bitwidth convolutional neu-ral networks with low bitwidth gradients. arXiv preprint arXiv:1606.06160 .10215

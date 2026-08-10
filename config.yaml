@@ -25,3 +25,67 @@ subscriptions:
     stage: A
     diff_threshold_pct: 15
   keyword_recall_mode: or
+  intent_profiles:
+    - tag: ulbv
+      description: LLM极低比特权重量化、向量/码本/格量化与高效推理
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: extreme low-bit LLM quantization
+          keyword_cn: 极低比特大模型量化
+          query: extreme low-bit quantization of large language model weights
+        - keyword: 2-bit LLM quantization
+          keyword_cn: 2比特大模型量化
+          query: 2-bit weight quantization for large language models
+        - keyword: vector quantization LLM weights
+          keyword_cn: 向量量化大模型权重
+          query: vector quantization methods for compressing large language model weights
+        - keyword: additive quantization language model
+          keyword_cn: 加性量化语言模型
+          query: additive quantization for language model weights
+        - keyword: codebook quantization LLM
+          keyword_cn: 码本量化大模型
+          query: learned codebook quantization for large language model weights
+        - keyword: lattice codebook quantization
+          keyword_cn: 格码本量化
+          query: lattice codebook quantization for low-bit neural network weights
+      intent_queries:
+        - query: >-
+            extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream
+            accuracy
+          query_cn: 保持困惑度和下游精度的LLM极低比特后训练权重量化方法
+          enabled: true
+          source: manual
+          note: ''
+        - query: vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression
+          query_cn: 用于1比特、1.58比特和2比特LLM权重量化的向量或加性量化技术
+          enabled: true
+          source: manual
+          note: ''
+        - query: incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss
+          query_cn: 利用非相干处理和哈达玛旋转实现无损低比特LLM量化
+          enabled: true
+          source: manual
+          note: ''
+        - query: efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference
+          query_cn: 极低比特量化大模型推理的高效GPU内核与硬件部署
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-08-10T08:40:52.010Z'
+source_backends:
+  arxiv:
+    papers_table: arxiv_papers
+    use_vector_rpc: true
+    vector_rpc: match_arxiv_papers
+    vector_rpc_exact: match_arxiv_papers_exact
+    use_bm25_rpc: true
+    bm25_rpc: match_arxiv_papers_bm25
+    sync_table: arxiv_sync_status
+    sync_success_value: success
+    schema: public
+    kind: supabase
+    enabled: true
+    url: https://lyucdwgefyfbmaiopjbk.supabase.co
+    anon_key: sb_publishable_lX-oi64Uxyd7SIVv3_w2Uw_MTOojeKq

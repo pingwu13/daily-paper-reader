@@ -26,7 +26,7 @@ subscriptions:
     diff_threshold_pct: 15
   keyword_recall_mode: or
   intent_profiles:
-    - tag: ulbv
+    - tag: elblq
       description: LLM极低比特权重量化、向量/码本/格量化与高效推理
       enabled: true
       paper_sources:
@@ -73,7 +73,61 @@ subscriptions:
           enabled: true
           source: manual
           note: ''
-      updated_at: '2026-08-10T08:40:52.010Z'
+      updated_at: '2026-08-18T02:11:50.016Z'
+    - tag: isc
+      description: 追踪 LLM 极低比特向量量化中的结构化与隐式码本，包括 lattice、trellis、生成矩阵和线性映射等码本构造方法。
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: parametric codebook
+          keyword_cn: ''
+          query: parametric codebook
+        - keyword: implicit codebook
+          keyword_cn: ''
+          query: implicit codebook
+        - keyword: structured codebook
+          keyword_cn: ''
+          query: structured codebook
+        - keyword: lattice codebook quantization
+          keyword_cn: 格码本量化
+          query: lattice-based codebook quantization for extreme low-bit large language model weights
+        - keyword: trellis-coded quantization
+          keyword_cn: 网格编码量化
+          query: trellis-coded quantization for large language model weight-only compression
+        - keyword: learned codebook generation
+          keyword_cn: 学习式码本生成
+          query: learned codebook generation with parameterized codebook for low-bit large language model vector quantization
+      intent_queries:
+        - query: >-
+            structured vector quantization methods that avoid storing a large explicit codebook through lattice,
+            trellis, algebraic, or implicit codebook representations
+          query_cn: 寻找无需显式存储大型码本，而通过格、trellis、代数结构或隐式表示实现向量量化的方法
+          enabled: true
+          source: manual
+          note: ''
+        - query: >-
+            extreme low bit LLM quantization with codewords generated from lattices, basis vectors, generator matrices,
+            or other compact parametric structures
+          query_cn: 寻找由格、基向量、生成矩阵或其他紧凑参数结构生成码字的极低比特 LLM 量化方法
+          enabled: true
+          source: manual
+          note: ''
+        - query: >-
+            LLM vector quantization with implicit codebooks parameterized by learnable generator matrices or linear
+            transformations similar to GLVQ
+          query_cn: 寻找类似 GLVQ 的通过可学习生成矩阵或线性映射隐式构造码本的 LLM 向量量化
+          enabled: true
+          source: manual
+          note: ''
+        - query: >-
+            LLM quantization using highly structured lattice, algebraic, or geometric codebooks similar to QuIP# E8
+            lattice codebooks
+          query_cn: 寻找类似 QuIP# 的高度结构化格码本或代数几何码本用于 LLM 极低比特向量量化
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-08-18T02:15:41.185Z'
 source_backends:
   arxiv:
     papers_table: arxiv_papers

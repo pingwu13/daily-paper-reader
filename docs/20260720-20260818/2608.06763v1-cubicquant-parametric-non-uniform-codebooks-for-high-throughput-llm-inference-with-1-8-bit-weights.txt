@@ -1,0 +1,1971 @@
+CubicQuant: Parametric Non-Uniform Codebooks for
+High-Throughput LLM Inference with 1–8-Bit Weights
+Xuetian “Elliot” Gao
+gxtcch@outlook.com
+Technical Report · August 2026
+Abstract
+Weight quantization for large-language-model inference must reconcile two competing goals:
+reconstruction levels should adapt to the strongly varying local statistics of model weights, yet their
+representation should remain compact and regular enough for direct GPU execution. Uniform integers
+favor regularity but constrain every group to a linear grid. Low-bit floating-point formats redistribute
+levels through a fixed exponent–mantissa structure, whereas learned codebooks gain flexibility at the
+cost of less regular decoding and additional metadata.
+We introduce CubicQuant, a parametric non-uniform scalar format that preserves a dense integer
+code stream while adapting its reconstruction levels independently within each weight group. A
+monotonic cubic curve, specified by two shape parameters and one scale, maps uniformly spaced
+magnitude codes to non-uniform levels. The family spans 1–8-bit weight payloads, contains symmetric
+uniform integer quantization as an exact special case, and has effective width B +64/G bits per weight
+for payload width B and group size G. We derive its population distortion under Uniform, Gaussian,
+and Laplace distributions, formulate both continuous and Dynamic-A8-carrier-aware fitting objectives,
+and describe direct packed-weight GPU execution with model-dtype or dynamically quantized INT8
+activations.
+In a finite-group G128 experiment with 15,360 samples per distribution, W4 CubicQuant reduced
+reconstruction RMSE relative to optimally clipped four-bit uniform integer quantization by 3.90%
+on Uniform, 13.49% on Gaussian, and 28.14% on Laplace samples. Relative to the best enumerated
+four-bit finite floating-point format, the reductions were 3.90%, 9.44%, and 6.27%. Preliminary
+H200 kernel measurements further reveal a workload-dependent crossover: model-dtype execution is
+faster for narrow GEMV, while Dynamic A8 becomes favorable as row count grows. Together, the
+results establish the representational promise and executable character of the format, while leaving
+downstream model quality and cross-device end-to-end performance as open evaluation questions.
+1
+Introduction
+Autoregressive inference repeatedly streams large weight matrices through GPU memory. Reducing their
+stored width directly relieves capacity and bandwidth pressure, particularly in decode-like regimes where
+weight reuse across tokens is limited. At low precision, however, storage width alone is not sufficient: the
+placement of the few available reconstruction levels determines whether a format preserves the mass near
+zero, the tails, or neither. A useful format must therefore balance statistical adaptability against the
+regularity required by high-throughput matrix kernels.
+The established scalar choices occupy distinct points on this trade-off. Uniform integers offer dense
+packing and simple arithmetic, but every group is restricted to an affine level grid. Floating-point formats
+devote bits to a fixed exponent–mantissa hierarchy and thereby favor a predetermined dynamic range.
+Free or learned codebooks can adapt all levels, yet their lookup and metadata structure is less naturally
+aligned with conventional GPU dot-product paths. Vector and additive codebooks enlarge the design
+space further, but also change the decoding problem from scalar reconstruction to structured lookup.
+CubicQuant occupies the middle ground between a fixed grid and a free codebook. It retains scalar integer
+codes and a regular packed bitstream, but makes the represented level positions parametric. Within
+each group, a normalized monotonic cubic maps uniformly spaced magnitude indices to non-uniform
+reconstruction levels. Two shape coefficients control the distribution of interior levels and a scale fixes the
+1
+arXiv:2608.06763v1  [cs.LG]  7 Aug 2026
+
+
+endpoint. The resulting codebook is adaptive, yet sufficiently structured to be regenerated from compact
+metadata inside the consuming GPU tile.
+Four requirements shape the format:
+1. Compactness. Weight codes remain densely packed from one to eight bits, and metadata cost is
+explicit rather than hidden in a model-level average.
+2. A stable numerical contract. Zero and both signed endpoints are exact; the scale is persisted and
+applied in FP32; the codebook is monotonic.
+3. Estimator independence. The representation does not prescribe how its codes and parameters are
+estimated; data-free, activation-aware, and second-order objectives can share the same format.
+4. Direct GPU execution. Cubic weights can be consumed directly by GPU kernels with either
+BF16/FP16 activations or dynamically quantized INT8 activations. The packed weights are recon-
+structed within each compute tile rather than materialized as a full-precision tensor, while the kernel
+strategy may vary with tensor shape and GPU architecture without changing the numerical format.
+This report develops that design through five contributions:
+• a symmetric, groupwise, two-parameter family of scalar non-uniform codebooks that contains uniform
+signed integer quantization as an exact special case;
+• a packed checkpoint format spanning one- to eight-bit weights, with FP32 scaling and a closed-form
+storage overhead;
+• a groupwise reference fitting procedure and a Dynamic-A8-carrier-aware objective, both separable from
+richer data-driven error estimators;
+• GPU execution paths for model-dtype and Dynamic-A8 activations, with device- and tensor-shape-aware
+calibration; and
+• analytical memory and operation models together with preliminary numerical and Hopper kernel
+evidence that delimit the present claims.
+CubicQuant is developed within the QuantTrio open-source project. Its reference implementation uses
+vLLM as a systems substrate, while the contribution studied here is confined to the weight representation,
+fitting objectives, packed operators, and their evaluation. Scheduler, attention, and memory-management
+behavior are not attributed to the format [24].
+The remainder of the report follows the format from definition to evidence. Section 2 specifies the code
+space, level function, and metadata. Section 3 derives population distortion and connects it to finite-group
+behavior. Section 4 formulates offline fitting, including the deterministic Dynamic-A8 carrier projection.
+Section 5 describes packed GPU realization, and Section 6 separates analytical properties from the
+presently available numerical and kernel evidence. Sections 7–9 position the work, state its limitations,
+and conclude.
+2
+CubicQuant representation
+Throughout this report, WbAa denotes a b-bit weight payload and an a-bit activation precision; W4A8
+therefore means four-bit weights with eight-bit activations. After this definition, W1–W8 is used as a
+range notation for the eight supported weight payload widths, not as the name of a single format.
+2.1
+Signed codes
+Let B be the payload width. For B > 1, define
+M = 2B−1 −1,
+k ∈{−M, . . . , 0, . . . , M}.
+(1)
+The signed code range has 2B −1 valid values. The remaining two’s-complement bit pattern, −2B−1, is
+reserved and decodes deterministically to zero. This choice gives an exact zero while preserving symmetric
+positive and negative endpoints. W1 is a separate binary case with codes in {−1, +1} and no zero code.
+Packed codes are stored as a continuous bitstream in row-major logical order. At widths that do not
+divide eight, such as W3, W5, W6, and W7, an individual code may span two adjacent bytes. The format
+2
+
+
+therefore specifies both cross-byte decoding and the treatment of unused bits at the end of each logical
+row.
+2.2
+Parametric level function
+For B > 1, reconstruction is defined by
+tk = |k|
+M ,
+c = 1 −a −b,
+q(t) = t [a + t (b + ct)] ,
+bw(k) = sign(k) s q(tk).
+(2)
+The reconstruction combines a stored integer code with group-local scale and shape parameters. The
+notation and the role of each quantity are summarized below.
+Symbol
+Definition
+B
+Weight payload width in bits. Equation (2) applies to B ∈{2, . . . , 8}; W1 is the binary case
+defined separately above.
+k
+Signed integer code stored for one weight, with k ∈{−M, . . . , M}.
+M
+Largest positive magnitude code, M = 2B−1 −1.
+tk
+Normalized code magnitude, |k|/M. Valid codes sample {0, 1/M, . . . , 1}.
+s
+Positive group scale. Codes k = +M and k = −M reconstruct to +s and −s, respectively.
+a
+Stored dimensionless shape coefficient and initial slope, a = q′(0).
+b
+Stored dimensionless shape coefficient and half the initial curvature, b = q′′(0)/2.
+c
+Derived cubic coefficient, 1 −a −b; it is not stored.
+q(t)
+Continuous normalized-magnitude map from [0, 1] to [0, 1]. Actual reconstruction uses only
+the discrete coordinates tk.
+bw(k)
+Signed reconstructed value represented by code k.
+The factor t gives q(0) = 0, while c = 1 −a −b gives q(1) = 1. Thus zero and both group endpoints are
+exact by construction. The two stored shape coefficients jointly redistribute the interior reconstruction
+levels. Candidate shape parameters must also satisfy
+q′(t) = a + 2bt + 3(1 −a −b)t2 > 0,
+t ∈[0, 1].
+(3)
+which prevents level inversions. Strict monotonicity can be checked cheaply because the derivative is
+quadratic.
+Uniform symmetric integer quantization is not merely a baseline adjacent to the format. It is a point
+inside the family:
+a = 1,
+b = 0,
+c = 0
+=⇒
+q(t) = t.
+(4)
+Including this point in every fitting search ensures that, before metadata rounding, a Cubic candidate
+need not be worse than the corresponding optimally clipped uniform-integer candidate under the same
+objective.
+Figure 1 illustrates how the two shape coefficients redistribute levels without changing either endpoint.
+Curves below the linear grid assign smaller reconstructed magnitudes to a given interior code index,
+thereby concentrating more discrete levels near zero while preserving the group scale at t = 1.
+2.3
+Metadata and effective width
+Let a Linear weight matrix have logical shape N × K. CubicQuant uses a [1, G] group shape: each output
+row is divided independently into contiguous groups of G input-channel weights. Group boundaries are
+3
+
+
+0
+0.1
+0.2
+0.3
+0.4
+0.5
+0.6
+0.7
+0.8
+0.9
+1
+0
+0.2
+0.4
+0.6
+0.8
+1
+t
+q(t)
+a = 1.0, b = 0.0 (INT)
+a = 0.8, b = −0.4
+a = 0.5, b = −0.3
+Figure 1: Illustrative members of the normalized Cubic level family. All curves satisfy q(0) = 0 and q(1) = 1; the
+shape parameters alter only the interior level placement.
+identical across rows, but the fitted metadata is not shared. The three metadata tensors therefore have
+logical shape N × (K/G) when K is divisible by G.
+Each group stores GB payload bits, one FP32 scale s, and two FP16 shape coefficients a and b.
+The metadata is therefore eight bytes per group. Ignoring row-tail padding and container metadata, its
+contribution is
+N(K/G) 64
+NK
+= 64
+G
+bits per weight,
+(5)
+and the effective stored width is
+Beff = B + 64
+G
+bits per weight.
+(6)
+The following comparison places this layout beside two representative weight scaling schemes. It describes
+both metadata geometry and effective stored width, not a universal rule for all integer or floating-point
+formats.
+Scheme
+Payload
+Scale region
+Metadata per region
+Effective width ↓
+Symmetric groupwise INT
+B
+[1, G]
+one FP16/BF16 scale
+B + 16/G
+CubicQuant
+B
+[1, G]
+one FP32 scale and two
+FP16 shape values
+B + 64/G
+2-D block-scaled FP8
+8
+[G, G]
+one FP32 scale
+8 + 32/G2
+The [1, G] integer layout is the common groupwise weight-only case; asymmetric variants additionally
+store a zero point. The FP8 row represents two-dimensional [G, G] weight scaling; activation scaling may
+instead use [1, G] tiles. Its smaller scale overhead is not a like-for-like representation comparison: each
+FP8 payload already carries exponent and mantissa fields, whereas INT and Cubic payloads rely more
+directly on group-local metadata.
+At the same value of G, the effective widths are:
+G
+Symmetric INT, [1, G]
+↓
+CubicQuant, [1, G] ↓
+FP8, [G, G] ↓
+128
+B + 0.12500
+B + 0.500
+8 + 0.001953
+256
+B + 0.06250
+B + 0.250
+8 + 0.000488
+512
+B + 0.03125
+B + 0.125
+8 + 0.000122
+Larger groups amortize metadata and codebook-generation work, but provide one curve for a wider region
+of the tensor. Whether the additional shape freedom is enough to compensate for that coarser granularity
+is an empirical question; it is tested rather than assumed.
+The shape parameters use FP16, whereas the scale remains FP32. This asymmetry keeps the dominant
+4
+
+
+magnitude in higher precision while allowing the two dimensionless shape coefficients to contribute only
+four metadata bytes per group.
+3
+Quantization distortion under reference distributions
+This section gives a population reference for the finite-group experiment in Section 3.6. Let X be a
+zero-mean, unit-variance symmetric random variable with density f(x), and let Q be a scalar quantizer.
+Its mean-squared distortion is
+D(Q) = E
+
+(X −Q(X))2
+.
+(7)
+Throughout this section, Q reconstructs the continuous Cubic levels sq(tk). Accordingly, DC and every
+numerical value reported below are pre-carrier population references. They characterize the representation
+itself before the additional INT8 grid projection used by Dynamic-A8 execution. Section 4.3 defines the
+joint continuous/carrier objective adopted for dual-path representation fitting; its numerical optimum is a
+different quantity and must not be inferred from the tables in this section.
+We first derive an exact expression in which the Cubic shape parameters are explicit. We then bound the
+best Cubic quantizer between a free Lloyd–Max codebook and the uniform-integer member of the Cubic
+family.
+3.1
+Exact distortion and explicit shape dependence
+For B > 1, write M = 2B−1 −1, ti = i/M, and define three fixed basis terms
+ri = t3
+i ,
+ui = ti −t3
+i ,
+vi = t2
+i −t3
+i .
+(8)
+Substituting c = 1 −a −b into the level function and collecting the coefficients of a and b gives
+q(t) = at + bt2 + (1 −a −b)t3 = t3 + a(t −t3) + b(t2 −t3).
+(9)
+Evaluating this identity at ti makes each stored level affine in the two shape parameters:
+yi = s q(ti) = s (ri + aui + bvi) .
+(10)
+The nearest-neighbor boundary between adjacent levels is therefore
+hi = s
+2 [ri + ri+1 + a(ui + ui+1) + b(vi + vi+1)] .
+(11)
+Equations (10) and (11) show precisely where a and b enter the distortion: they move both the recon-
+struction values and their Voronoi boundaries. With h−1 = 0 and hM = ∞, symmetry gives
+D(s, a, b) = 2
+M
+X
+i=0
+Z hi
+hi−1
+(x −yi)2f(x) dx.
+(12)
+For each quantization cell, define its order-r cell moment
+µr(ℓ, u) =
+Z u
+ℓ
+xrf(x) dx,
+r ∈{0, 1, 2}.
+(13)
+Expanding the square turns each cell integral into
+µ2(hi−1, hi) −2yiµ1(hi−1, hi) + y2
+i µ0(hi−1, hi).
+(14)
+5
+
+
+For compactness, put Ri(a, b) = ri + aui + bvi. Substituting yi = sRi and hi = s(Ri + Ri+1)/2 into the
+preceding equation gives the complete three-parameter objective
+DB(s, a, b) = 2
+M
+X
+i=0
+
+µ2 −2sRi(a, b)µ1 + s2Ri(a, b)2µ0
+
+(hi−1,hi)
+(15)
+where [µr](hi−1,hi) means that every cell moment is evaluated on that cell’s two boundaries. Thus a and b
+are present both explicitly in Ri and implicitly through the limits hi−1, hi; treating the boundaries as
+fixed while changing the curve would give the wrong distortion.
+For the unit-variance reference distributions, the required positive-half moments are closed form. Let
+A =
+√
+3, β = 1/
+√
+2, Ex = exp(−x/β), and let ϕ and Φ denote the standard-normal PDF and CDF. For
+Uniform, replace [ℓ, u] by its intersection with the support [0, A]. Then
+Uniform:
+µr(ℓ, u) = ur+1 −ℓr+1
+2A(r + 1) ,
+(16)
+Gaussian:
+µ0 = Φ(u) −Φ(ℓ),
+(17)
+µ1 = ϕ(ℓ) −ϕ(u),
+(18)
+µ2 = µ0 + ℓϕ(ℓ) −uϕ(u),
+(19)
+Laplace:
+µ0 = 1
+2(Eℓ−Eu),
+(20)
+µ1 = 1
+2[(ℓ+ β)Eℓ−(u + β)Eu],
+(21)
+µ2 = 1
+2[(ℓ2 + 2βℓ+ 2β2)Eℓ−(u2 + 2βu + 2β2)Eu],
+(22)
+For the unbounded final cell, the upper-endpoint terms are evaluated in the limit u →∞and vanish.
+Substitution into (14) then gives an exact evaluation of D(s, a, b).
+These expressions follow directly from elementary antiderivatives. Uniform uses
+R
+xr dx = xr+1/(r + 1).
+For Gaussian, ϕ′(x) = −xϕ(x) gives
+Z
+xϕ(x) dx = −ϕ(x),
+Z
+x2ϕ(x) dx = Φ(x) −xϕ(x).
+(23)
+For the positive half of the unit-variance Laplace density, f(x) = Ex/(2β); integrating xrEx for r = 0, 1, 2
+produces the three endpoint differences in (22). No distribution tail is discarded: the last cell is evaluated
+with upper limit u →∞.
+The monotonicity condition also gives an explicit feasible domain for the shape search. Put c = 1 −a −b.
+Since q′(t) = a + 2bt + 3ct2, its minimum over [0, 1] is attained at an endpoint or, when it lies inside the
+interval, at t∗= −b/(3c). The endpoint values are q′(0) = a and q′(1) = 3 −2a −b. If c ≤0, the quadratic
+is concave and its minimum on a closed interval is an endpoint. If c > 0, an interior minimum exists
+exactly when 0 < t∗< 1, equivalently −3c < b < 0, and substitution gives q′(t∗) = a −b2/(3c). Hence
+m(a, b) =
+
+
+
+min
+
+a, 3 −2a −b, a −b2
+3c
+
+,
+c > 0 and −3c < b < 0,
+min{a, 3 −2a −b} ,
+otherwise,
+(24)
+The admissible closure is A = {(a, b) : m(a, b) ≥0}. Together, Equations (10), (14), and (24) reduce
+population fitting to a constrained optimization over only three variables: the scale s and the two stored
+shape parameters (a, b). The next subsection compares the optimum of this constrained family with free
+and uniform codebooks.
+3.2
+Cubic lower and upper bounds
+Let YB contain every ordered, symmetric scalar codebook with 2B −1 reconstruction levels and an exact
+zero. Let CB contain only the codebooks generated by (10) with s > 0 and (a, b) ∈A, and let IB be the
+6
+
+
+scaled uniform integer codebooks obtained at (a, b) = (1, 0). These are nested:
+IB ⊆CB ⊆YB.
+(25)
+The first inclusion follows by direct substitution: at (a, b) = (1, 0), Equation (9) reduces to q(t) = t, so
+every scaled uniform-integer level set {0, s/M, 2s/M, . . . , s} is a member of CB. The second inclusion
+follows from m(a, b) ≥0: the Cubic levels are ordered, symmetric, contain zero, and number 2B −1, which
+are precisely the defining requirements of YB; YB simply removes the cubic-curve restriction.
+For any objective D and feasible sets S1 ⊆S2,
+inf
+z∈S2 D(z) ≤inf
+z∈S1 D(z),
+(26)
+because the minimization on the left may choose every candidate available on the right and possibly more.
+Applying (26) first to CB ⊆YB and then to IB ⊆CB proves
+DLM(B)
+|
+{z
+}
+min
+Y ∈YB D(Y )
+≤
+DC(B)
+| {z }
+min
+s>0,(a,b)∈A D(s, a, b)
+≤
+DINT(B)
+|
+{z
+}
+min
+s>0 D(s, 1, 0)
+.
+(27)
+A finite floating-point family does not extend this chain.
+For an EeMm format with one sign bit,
+e + m = B −1, let all exponent/mantissa patterns denote finite values. With exponent field E, mantissa
+field J, and bias γe = 2e−1 −1, its nonnegative raw levels are
+ge,m(E, J) =
+(
+J 2−m 21−γe,
+E = 0,
+(1 + J 2−m) 2E−γe,
+E > 0.
+(28)
+Sort the distinct nonnegative values and normalize by the largest one: 0 = z0 < z1 < · · · < zM = 1, where
+M = 2B−1 −1. With an external scale s, the positive reconstruction levels and their nearest-neighbor
+boundaries are
+yFP
+i
+= szi,
+κi(s) = s
+2(zi + zi+1),
+κ−1 = 0,
+κM = ∞.
+(29)
+Substituting these quantities into the same cell-moment expansion used for Cubic gives the complete FP
+objective
+De,m(s) = 2
+M
+X
+i=0
+
+µ2(κi−1, κi) −2sziµ1(κi−1, κi) + s2z2
+i µ0(κi−1, κi)
+
+.
+(30)
+The best finite-FP reference at width B is therefore
+DFP(B) =
+min
+e+m=B−1 min
+s>0 De,m(s).
+(31)
+It obeys the separate bound DLM(B) ≤DFP(B) because every finite-FP codebook is also a member of
+the unrestricted set YB. The finite-FP and Cubic families do not contain one another, so there is no
+distribution-free ordering between them; their comparison must be evaluated directly.
+It remains to characterize the free-codebook lower bound. For fixed adjacent levels yi < yi+1, nearest-
+neighbor assignment places their boundary where their squared errors are equal:
+(hi −yi)2 = (hi −yi+1)2
+=⇒
+hi = yi + yi+1
+2
+.
+(32)
+For fixed boundaries, differentiating the distortion of cell i with respect to its reconstruction value gives
+7
+
+
+∂
+∂yi
+Z hi
+hi−1
+(x −yi)2f(x) dx = 2 [yiµ0(hi−1, hi) −µ1(hi−1, hi)] .
+(33)
+Setting this derivative to zero yields the conditional mean. Alternating the two necessary conditions gives
+the Lloyd–Max fixed point [1, 2]:
+hi = yi + yi+1
+2
+,
+(34)
+yi = E[X | hi−1 ≤X < hi].
+(35)
+The resulting codebook belongs to the largest feasible set YB; its distortion is therefore the lower term in
+(27).
+Thus DC −DLM measures the restriction imposed by the two-parameter cubic curve, while DINT −DC
+measures the benefit of those two parameters over a linear grid. We report the fraction of the available
+gap closed by Cubic as
+ηB = DINT −DC
+DINT −DLM
+.
+(36)
+Equation (27) ensures 0 ≤ηB ≤1 whenever the denominator is nonzero. This is a bound on the optimized
+Cubic family, not a claim that every arbitrary (a, b) choice is better than INT.
+3.3
+Population solutions
+For X ∼Uniform[−
+√
+3,
+√
+3], the optimal odd L = 2B −1 level codebook has equal-width cells of width
+∆= 2
+√
+3/L. The outer positive reconstruction point is the center of the last cell, s∗=
+√
+3 −∆/2 =
+√
+3(1 −1/L). Because the density is 1/(2
+√
+3), translating every cell to [−∆/2, ∆/2] gives
+D∗=
+L
+2
+√
+3
+Z ∆/2
+−∆/2
+x2 dx = L∆3
+24
+√
+3 = 1
+L2 .
+(37)
+The cell centers are uniformly spaced, so the corresponding Cubic parameters are a∗= 1, b∗= 0. Collecting
+the result,
+s∗=
+√
+3
+
+1 −1
+L
+
+,
+a∗= 1,
+b∗= 0,
+D∗= 1
+L2 .
+(38)
+Therefore all three terms in (27) are equal for Uniform at W2–W8. Cubic cannot improve the population
+optimum there; any finite-group improvement comes from adapting to sample fluctuations within individual
+groups.
+W3 provides a second result that follows from the parameter count rather than from a numerical coincidence.
+Here M = 3 and a free symmetric codebook has three positive levels 0 < y1 < y2 < y3. Set p1 = y1/y3,
+p2 = y2/y3, and s = y3. Evaluating (9) at t = 1/3 and t = 2/3 gives
+27p1 = 1 + 8a + 2b,
+27p2 = 8 + 10a + 4b.
+(39)
+Solving this two-by-two system yields
+a = 1 + 9p1 −9
+2p2,
+b = 18p2 −45
+2 p1 −9
+2.
+(40)
+Thus every W3 free-codebook solution whose recovered (a, b) lies in A is represented exactly by Cubic.
+The Gaussian and Laplace Lloyd–Max solutions below satisfy this feasibility check, so equality at W3 is
+explained by (40); it is not inferred from rounded table entries.
+8
+
+
+For Gaussian and Laplace, we evaluated the cell moments in (22), solved Lloyd–Max to convergence,
+minimized the Cubic objective over s and the feasible (a, b) domain, independently optimized the INT
+scale, and enumerated all finite-FP splits in (31). All distributions have unit variance; values are MSE.
+Concretely, every candidate split uses levels from (28), evaluates (30), minimizes its single scale variable,
+and competes in the outer minimum of (31). The best finite-FP reference table reports that outer
+minimum and its winning split.
+The finite-FP comparison uses a different denominator from (36). Its final column is the direct relative
+MSE reduction
+ρFP
+B = DFP −DC
+DFP
+.
+(41)
+Gaussian
+B
+a∗
+b∗
+DLM ↓
+DC ↓
+DINT ↓
+INT–LM gap
+recovered ↑
+2
+1.0000
+0.0000
+0.190174
+0.190174
+0.190174
+–
+3
+0.8517
+-0.1852
+0.0440004
+0.0440004
+0.0468600
+100.0%
+4
+0.7932
+-0.3847
+0.0107372
+0.0108210
+0.0128894
+96.1%
+5
+0.7510
+-0.5253
+0.00266411
+0.00275245
+0.00369322
+91.4%
+6
+0.7192
+-0.6213
+0.000664545
+0.000712873
+0.00106929
+88.1%
+7
+0.6933
+-0.6877
+0.000166043
+0.000186029
+0.000308622
+86.0%
+8
+0.6711
+-0.7346
+0.0000415075
+0.0000486179
+0.0000883080
+84.8%
+Laplace
+B
+a∗
+b∗
+DLM ↓
+DC ↓
+DINT ↓
+INT–LM gap
+recovered ↑
+2
+1.0000
+0.0000
+0.264241
+0.264241
+0.264241
+–
+3
+0.6216
+-0.1495
+0.0680875
+0.0680875
+0.0830865
+100.0%
+4
+0.5203
+-0.2936
+0.0172934
+0.0176090
+0.0273952
+96.9%
+5
+0.4603
+-0.3881
+0.00435851
+0.00464288
+0.00908513
+94.0%
+6
+0.4199
+-0.4519
+0.00109410
+0.00123904
+0.00297951
+92.3%
+7
+0.3892
+-0.4938
+0.000274090
+0.000331995
+0.000959943
+91.6%
+8
+0.3642
+-0.5208
+0.0000685935
+0.0000888644
+0.000303302
+91.4%
+Best finite-FP reference
+Distribution
+B
+Split
+DFP ↓
+DC ↓
+MSE reduction
+vs. FP ↑
+Gaussian
+2
+E1M0
+0.190174
+0.190174
+0.00%
+3
+E1M1
+0.0468600
+0.0440004
+6.10%
+4
+E2M1
+0.0126849
+0.0108210
+14.69%
+5
+E2M2
+0.00325600
+0.00275245
+15.47%
+6
+E2M3
+0.000829147
+0.000712873
+14.02%
+7
+E2M4
+0.000211523
+0.000186029
+12.05%
+8
+E2M5
+0.0000541207
+0.0000486179
+10.17%
+Laplace
+2
+E1M0
+0.264241
+0.264241
+0.00%
+3
+E2M0
+0.0706815
+0.0680875
+3.67%
+4
+E2M1
+0.0184910
+0.0176090
+4.77%
+5
+E2M2
+0.00501991
+0.00464288
+7.51%
+6
+E2M3
+0.00139751
+0.00123904
+11.34%
+7
+E2M4
+0.000396214
+0.000331995
+16.21%
+8
+E2M5
+0.000113607
+0.0000888644
+21.78%
+At W2 there is no interior positive level, so (a, b) is not identifiable; the table reports the canonical
+INT point. At W3, s, a, b provide exactly three degrees of freedom for the three positive levels, and the
+optimized Cubic codebook reaches the Lloyd–Max lower bound for both tested unbounded distributions.
+From W4 onward, DC > DLM exposes the cost of describing more than three positive levels with only
+s, a, b. Even so, Cubic closes 84.8–96.1% of the Gaussian gap and 91.4–96.9% of the Laplace gap over
+W4–W8. The decreasing a∗and increasingly negative b∗move interior levels toward the high-density
+9
+
+
+center while preserving a more distant endpoint for the tails.
+For Uniform, the finite-FP split E1M(B −2) is the same linear grid as INT and therefore also attains
+1/(2B −1)2. For Gaussian and Laplace, Cubic is better than the best enumerated finite-FP split at every
+width above W2 in this population comparison, but this is a numerical result for the stated distributions
+rather than a consequence of set inclusion.
+3.4
+Numerical verification of analytic distortion
+An independent Monte Carlo estimate checks the analytic distortion in the preceding subsection. For
+each distribution, 2,000,000 samples are assigned to their nearest reconstruction levels and their empirical
+squared error is compared with the closed-form cell-moment result. Across all 21 distribution–bit-width
+combinations, the largest discrepancy is 2.10 estimated standard errors. Here Danalytic is the optimized
+Cubic population value DC and SE is the estimated standard error of the Monte Carlo mean.
+Uniform
+B
+Danalytic ↓
+DMC ↓
+MC SE ↓
+(Danalytic −DMC)/SE →0
+Relative difference ↓
+2
+0.111111111
+0.111176809
+7.03×10−5
+-0.94
+0.059%
+3
+0.0204081633
+0.0204092026
+1.29×10−5
+-0.08
+0.005%
+4
+0.00444444444
+0.00444717327
+2.81×10−6
+-0.97
+0.061%
+5
+0.00104058273
+0.00104130287
+6.58×10−7
+-1.09
+0.069%
+6
+0.000251952633
+0.000252070370
+1.59×10−7
+-0.74
+0.047%
+7
+0.000062000124
+0.000062005266
+3.92×10−8
+-0.13
+0.008%
+8
+0.000015378701
+0.000015369324
+9.72×10−9
++0.96
+0.061%
+Gaussian
+B
+Danalytic ↓
+DMC ↓
+MC SE ↓
+(Danalytic −DMC)/SE →0
+Relative difference ↓
+2
+0.190174039
+0.190646342
+2.58×10−4
+-1.83
+0.248%
+3
+0.0440003825
+0.0441182339
+7.85×10−5
+-1.50
+0.268%
+4
+0.0108210079
+0.0108585225
+2.62×10−5
+-1.43
+0.347%
+5
+0.00275245089
+0.00276697900
+9.92×10−6
+-1.46
+0.528%
+6
+0.000712872730
+0.000719439447
+4.27×10−6
+-1.54
+0.921%
+7
+0.000186029096
+0.000189446766
+1.96×10−6
+-1.75
+1.837%
+8
+0.000048617883
+0.000049916906
+8.87×10−7
+-1.47
+2.672%
+Laplace
+B
+Danalytic ↓
+DMC ↓
+MC SE ↓
+(Danalytic −DMC)/SE →0
+Relative difference ↓
+2
+0.264241118
+0.265203848
+6.30×10−4
+-1.53
+0.364%
+3
+0.0680875037
+0.0684364227
+2.37×10−4
+-1.47
+0.512%
+4
+0.0176089626
+0.0177324582
+9.05×10−5
+-1.36
+0.701%
+5
+0.00464287524
+0.00467610756
+3.59×10−5
+-0.93
+0.716%
+6
+0.00123903759
+0.00123766787
+1.40×10−5
++0.10
+0.111%
+7
+0.000331995019
+0.000327824299
+4.92×10−6
++0.85
+1.256%
+8
+0.000088864369
+0.000086346622
+1.20×10−6
++2.10
+2.833%
+The larger relative percentages occur only where W8 MSE is very small and tail events dominate sampling
+variance; the standardized discrepancies remain within 2.10 standard errors.
+3.5
+From population optima to finite-group fitting
+The preceding results optimize one continuous-level quantizer for an entire reference distribution. A
+groupwise continuous fitter instead selects a separate scale and shape for every finite group of weights.
+These are different optimization problems, even when the weights in a group are independent samples
+from the same distribution.
+Let SG = (X1, . . . , XG) denote a group of G values, let θ = (s, a, b) collect the continuous Cubic parameters,
+and let ℓC(X, θ) include assignment to the nearest continuous level generated by θ. Define the empirical
+distortion of one group as
+10
+
+
+bDC
+G(θ; SG) = 1
+G
+G
+X
+j=1
+ℓC(Xj, θ),
+bθ(SG) ∈arg min
+θ
+bDC
+G(θ; SG).
+(42)
+The expected distortion after independently fitting every group is therefore
+RC
+G = ESG
+
+min
+θ
+bDC
+G(θ; SG)
+
+.
+(43)
+By contrast, Section 3.3 reports the population optimum
+D∗
+pop,C = min
+θ
+EX[ℓC(X, θ)].
+(44)
+If θ∗is a population minimizer, then for every observed group SG,
+min
+θ
+bDC
+G(θ; SG) ≤bDC
+G(θ∗; SG).
+(45)
+Taking expectations on both sides gives
+RC
+G ≤ESG[ bDC
+G(θ∗; SG)] = EX[ℓC(X, θ∗)] = D∗
+pop,C.
+(46)
+This inequality is an in-group reconstruction statement for static weights, not a claim about out-of-sample
+generalization. It says that a fitter allowed to adapt (s, a, b) to each realized group cannot have larger
+expected reconstruction error than a single population-wide parameter choice. Under the usual law-of-
+large-numbers and regularity conditions, the empirical objective approaches the population objective as G
+grows, so this finite-group adaptation advantage diminishes.
+This distinction resolves an otherwise apparent contradiction in the Uniform result. Section 3.3 shows that
+the linear INT grid is population optimal for a perfectly Uniform distribution. A finite group, however, is
+not exactly Uniform: its empirical histogram, extrema, and spacing fluctuate. Cubic can adapt its two
+shape parameters to those fluctuations and may obtain a small groupwise improvement even though it
+has no population-level advantage for Uniform data.
+Group size consequently controls two opposing effects. Smaller groups permit more local adaptation
+but require more scale and shape metadata per weight; larger groups amortize metadata and codebook-
+generation cost but force one curve to represent a broader region of the tensor. Real weight groups are
+also neither independent nor stationary, so the size of this tradeoff cannot be inferred from the reference
+distributions alone. Finite-G simulation and tensor-level experiments are therefore used to measure this
+finite-group effect, while the population analysis supplies the distribution-controlled reference point. The
+same empirical-versus-population argument applies when the loss is replaced consistently by the joint
+carrier-aware loss in Section 4.3, but the resulting optimum and decision cells are not the continuous
+quantities tabulated in this section.
+3.6
+Finite-group reconstruction experiment
+The population results above use one parameter set for an entire distribution. To measure the distinct
+finite-group setting of Section 3.5, we drew 15,360 zero-centered values from each reference distribution
+with seed 42 and divided them into groups of G = 128. Every group was fitted independently. Cubic used
+joint scale/shape fitting with optimized clipping; symmetric INT independently optimized its clipping
+scale; and the finite-FP reference enumerated every split e + m = B −1, optimized the scale of each
+candidate, and retained the lowest-error split.
+Because every candidate optimizes an external scale, the experiment is invariant to a common positive
+rescaling of the source values. The table therefore reports the scale-free quantity
+NRMSE =
+q
+N −1 PN
+j=1(xj −bxj)2
+σX
+,
+(47)
+11
+
+
+where N = 15,360 and each bxj is reconstructed with the parameters fitted to its own group. Lower
+is better; boldface marks the unique minimum in each row, while exact ties are left unbolded. The
+experiment records W2–W6 and W8; the absent W1 and W7 rows are not interpolated. As elsewhere in
+Section 3, these are continuous-level reconstructions before Dynamic-A8 carrier projection.
+Distribution
+B
+Cubic ↓
+Clipped INT ↓
+Finite FP ↓
+FP split
+Uniform
+2
+0.331403
+0.331403
+0.331403
+E1M0
+3
+0.139198
+0.141685
+0.141685
+E1M1
+4
+0.062979
+0.065536
+0.065536
+E1M2
+5
+0.029996
+0.031351
+0.031351
+E1M3
+6
+0.014636
+0.015359
+0.015359
+E1M4
+8
+0.003563
+0.003792
+0.003792
+E1M6
+Gaussian
+2
+0.434638
+0.434638
+0.434638
+E1M0
+3
+0.201392
+0.213533
+0.210783
+E2M0
+4
+0.092396
+0.106803
+0.102027
+E2M1
+5
+0.043095
+0.053124
+0.051308
+E2M2
+6
+0.020502
+0.026055
+0.025654
+E2M3
+8
+0.004920
+0.006408
+0.006358
+E2M5
+Laplace
+2
+0.513876
+0.513876
+0.513876
+E1M0
+3
+0.236439
+0.280624
+0.251182
+E2M0
+4
+0.106764
+0.148571
+0.113906
+E2M1
+5
+0.048854
+0.074182
+0.054661
+E2M2
+6
+0.023584
+0.036513
+0.026644
+E2M3
+8
+0.005614
+0.009004
+0.006547
+E2M5
+W2 has no movable interior positive level, so all three families coincide in this experiment. From W3
+upward, per-group shape adaptation consistently reduces reconstruction error. The improvement over
+clipped INT is modest for bounded Uniform samples and larger for Gaussian and Laplace samples. At W4,
+the Cubic NRMSE reductions are 3.90%, 13.49%, and 28.14%, respectively. Against the best finite-FP
+candidate, the corresponding reductions are 3.90%, 9.44%, and 6.27%.
+Unlike the population result, the small Uniform gain does not imply that a nonlinear grid is optimal for a
+Uniform law. It is the finite-sample adaptation effect derived in Section 3.5: each realized group departs
+slightly from the population distribution, and Cubic can fit those local fluctuations. The experiment
+therefore supplies a finite-G counterpart to the population tables, not evidence about CUDA throughput
+or model-level task quality. Since only G = 128 is measured here, it also does not determine the best
+group size.
+4
+Groupwise parameter fitting
+4.1
+Continuous reference objective
+The representation becomes a quantizer only after codes and group parameters have been selected. The
+reference estimator operates independently on each static weight group and minimizes original-domain
+squared reconstruction error over codes, scale, and admissible shape parameters:
+min
+s,a,b,{kj}
+X
+j
+
+wj −sign(kj)sq
+|kj|
+M
+2
+.
+(48)
+Here s is both the endpoint and the clipping threshold; it is not constrained to equal the largest magnitude
+in the group. Values beyond s saturate at the signed endpoint. For fixed levels, each value is assigned
+to its nearest reconstruction. The reference search traverses a deterministic set of monotonic (a, b)
+candidates, jointly refines scale and clipping, and always includes the uniform-integer point. The objective
+is reevaluated after mapping s, a, and b to their serialized precisions, so parameter rounding is part of the
+fitted representation rather than a post hoc perturbation.
+The fitting loss is MSE/SSE. Its aggregate, scale-free reporting form is
+12
+
+
+NRMSEC =
+sP
+j(wj −bwj)2
+P
+j w2
+j
+,
+(49)
+which is scale-free across tensors and bit widths. Taking the square root is a reporting transformation; it
+does not alter the candidate selected by MSE.
+This continuous objective is the finite-group counterpart of the population analysis in Section 3 and one
+component of the dual-path objective introduced in Section 4.3. It depends only on the weights themselves
+and therefore serves as a controlled reference estimator. That choice does not imply that every coordinate
+has equal functional importance; Section 4.2 separates the format from richer estimators that incorporate
+model sensitivity.
+4.2
+Compatibility with data-driven estimation
+The weight-only fitter is a reference estimator, not a restriction of the Cubic format. Let E = W −c
+W
+be the weight error of a linear operator and x its input. Unweighted weight MSE minimizes ∥E∥2
+F . If
+representative activations are available, the expected output error is instead
+E∥Ex∥2
+2 = tr(EΣxE⊤),
+Σx = E[xx⊤].
+(50)
+A diagonal covariance becomes a coordinate-weighted reconstruction objective. Block-diagonal, low-rank,
+or full covariance models retain progressively more cross-coordinate structure at progressively greater
+fitting cost. Approximate Hessians and other sensitivity estimates can play the same role.
+Changing the estimator changes which codes and (s, a, b) are chosen; it does not change the packed
+bitstream, metadata schema, level function, or runtime kernel. CubicQuant can therefore be combined
+with data-driven methods such as second-order or activation-aware fitting. The experiments in this report
+evaluate only the data-free reference path and make no claim that it dominates such methods.
+4.3
+Dynamic-A8 carrier-aware fitting
+The model-dtype execution path can reconstruct the continuous Cubic value. The Dynamic-A8 path
+instead maps the normalized Cubic level to a signed INT8 carrier:
+r(k) = round
+
+127 sign(k)q
+|k|
+M
+
+.
+(51)
+The deployed normalized level is consequently
+eq(t) = round(127q(t))
+127
+.
+(52)
+For a weight wj assigned to code kj, define the two reconstructions
+bwC
+j = sign(kj)sq(tkj),
+bwA8
+j
+=
+s
+127r(kj) = sign(kj)seq(tkj).
+(53)
+The first is consumed by the model-dtype path; the second is the effective weight represented by the
+signed INT8 carrier in the Dynamic-A8 path. Their groupwise squared errors are
+LC =
+X
+j
+(wj −bwC
+j )2,
+LA8 =
+X
+j
+(wj −bwA8
+j )2.
+(54)
+The dual-path fitting policy studied here gives the two execution paths equal weight:
+Ljoint = 1
+2LC + 1
+2LA8.
+(55)
+13
+
+
+This objective is distinct from the continuous distortion analyzed in Section 3. To state the corresponding
+population quantity, put zi = q(ti) and ezi = eq(ti). On the positive half-line, the joint distortion is
+Djoint
+B
+(s, a, b) = 2
+M
+X
+i=0
+Z hjoint
+i
+hjoint
+i−1
+(x −szi)2 + (x −sezi)2
+2
+f(x) dx.
+(56)
+Equating the joint costs of adjacent codes gives their decision boundary
+hjoint
+i
+= s
+2
+(z2
+i+1 + ez2
+i+1) −(z2
+i + ez2
+i )
+(zi+1 + ezi+1) −(zi + ezi) .
+(57)
+Equation 56 can be evaluated with the same cell moments as Equation 14, but its boundaries are not
+the midpoints in Equation 11. Moreover, the rounding operation makes it piecewise non-smooth in (a, b).
+The continuous population values and bounds in Section 3 therefore remain representation references;
+they are not numerical evaluations of the joint fitting policy.
+Thus the carrier correction is not an additional diagnostic applied after a continuous-only fit: it participates
+in the selection of codes, scale, and shape parameters. The implementation minimizes LC + LA8, omitting
+the common factor 1/2 because it cannot change the minimizer. For reporting, it restores the mean and
+emits
+NRMSEjoint =
+s
+LC + LA8
+2 P
+j w2
+j
+(58)
+together with the A8-only diagnostic
+q
+LA8/ P
+j w2
+j.
+The joint objective is used throughout the deterministic candidate search. For fixed codes and shape
+parameters, let uj = |wj| and use zj = q(tkj), ezj = eq(tkj). The shared scale that minimizes Equation 55
+has the closed form
+s∗=
+P
+j uj(zj + ezj)
+P
+j(z2
+j + ez2
+j ) .
+(59)
+Conversely, for fixed (s, a, b), each code is assigned by minimizing
+(uj −sq(tk))2 + (uj −seq(tk))2
+(60)
+over the admissible magnitudes. Assignment and scale updates alternate while the estimator traverses the
+same monotonic shape and soft-clipping candidates as the continuous fitter. After converting a and b
+to FP16 and retaining s in FP32, the final code assignment is repeated under the same joint objective.
+The evaluated object is therefore the serialized representation rather than an unrounded optimization
+intermediate.
+Equal weighting is a representation-design choice, not an assumption about the frequency with which either
+execution path is selected, and no averaging occurs during inference. A model-dtype kernel reconstructs
+bwC, whereas a Dynamic-A8 kernel uses the carrier represented by r(k). For W1 and W2 the available
+normalized levels already lie exactly on the INT8 carrier grid, so LC = LA8 and the correction has no
+effect.
+Optimizing only the continuous curve at W3–W8 can choose parameters that look favorable before the
+second grid projection but lose that advantage in the actual A8 kernel. The joint correction remains
+data-free because it models deterministic runtime arithmetic rather than activation statistics. It changes
+neither code packing nor stored metadata and adds no online fitting work; the same checkpoint can
+therefore serve both model-dtype and Dynamic-A8 execution. In particular, the correction covers only the
+weight-side projection onto the INT8 carrier grid. It does not model dynamic activation quantization or
+its propagation into operator outputs; doing so requires an activation distribution or sensitivity estimator
+of the kind discussed in Section 4.2.
+14
+
+
+5
+GPU realization
+5.1
+Fused decode-and-compute principle
+Cubic codes are not native Tensor Core operands. Expanding an entire matrix to BF16 or INT8 before
+multiplication would write and reread a conventional weight tensor, eliminating much of the bandwidth
+benefit of the packed representation. CubicQuant therefore couples reconstruction to consumption: each
+output tile loads only its packed payload and group metadata, generates a temporary model-dtype or
+INT8 operand, and immediately consumes that operand in the dot-product main loop. The expanded tile
+remains local to the kernel.
+Two complementary kernel families instantiate this principle. Generic kernels cover W1–W8 for model-dtype
+and Dynamic-A8 activations, with separate narrow-row GEMV and two-dimensional dense organizations.
+Native CUDA kernels add packed-word extraction and DP4A-style signed INT8 dot products for selected
+Dynamic-A8 regimes. These families are alternative realizations of the same operator semantics; the
+numerical format does not depend on which realization is selected.
+5.2
+Packed extraction and level reconstruction
+Let βp denote packed byte p. For logical coordinate j, define pj = ⌊jB/8⌋and δj = (jB) mod 8. The
+unsigned payload is recovered by
+uj =
+
+(βpj ≫δj) | (βpj+1 ≪(8 −δj))
+
+& (2B −1),
+(61)
+where the second-byte contribution is omitted when the field does not cross a byte boundary. W1 maps
+its single payload bit directly to {−1, +1}; wider codes are sign-extended, and the reserved most-negative
+pattern is mapped to zero as required by the format. Because GB is byte aligned, a weight group does
+not share a partial byte with the next group’s metadata domain.
+The group index is g = ⌊j/G⌋. A tile loads sg and, where needed, (ag, bg) once for the output channels it
+covers. Three reconstruction strategies are used:
+1. W1 and W2 admit direct algebraic mappings and need no curve table.
+2. A nonnegative Cubic table contains 2B−1 entries, including zero; its signed values are obtained by
+applying the decoded sign.
+3. Direct evaluation uses Horner-form fused multiply-adds,
+q(t) = t fma(t, fma(t, c, b), a) .
+(62)
+For some routed W3/A8 kernels, the two interior positive carrier levels are precomputed from (a, b)
+after loading and reused as compact INT8 metadata. For W4–W8, eligible CUDA kernels construct a
+group-local carrier table in shared memory, while generic kernels may construct levels through static
+evaluation or evaluate the curve directly. A simple arithmetic comparison is O(2B−1) work to construct
+the positive table versus O(G) curve evaluations to decode a group. This is only a cost-model term, not a
+dispatch law: packed-load pattern, table reuse, register pressure, shared-memory capacity, output shape,
+and GPU architecture determine the measured crossover.
+5.3
+Model-dtype execution
+The model-dtype path accepts FP16 or BF16 activations and implements the continuous reconstruction
+in Equation 2. Its dense and narrow-row tactics have different, explicit rounding points. In a dense
+Triton tile, sgq(tk) is formed using FP32 metadata arithmetic, converted to the activation dtype, and
+supplied with the activation tile to tl.dot; the dot accumulator is FP32. In the narrow-row GEMV path,
+activations and reconstructed normalized weights are multiplied in FP32 and sg is applied to the group
+reduction in FP32. Both store the requested model dtype, but they need not be bitwise identical because
+the dense path rounds the temporary weight operand before the dot.
+The continuous formula is therefore the semantic reference for this execution mode. No individual
+model-dtype kernel is treated as an oracle for Dynamic A8; both modes are compared independently with
+15
+
+
+the mathematical reconstruction defined by their respective equations.
+5.4
+Dynamic-A8 execution
+For an activation row x, the canonical path computes
+¯x = max
+
+max
+j
+|xj|, ϵ
+
+,
+dx =
+¯x
+127,
+(63)
+and
+x8,j = clip(roundaway(xj/dx), −127, 127) .
+(64)
+Here roundaway denotes nearest-integer rounding with halfway cases away from zero, matching the
+activation-quantization semantics. This is distinct from the round-to-nearest-even operation used to
+construct the weight carrier r(k) in Section 4.3. The distinction only affects exact halfway cases but is
+part of the executable contract. An all-zero row uses the positive safeguard ϵ and produces zero activation
+carriers.
+For weight group g, the signed integer partial and reconstructed output are
+Pg =
+X
+j∈g
+x8,jrg(kj),
+(65)
+y =
+X
+g
+dxsg
+127 Pg.
+(66)
+Integer products accumulate into INT32 partials. With the supported G ≤512, a full-group worst-case
+magnitude is bounded by
+|Pg| ≤G 1272 ≤512 × 1272 = 8,258,048 < 231 −1.
+(67)
+Dense kernels may form still smaller K-tile partials. Each completed partial is converted to FP32 before
+multiplication by dxsg/127; cross-group accumulation is also FP32, followed by the requested output cast.
+The activation scale is generated at runtime and is neither stored in the checkpoint nor estimated from a
+calibration corpus.
+After carrier construction, W1–W8 all perform one signed INT8 product per logical weight. This equality
+concerns the main dot-product order only. Their total costs remain different because packed traffic,
+cross-byte extraction, carrier-table construction, direct curve evaluation, and achievable occupancy all
+depend on B and G.
+Dynamic A8 is an operator-local compute mode, not a persistent integer graph. An ordinary operator
+returns model-dtype output, and a later operator quantizes its own input when invoked.
+Selected
+fused expert paths can combine activation and quantization adjacent to the down projection, but this
+optimization does not change the general boundary or the checkpoint format.
+5.5
+Workload regimes and routed execution
+For an ordinary Linear operator, M is the number of activation rows. Small M provides too little
+row parallelism for a conventional matrix tile, so the narrow path assigns parallel work across output
+channels and consumes one or a few rows as GEMV. As M grows, a two-dimensional tile can reuse each
+decoded weight across several activation rows and can make effective use of native dot instructions. Thus
+decode-like and prefill-like shapes have different crossovers even at identical (B, G, N, K).
+For a routed operator, the relevant work is the number and distribution of active token–matrix routes
+rather than the input-token count alone. Routes can be compacted and grouped to reuse a decoded tile,
+processed independently with route-major outputs, or reduced within the kernel when the layout permits
+16
+
+
+it. Dense tiles remain useful when route density is high. These choices alter work organization but not
+the Cubic reconstruction or route weights.
+Routing probabilities, expert selection, and expert placement remain outside the Cubic format. The
+kernels consume the route map supplied by the serving system and support both local and expert-parallel
+layouts without assigning a special meaning to expert numbering.
+5.6
+Shape- and device-dependent kernel selection
+Performance depends on (B, G, M, N, K), activation dtype, route topology, GPU architecture, compiler
+stack, and kernel organization. No single threshold in M or B reliably determines whether a narrow,
+dense, native, or generic kernel is fastest across this space. CubicQuant therefore treats kernel choice as a
+shape- and device-dependent optimization problem rather than a property of the numerical format.
+For every admissible operator signature, candidate families are first filtered by payload width, alignment,
+dtype, and architectural constraints. Numerically valid candidates are then compared on representative
+row-count regimes, with choices including GEMV versus dense tiling, block height, route grouping,
+route-level parallelism, and native CUDA versus generic kernels. The selected strategy is a deterministic
+function of the measured execution environment and operator signature.
+This empirical selection changes neither codes nor group parameters. It is also distinct from quantizer
+fitting: synthetic operands are sufficient because the quantity being estimated is kernel latency, not an
+activation distribution or model-sensitivity statistic. A conservative implementation remains available
+whenever no specialized candidate satisfies the numerical and structural constraints.
+6
+Experimental evidence
+The evidence is organized in increasing order of system dependence. Section 3 establishes distribution-
+controlled representation error; this section first quantifies storage and computational work, then reports
+isolated kernel measurements and one negative fusion result. End-to-end serving behavior is discussed
+only as an attribution boundary because it also depends on attention, communication, scheduling, and
+memory management.
+6.1
+Experimental scope and portability
+The implementation can be compiled natively for several GPU generations, but binary compatibility and
+measured performance are distinct claims:
+GPU generation
+Native target
+Latency evidence in this report
+Ampere data center
+SM80
+Not measured
+Ampere consumer
+SM86
+Not measured
+Ada consumer/data center
+SM89
+Not measured
+Hopper
+SM90 and SM90a
+Single-H200 kernel measurements
+Blackwell data center
+SM100
+Not measured
+Blackwell consumer
+SM120
+Not measured
+The isolated measurements were collected on one NVIDIA H200 with 143,771 MiB of memory and CUDA
+compute capability 9.0, using the SM90a target. The storage and work model in Section 6.2 is architecture
+independent; every measured latency in this report is Hopper-specific.
+Native targets were verified from the produced code objects rather than inferred solely from compiler
+flags [25]. Physical-device evidence remains limited to Hopper, so the other rows establish portability of
+the implementation, not performance equivalence across architectures.
+6.2
+Computational work and memory traffic
+Consider a matrix multiplication with M input rows, N output columns, input dimension K, weight
+width B, and weight group size G. Ignoring row-tail padding, the packed Cubic matrix occupies
+17
+
+
+TW = NK
+B
+8 + 8
+G
+
+bytes.
+(68)
+The first term is the packed payload. The second is one FP32 scale and two FP16 shape coefficients per
+group. Relative to a two-byte BF16 matrix, the ideal resident-weight compression factor is therefore
+CBF16/Cubic =
+2
+B/8 + 8/G.
+(69)
+B
+G256
+bytes/weight ↓
+G256
+BF16/Cubic ↑
+G512
+bytes/weight ↓
+G512
+BF16/Cubic ↑
+1
+0.15625
+12.80×
+0.140625
+14.22×
+2
+0.28125
+7.11×
+0.265625
+7.53×
+3
+0.40625
+4.92×
+0.390625
+5.12×
+4
+0.53125
+3.76×
+0.515625
+3.88×
+5
+0.65625
+3.05×
+0.640625
+3.12×
+6
+0.78125
+2.56×
+0.765625
+2.61×
+7
+0.90625
+2.21×
+0.890625
+2.25×
+8
+1.03125
+1.94×
+1.015625
+1.97×
+These are representation ratios, not measured kernel speedups. A tile-local kernel reads the compressed
+payload and metadata without writing a complete BF16 weight tensor, but it must generate or look
+up Cubic levels and perform the same number of logical dot-product terms as an uncompressed matrix
+multiplication. The leading work therefore remains O(MNK).
+Component
+Leading work
+Ideal full-matrix traffic or state
+Packed weights and
+metadata
+Decode/lookup per visited tile
+NK(B/8 + 8/G) bytes
+Main dot product
+MNK products and
+accumulations
+Output-tile dependent
+Group rescaling
+MNK/G group contributions
+FP32 scale/shape metadata
+included above
+Dynamic-A8 activation
+encoding
+MK reduction/rounding work
+BF16 source plus an MK-byte
+INT8 carrier
+Dynamic-A8 activation
+scales
+M values for per-token A8
+4M bytes under the operator
+semantics
+The resident Dynamic-A8 operand is approximately MK + 4M bytes rather than 2MK bytes for BF16,
+but producing it also reads the BF16 source and writes the carrier. Consequently, activation compression
+becomes a traffic reduction only when the carrier is fused with, or reused by, enough downstream work.
+A16 and Dynamic-A8 also have different constant factors: A16 reconstructs levels into floating-point
+dot operands, whereas Dynamic-A8 maps them to INT8 carriers, uses integer dot products with INT32
+partial sums, and performs FP32 group rescaling. Direct maps, Horner evaluation, and shared-memory
+lookup tables alter the decode constant but not the asymptotic complexity. This is why latency must be
+measured as a function of (M, N, K, B, G) rather than inferred from storage width alone.
+6.3
+H200 kernel crossover: model dtype versus Dynamic A8
+The kernel experiment compares the model-dtype path, labeled A16, with the operator-local Dynamic-A8
+path on two large linear shapes at G512: (N, K) = (3584, 3072) and (6144, 3584). These dimensions
+are drawn from actual projection shapes in a widely used, large-scale open model and serve here as
+representative large-model workloads; neither the kernels nor their dispatch rules are specialized to that
+model. Both paths consume the same packed Cubic representation and produce the same output dtype.
+The ratio below is tA16/tA8, so values above one favor Dynamic A8. Measurements are available for
+representative W2, W5, and W8 cases and do not constitute a complete W1–W8 performance sweep.
+18
+
+
+Weight width
+M = 1
+M = 16
+M = 64
+M = 256
+W2
+0.40–0.59×
+1.00–1.60×
+1.74–2.03×
+2.21–2.23×
+W5
+0.78–0.87×
+1.62–2.60×
+2.94–3.16×
+3.35–3.93×
+W8
+0.35–0.42×
+1.62–2.40×
+2.37–4.19×
+4.31–4.46×
+For one of those shapes, (N, K) = (3584, 3072), the underlying measured latencies were as follows; each
+cell is A16/A8 in milliseconds.
+Width
+M = 1
+M = 16
+M = 64
+M = 256
+W2
+0.0184 / 0.0461
+0.0945 / 0.0945
+0.1653 / 0.0950
+0.5484 / 0.2484
+W5
+0.0364 / 0.0467
+0.2658 / 0.1642
+0.4872 / 0.1656
+1.9521 / 0.4965
+W8
+0.0171 / 0.0489
+0.2181 / 0.1344
+0.3950 / 0.1670
+1.5317 / 0.3557
+The measurements show a crossover rather than a universal A8 advantage. At M = 1, activation encoding
+and integer-path setup dominate, and the mature A16 GEMV is faster. As M grows, those fixed costs are
+amortized and the integer main loop becomes favorable. The crossover also depends on width and shape,
+supporting the shape- and device-dependent selection developed in Section 5.6. The measurements are
+preliminary Hopper evidence rather than a general throughput claim.
+6.4
+Persistent activation carriers: a negative result
+An experimental path persisted groupwise INT8 activation carriers between adjacent MLP operators to
+avoid an intermediate BF16 tensor. Although this reduces the nominal intermediate width, it did not
+improve either isolated or end-to-end performance and is therefore not part of CubicQuant’s retained
+execution design.
+On a representative W1/activation-to-W2 boundary with G512 weights and G256 activation groups, the
+online boundary was slower than the established non-online Dynamic-A8 path:
+Routed rows
+Non-online boundary
+(ms) ↓
+Online boundary (ms)
+↓
+Non-online / online
+16
+0.1092
+0.1408
+0.776×
+64
+0.3651
+0.3945
+0.926×
+128
+0.7112
+0.7576
+0.939×
+The intended bandwidth saving was real, but the producer needed groupwise reductions, synchronization,
+scale generation, and an additional carrier write. At the tested boundary those costs exceeded the saved
+BF16 traffic. This negative result narrows the contribution: Dynamic A8 is an operator-local compute
+mode, not a persistent all-integer activation graph. A future design would need producer-consumer fusion
+that keeps the intermediate in registers or shared memory rather than merely changing its global-memory
+dtype.
+6.5
+Interpretation of system-level evidence
+Large routed operators and complete multi-GPU serving workloads have been executed with both activation
+modes, but those observations combine Cubic kernels with attention, collective communication, scheduling,
+and memory management. They cannot isolate the causal contribution of the weight format. Accordingly,
+this report makes no aggregate serving-speedup, power, or energy claim.
+The isolated latency results support a narrower conclusion: CubicQuant is directly executable from its
+packed representation, and Dynamic A8 has a measured crossover with model-dtype execution as row
+count grows. Establishing an end-to-end advantage requires matched experiments that hold the model,
+parallel decomposition, attention and KV representation, request distribution, and hardware operating
+point fixed. Those controls are necessary because the full system difference cannot be attributed to the
+weight format alone.
+19
+
+
+7
+Related work
+7.1
+Uniform and second-order post-training quantization
+GPTQ uses approximate second-order information to minimize layer-wise error during one-shot weight
+quantization [3]. AWQ uses activation statistics to identify salient channels and applies an equivalent
+scaling transformation while retaining a hardware-friendly low-bit format [4]. SmoothQuant migrates
+activation outlier difficulty into weights through an equivalent transformation to enable W8A8 execution
+[5]. OmniQuant learns clipping and equivalent transformations through block-wise calibration [6]. These
+methods motivate the distinction made above: the stored representation and the estimator used to select
+it are separable. CubicQuant’s present fitter is data-free, but its codes and shape parameters can be
+selected with activation-aware or second-order objectives.
+7.2
+Distribution-matched and adaptive scalar formats
+QLoRA introduced NormalFloat4, a fixed non-uniform codebook constructed for normally distributed
+weights, together with double quantization for training memory reduction [7]. Subsequent analysis showed
+that absmax normalization changes the blockwise source distribution and therefore the codebook favored
+by a reconstruction objective [8]. BOF4 formalizes that dependence by optimizing a blockwise codebook
+for a specified source model and loss [9]. Standard finite floating-point formats instead place levels through
+a fixed exponent–mantissa split; E4M3 and E5M2 are representative FP8 instances [13].
+Adaptive Block-Scaled Data Types introduce IF4, which evaluates native FP4 and scaled INT4 for each
+group and records the lower-MSE choice [10]. IF4 therefore adapts the local scalar grid through a discrete
+choice between two fixed formats; it does not learn the reconstruction levels or continuously deform the
+selected grid.
+LO-BCQ clusters blocks according to their local statistics and designs a separate quantization codebook
+for each cluster [11]. A block selector then identifies the shared cluster codebook used for reconstruction.
+This provides finer adaptation than a single global grid, at the cost of a codebook library and explicit
+selection metadata.
+AAAC learns two activation-aware scalar codebooks per layer and lets each weight group select between
+them [12]. CubicQuant makes a different locality–metadata trade-off: every group receives its own
+codebook, but that codebook is restricted to a monotonic cubic family represented by two shape coefficients.
+Thus AAAC offers two freer layer-level alternatives with a one-bit group selector, whereas CubicQuant
+offers continuously varying group-local shapes with explicit parameter metadata.
+SqueezeLLM combines sensitivity-based non-uniform quantization with a sparse representation for outliers
+[14], while SpQR isolates sensitive outliers into a higher-precision sparse component [15]. CubicQuant
+instead retains a homogeneous packed scalar stream and has no separate sparse outlier matrix.
+7.3
+Vector and additive codebooks
+AQLM represents weight vectors through sums of learned codebook entries and optimizes layer/block
+output reconstruction [16]. QuIP# combines randomized Hadamard incoherence processing with lattice
+codebooks [17]. Such vector representations can express correlations unavailable to a scalar curve and have
+shown strong extreme-compression accuracy. CubicQuant instead restricts itself to a scalar monotonic
+codebook to retain simple bit packing, compact metadata, and a direct tile-local decode path. The
+approaches therefore occupy different points in the accuracy, fitting-cost, metadata, and kernel-complexity
+space.
+7.4
+Packed low-bit GPU execution
+LUT-GEMM replaces repeated scalar dequantization with lookup-based products for sub-four-bit weight-
+only inference [18]. FLUTE develops this line for non-uniform LUT formats and explicitly addresses
+irregular widths such as W3 through offline restructuring, vectorized lookup, and fused matrix multiplica-
+tion [19]. MARLIN instead targets mixed-precision packed weights and shows that the balance between
+memory traffic, dequantization, and matrix work changes with batch size [20]. These systems motivate
+20
+
+
+CubicQuant’s tile-local reconstruction and shape-dependent tactic selection, but do not directly execute
+its parametric level function.
+7.5
+Dynamic weight-activation execution
+LLM.int8() exposes the importance of activation outliers and uses a mixed-precision decomposition around
+an INT8 matrix product [21]. ZeroQuant and SmoothQuant demonstrate that backend integration,
+equivalent transformations, and fusion are central to realizing W8A8 benefits [22, 5]. QServe extends the
+systems argument to W4A8 serving and identifies dequantization overhead as a first-order concern at
+larger batches [23]. CubicQuant’s Dynamic-A8 path follows the same principle—temporary activation
+quantization and weight reconstruction must be consumed inside or adjacent to the matrix kernel—but
+differs in how compressed weights are mapped to the INT8 operand. Its carrier rounding is exposed in the
+offline objective rather than treated as an invisible implementation detail.
+8
+Limitations
+Downstream task quality remains unmeasured. Distributional distortion and finite-group NRMSE
+characterize scalar reconstruction; they do not establish perplexity, reasoning, instruction following,
+long-context behavior, or task accuracy.
+Finite-group numerical coverage is incomplete. The reported experiment contains one group size
+and omits W1 and W7. It therefore demonstrates the observed distributional trend but cannot identify
+the best group size or provide a complete 1–8-bit comparison.
+The systems evidence does not establish a general speedup. The H200 measurements cover
+representative widths and shapes rather than a matched W1–W8 sweep across GPU generations. They
+establish a workload-dependent crossover, not a universal ordering between model-dtype and Dynamic-A8
+execution.
+CubicQuant is not a native Tensor Core type. Packed codes must be reconstructed into model-
+dtype values or an INT8 carrier. Any bandwidth benefit therefore depends on coupling reconstruction to
+consumption and avoiding full-matrix expansion.
+Metadata and locality trade against one another. Scale and shape parameters contribute 64/G
+bits per weight. Smaller groups increase local adaptability but also metadata cost; larger groups amortize
+metadata while forcing one curve to describe a broader tensor region.
+Weight-only MSE is not universally optimal. The reference estimator gives no special weight to
+directions emphasized by real activations. Covariance- or Hessian-weighted fitting may preserve operator
+behavior more faithfully, but requires representative information beyond the static weights.
+Physical performance validation is Hopper-centric. Native compilation targets several architectures,
+but the latency evidence is drawn from H200. Compilation coverage does not substitute for numerical and
+performance evaluation on Ampere, Ada, and Blackwell devices.
+Persistent activations and KV-cache formats are outside the retained scope. The measured
+persistent-activation design was unfavorable, and attention-state quantization poses a separate numerical
+and architectural problem.
+9
+Conclusion
+CubicQuant separates two properties that fixed scalar formats bind together: the payload remains a
+regular integer bitstream, while group-local parameters adapt the values represented by its magnitude
+codes. The normalized cubic guarantees exact zero and endpoints, preserves ordering through an explicit
+monotonicity constraint, and contains symmetric uniform integer quantization as an exact special case.
+Its additional flexibility costs two shape coefficients per group, giving a transparent effective width of
+B + 64/G bits per weight.
+The distributional analysis explains where that flexibility is useful. The linear grid is already population-
+optimal for a Uniform source, whereas Gaussian and Laplace distributions benefit from moving interior
+21
+
+
+levels toward their high-density center while retaining distant endpoints. Across W4–W8, the optimized
+cubic family recovers most of the gap between uniform integers and a free Lloyd–Max codebook for the
+two unbounded reference distributions. Finite groups add a second adaptation effect because each realized
+group may depart from its population law.
+The same representation supports two execution semantics. Model-dtype kernels consume continuous Cubic
+levels, while Dynamic-A8 kernels consume the deterministic INT8 projection of those levels. Incorporating
+both reconstructions into the fitting objective allows one serialized weight format to serve either path.
+Tile-local reconstruction preserves compressed weight traffic, and empirical kernel selection accommodates
+the fact that narrow GEMV and denser row regimes favor different realizations.
+The present evidence establishes a parametric scalar format with explicit distortion theory, finite-group
+reconstruction gains, and direct packed GPU execution. It does not yet establish downstream model
+quality or a universal end-to-end speedup. Those questions require broader numerical, architectural, and
+model-level evaluation, but they do not alter the central result: a compact parametric curve can recover
+much of the adaptability of a free codebook without abandoning a regular scalar bitstream.
+References
+[1] S. P. Lloyd. Least squares quantization in PCM. IEEE Transactions on Information Theory, 28(2):129–
+137, 1982.
+[2] J. Max. Quantizing for minimum distortion. IRE Transactions on Information Theory, 6(1):7–12,
+1960.
+[3] E. Frantar, S. Ashkboos, T. Hoefler, and D. Alistarh. GPTQ: Accurate post-training quantization for
+generative pre-trained transformers. arXiv:2210.17323, 2022.
+[4] J. Lin et al. AWQ: Activation-aware weight quantization for LLM compression and acceleration.
+arXiv:2306.00978, 2023.
+[5] G. Xiao et al. SmoothQuant: Accurate and efficient post-training quantization for large language
+models. arXiv:2211.10438, 2022.
+[6] W. Shao et al. OmniQuant: Omnidirectionally calibrated quantization for large language models.
+arXiv:2308.13137, 2023.
+[7] T. Dettmers, A. Pagnoni, A. Holtzman, and L. Zettlemoyer. QLoRA: Efficient finetuning of quantized
+LLMs. arXiv:2305.14314, 2023.
+[8] D. Yoshida. NF4 isn’t information theoretically optimal (and that’s good). arXiv:2306.06965, 2023.
+[9] P. Blumenberg, T. Graave, and T. Fingscheidt. Improving block-wise LLM quantization by 4-bit
+block-wise optimal float (BOF4): Analysis and variations. arXiv:2505.06653, 2025.
+[10] J. Cook et al. Adaptive block-scaled data types. arXiv:2603.28765, 2026.
+[11] R. Elangovan, C. Sakr, A. Raghunathan, and B. Khailany. LO-BCQ: Block clustered quantization for
+4-bit (W4A4) LLM inference. arXiv:2502.05376, 2025.
+[12] B. IslamBouli and D. Jin. AAAC: Activation-aware adaptive codebooks for 4-bit LLM weight
+quantization. arXiv:2605.08692, 2026.
+[13] P. Micikevicius et al. FP8 formats for deep learning. arXiv:2209.05433, 2022.
+[14] S. Kim et al. SqueezeLLM: Dense-and-sparse quantization. arXiv:2306.07629, 2023.
+[15] T. Dettmers et al. SpQR: A sparse-quantized representation for near-lossless LLM weight compression.
+arXiv:2306.03078, 2023.
+[16] V. Egiazarian et al. Extreme compression of large language models via additive quantization.
+arXiv:2401.06118, 2024.
+[17] A. Tseng et al. QuIP#: Even better LLM quantization with Hadamard incoherence and lattice
+codebooks. arXiv:2402.04396, 2024.
+[18] G. Park et al. LUT-GEMM: Quantized matrix multiplication based on LUTs for efficient inference in
+large-scale generative language models. arXiv:2206.09557, 2022.
+22
+
+
+[19] H. Guo, W. Brandon, R. Cholakov, J. Ragan-Kelley, E. P. Xing, and Y. Kim. Fast matrix multiplica-
+tions for lookup table-quantized LLMs. arXiv:2407.10960, 2024.
+[20] E. Frantar, R. L. Castro, J. Chen, T. Hoefler, and D. Alistarh. MARLIN: Mixed-precision auto-
+regressive parallel inference on large language models. arXiv:2408.11743, 2024.
+[21] T. Dettmers, M. Lewis, Y. Belkada, and L. Zettlemoyer. LLM.int8(): 8-bit matrix multiplication for
+transformers at scale. arXiv:2208.07339, 2022.
+[22] Z. Yao et al. ZeroQuant: Efficient and affordable post-training quantization for large-scale transformers.
+arXiv:2206.01861, 2022.
+[23] Y. Lin et al. QServe: W4A8KV4 quantization and system co-design for efficient LLM serving.
+arXiv:2405.04532, 2024.
+[24] W. Kwon et al. Efficient memory management for large language model serving with PagedAttention.
+arXiv:2309.06180, 2023.
+[25] NVIDIA. CUDA Binary Utilities. CUDA Toolkit Documentation. https://docs.nvidia.com/cuda/cuda-
+binary-utilities/, accessed August 2026.
+A
+Normative format properties
+1. B ∈{1, . . . , 8} and GB is byte-aligned.
+2. W1 uses binary −1/ + 1 codes; W2–W8 reserve the most-negative signed pattern and decode it to zero.
+3. The scale s is FP32 and positive for nonzero groups; a and b are FP16.
+4. The coefficient c = 1 −a −b is derived and is not stored.
+5. Every accepted curve satisfies q(0) = 0, q(1) = 1, and strict monotonicity.
+6. Packing order and logical tensor shape determine all tail decoding.
+7. Runtime A8 carrier generation uses round-to-nearest-even, matching the reference framework behavior.
+B
+Reference decoding pseudocode
+def cubic_levels(bits, scale, a, b):
+if bits == 1:
+return (-scale, scale)
+maximum = (1 << (bits - 1)) - 1
+c = 1.0 - a - b
+levels = []
+for index in range(maximum + 1):
+t = index / maximum
+q = t * (a + t * (b + t * c))
+levels.append(scale * q)
+return levels
+def decode(code, levels):
+return sign(code) * levels[abs(code)]
+C
+Experimental reporting variables
+Reproducing the numerical experiments requires the random seed, source distribution, sample count, group size,
+payload width, parameter precisions, clipping search, baseline scale optimization, and finite-format enumeration
+rule. Both the objective used for candidate selection and the statistic used for reporting must be stated explicitly.
+Reproducing kernel measurements additionally requires the GPU architecture and operating policy, driver and
+CUDA versions, compiler stack, tensor shape, activation mode, kernel family, correctness tolerance, repetition
+count, and reported latency statistic. System-level measurements require all non-Cubic components that can affect
+the observation—including attention, KV state, parallel decomposition, request distribution, and concurrency—to
+be held fixed or reported separately.
+23

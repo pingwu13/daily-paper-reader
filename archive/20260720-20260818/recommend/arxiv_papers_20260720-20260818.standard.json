@@ -1,0 +1,533 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-18T02:25:13.737527+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 1,
+    "deep_divecandidates": 2,
+    "deep_cap": 6,
+    "deep_selected": 2,
+    "quick_candidates": 13,
+    "quick_skim_target": 11,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2608.06763v1",
+      "source": "arxiv",
+      "title": "CubicQuant: Parametric Non-Uniform Codebooks for High-Throughput LLM Inference with 1-8-Bit Weights",
+      "abstract": "Weight quantization for large-language-model inference must balance adaptive reconstruction levels with representations regular enough for efficient GPU execution. Uniform integers constrain each group to a linear grid. Low-bit floating-point formats use a fixed exponent-mantissa structure, while learned codebooks gain flexibility at the cost of irregular decoding and additional metadata.   We introduce CubicQuant, a parametric non-uniform scalar format that preserves a dense integer code stream while adapting reconstruction levels within each weight group. A monotonic cubic curve, specified by two shape parameters and one scale, maps uniformly spaced magnitude codes to non-uniform levels. The family spans 1-8-bit weight payloads, contains symmetric uniform integer quantization as an exact special case, and has effective width B + 64/G bits per weight for payload width B and group size G. We derive population distortion under Uniform, Gaussian, and Laplace distributions, formulate continuous and Dynamic-A8-carrier-aware fitting objectives, and describe direct packed-weight GPU execution.   For finite groups of G=128 with 15,360 samples per distribution, W4 CubicQuant reduced reconstruction RMSE relative to optimally clipped four-bit uniform integer quantization by 3.90% on Uniform, 13.49% on Gaussian, and 28.14% on Laplace samples. Relative to the best enumerated four-bit finite floating-point format, the reductions were 3.90%, 9.44%, and 6.27%. Preliminary H200 kernel measurements show a workload-dependent crossover: model-dtype execution is faster for narrow GEMV, while Dynamic A8 becomes favorable as row count grows. The results establish the format's representational promise and direct executability; downstream model quality and cross-device end-to-end performance remain open evaluation questions.",
+      "authors": [
+        "Xuetian Gao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.DC"
+      ],
+      "published": "2026-08-07T03:36:07+00:00",
+      "link": "https://arxiv.org/pdf/2608.06763v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "parametric non-uniform codebook for 1-8-bit LLM weights",
+      "llm_evidence_cn": "面向1-8比特LLM权重的参数化非均匀码本",
+      "llm_evidence": "面向1-8比特LLM权重的参数化非均匀码本",
+      "canonical_evidence": "面向1-8比特LLM权重的参数化非均匀码本",
+      "llm_tldr_en": "CubicQuant introduces a parametric non-uniform scalar codebook using a monotonic cubic curve with two shape parameters and a scale, preserving dense integer codes for efficient LLM inference across 1-8-bit weights.",
+      "llm_tldr_cn": "大模型权重量化需要在自适应重建水平和GPU高效执行之间权衡。CubicQuant提出一种参数化非均匀标量格式，用单调三次曲线及两个形状参数和尺度映射均匀码字到非均匀重建电平，同时保持密集整数码流。该方法支持1到8比特权重量化，兼顾灵活性与解码效率，为LLM低比特推理提供新的码本构造方式。",
+      "llm_tldr": "大模型权重量化需要在自适应重建水平和GPU高效执行之间权衡。CubicQuant提出一种参数化非均匀标量格式，用单调三次曲线及两个形状参数和尺度映射均匀码字到非均匀重建电平，同时保持密集整数码流。该方法支持1到8比特权重量化，兼顾灵活性与解码效率，为LLM低比特推理提供新的码本构造方式。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "parametric codebook",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.08188v1",
+      "source": "arxiv",
+      "title": "Quantization Degradation in Large Language Models: A Signal-Noise Perspective",
+      "abstract": "Post-training quantization reduces the deployment cost of large language models, yet how severely a quantized model degrades is not determined by bit-width alone. We systematically study weight-only post-training quantization across bit-widths, quantization methods, model scales and downstream tasks on multiple model families. We observe that such degradation varies substantially across these factors: 4-bit quantization usually preserves performance, 2-bit often causes broad degradation, and at 3-bit, degradation becomes apparent but varies markedly with task type, quantization method and model scale. To explain this variability, we use the signal-to-noise ratio (SNR) to measure how strongly quantization perturbs full-precision representations. We trace degradation back to two linked processes: how quantization errors arise within individual modules, and how they accumulate across layers. First, a source SNR decomposition shows that newly introduced errors depend on three factors: the magnitude of the weight error, the strength of the task-specific signal, and how strongly the quantization error aligns with task-specific activations. Different factors affect these components in distinct ways. Second, a cross-layer propagation analysis shows that these errors can be attenuated, preserved, or amplified as they pass across layers, and that larger models benefit from weaker error amplification. Together, these results establish that quantization degradation is governed by how errors are introduced at the source and how they accumulate across the network.",
+      "authors": [
+        "Chenxi Zhou",
+        "Pengfei Cao",
+        "Jinyu Ye",
+        "Bohan Yu",
+        "Haida Yu",
+        "Jiang Li",
+        "Jun Zhao",
+        "Kang Liu"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-08T15:28:45+00:00",
+      "link": "https://arxiv.org/pdf/2608.08188v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "systematic study of weight-only post-training quantization across 2/3/4-bit, model scales, and downstream tasks; proposes SNR-based explanation",
+      "llm_evidence_cn": "系统研究LLM权重仅后训练量化，覆盖2/3/4比特，并用信噪比解释退化差异",
+      "llm_evidence": "系统研究LLM权重仅后训练量化，覆盖2/3/4比特，并用信噪比解释退化差异",
+      "canonical_evidence": "系统研究LLM权重仅后训练量化，覆盖2/3/4比特，并用信噪比解释退化差异",
+      "llm_tldr_en": "Investigates why degraded LLM quantization depends on more than bit-width; analyzes 4/3/2-bit weight-only PTQ across factors and uses signal-to-noise ratio to explain variability.",
+      "llm_tldr_cn": "针对仅权重量化中退化程度不唯一取决于比特宽度的问题，系统研究了不同比特宽度、量化方法、模型规模与下游任务下的表现。观察到4比特通常保留性能，2比特常造成广泛退化，3比特则随因素明显变化；提出用信噪比度量量化对全精度表示的扰动来解释这种差异。该工作为评估和改进低比特LLM权重量化提供了重要基准与分析框架。",
+      "llm_tldr": "针对仅权重量化中退化程度不唯一取决于比特宽度的问题，系统研究了不同比特宽度、量化方法、模型规模与下游任务下的表现。观察到4比特通常保留性能，2比特常造成广泛退化，3比特则随因素明显变化；提出用信噪比度量量化对全精度表示的扰动来解释这种差异。该工作为评估和改进低比特LLM权重量化提供了重要基准与分析框架。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2607.27694v1",
+      "source": "arxiv",
+      "title": "GyRot: Leveraging Hidden Synergy between Rotation and Fine-grained Group Quantization for Low-bit LLM Inference",
+      "abstract": "Low-bit quantization is essential for efficient LLM inference, and both rotation and fine-grained group quantization have shown individual promise. However, their combination often leads to accuracy degradation or hardware overhead due to a mismatch between the global nature of rotation and the localized behavior of group scaling. We propose GyRot, a quantization framework and hardware accelerator that bridges this gap through algorithm-hardware co-design. GyRot introduces Coarse Rotation, Fine Grouping (CoRFiG) and Harmonic-Aligned Permutation (HAP) to enable cooperative integration of rotation and group quantization, enhancing quantizability while relaxing scaling factor precision. To further reduce hardware cost, we reformulate asymmetric quantization and introduce a zero-point rounding strategy that enables fully integer dequantization. Implemented on an INT4-based tensor PE architecture, GyRot achieves state-of-the-art 4-bit accuracy across LLaMA-family models, while delivering up to 3.4x speedup and 3.6x energy efficiency over baseline LLM accelerators. These results validate GyRot's practical effectiveness for scalable and energy-efficient LLM deployment.",
+      "authors": [
+        "Sangjin Kim",
+        "Yuseon Choi",
+        "Byeongcheol Kim",
+        "Jungjun Oh",
+        "Hoi-jun Yoo"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR",
+        "cs.LG"
+      ],
+      "published": "2026-07-30T05:26:20+00:00",
+      "link": "https://arxiv.org/pdf/2607.27694v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Low-bit LLM quantization via rotation and fine-grained group quantization for efficient inference.",
+      "llm_evidence_cn": "面向高效推理的低比特LLM量化，结合旋转与细粒度分组量化，契合极低比特权重量化主题。",
+      "llm_evidence": "面向高效推理的低比特LLM量化，结合旋转与细粒度分组量化，契合极低比特权重量化主题。",
+      "canonical_evidence": "面向高效推理的低比特LLM量化，结合旋转与细粒度分组量化，契合极低比特权重量化主题。",
+      "llm_tldr_en": "GyRot co-designs rotation with fine-grained group quantization for low-bit LLM inference, introducing CoRFiG and HAP to improve quantizability.",
+      "llm_tldr_cn": "论文针对低比特LLM推理中旋转与细粒度分组量化各自有效但难以协同的问题，提出GyRot框架与硬件加速器。它引入Coarse Rotation, Fine Grouping (CoRFiG) 与 Harmonic-Aligned Permutation (HAP)，使旋转和分组量化协同工作，同时放宽缩放因子精度。算法-硬件协同设计显著提升可量化性并降低硬件开销。该工作直接服务低比特LLM高效推理，但未涉及结构化码本。",
+      "llm_tldr": "论文针对低比特LLM推理中旋转与细粒度分组量化各自有效但难以协同的问题，提出GyRot框架与硬件加速器。它引入Coarse Rotation, Fine Grouping (CoRFiG) 与 Harmonic-Aligned Permutation (HAP)，使旋转和分组量化协同工作，同时放宽缩放因子精度。算法-硬件协同设计显著提升可量化性并降低硬件开销。该工作直接服务低比特LLM高效推理，但未涉及结构化码本。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.22148v1",
+      "source": "arxiv",
+      "title": "dRAE: Representation Autoencoder with Hyper-Spherical Codes",
+      "abstract": "In this work, we aim to discretize the high-dimensional visual representations to bridge the gap with language models - a non-trivial challenge, as existing quantization methods suffer from codebook collapse, failing to scale while preserving semantic coherence. We identify the root cause as metric mismatch: standard Euclidean codebook objectives are fundamentally misaligned with the anisotropic geometry of representation space, leading to codebook embeddings with high-variance magnitude scales and uneven angular distributions that hinder scalability. To address this, we propose Hyper-Spherical Quantization (HSQ), which decouples semantic content from feature magnitude via angular routing, preventing code assignment from being dominated by scale rather than meaning. The resulting discrete Representation Autoencoder (dRAE) achieves high-fidelity reconstruction while preserving semantic integrity and supporting scalable codebook budget. Extensive experiments demonstrate consistent performance gains as the vocabulary size scales to 131{,}072, along with 100\\% codebook utilization, simplified training pipeline, and strong performance across understanding and generation tasks.",
+      "authors": [
+        "Tianren Ma",
+        "Lin Long",
+        "Chuyan Chen",
+        "Mu Zhang",
+        "Junbo Zhao",
+        "Tong Zhang",
+        "Qixiang Ye"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.AI"
+      ],
+      "published": "2026-07-24T09:47:32+00:00",
+      "link": "https://arxiv.org/pdf/2607.22148v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Hyper-spherical structured codebook for vector quantization",
+      "llm_evidence_cn": "用于向量量化的超球面结构化码本",
+      "llm_evidence": "用于向量量化的超球面结构化码本",
+      "canonical_evidence": "用于向量量化的超球面结构化码本",
+      "llm_tldr_en": "Proposes Hyper-Spherical Quantization to address codebook collapse by angular routing, decoupling semantic content from feature magnitude and improving codebook scalability.",
+      "llm_tldr_cn": "针对高维视觉表示离散化中码本坍缩和语义一致性难以扩展的问题，dRAE 提出超球面量化，将语义内容与特征幅度解耦，通过角度路由进行码本分配，避免欧氏度量与表示空间各向异性不匹配导致的缩放崩溃。实验表明该方法能有效缓解码本坍缩，提升码本规模扩展时的语义保持能力，为表示自编码器与语言模型的连接提供了更稳健的量化方案。",
+      "llm_tldr": "针对高维视觉表示离散化中码本坍缩和语义一致性难以扩展的问题，dRAE 提出超球面量化，将语义内容与特征幅度解耦，通过角度路由进行码本分配，避免欧氏度量与表示空间各向异性不匹配导致的缩放崩溃。实验表明该方法能有效缓解码本坍缩，提升码本规模扩展时的语义保持能力，为表示自编码器与语言模型的连接提供了更稳健的量化方案。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "structured codebook",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.03867v1",
+      "source": "arxiv",
+      "title": "Heterogeneity-Aware Microscaling for Efficient Low-Bit LLM Inference",
+      "abstract": "Microscaling (MX) is now the standard for low-bit large language model (LLM) inference. Its 4-bit form MXFP4 still loses substantial accuracy, because existing MX formats fix either the element format or the precision-recovery scheme across blocks, and thus capture only limited quantization heterogeneity. Quantization heterogeneity appears at two levels: 1) across blocks, the preferred element format and precision-recovery scheme vary; 2) across operands, weights and activations require different encoding. We introduce AdaMX (Adaptive Microscaling), a heterogeneity-aware format and accelerator. It selects the precision-recovery scheme per block and the representation per operand, at no increase in equivalent bit width (EBW). One design covers two block sizes, giving a higher-accuracy operating point and a lower-EBW operating point that saves storage. We implement a 22nm FD-SOI AI accelerator prototype with the proposed decoder, computing unit, and quantization logic. Against an otherwise identical MXFP4 accelerator with FP4-only multipliers, AdaMX adds about 1% system energy. At the lower-EBW point, AdaMX stays more accurate than the baseline while lowering both memory footprint and energy. Across LLMs from 3B to 70B, AdaMX removes 83% of the MXFP4 accuracy loss on commonsense and 82% on MMLU, and 43% and 27% of the NVFP4 loss. AdaMX also generalizes to multimodal models. On Gemma-4 12B, it leads MXFP4 on all four vision-language benchmarks and keeps up to 96% of FP16 accuracy.",
+      "authors": [
+        "Junyi Luo",
+        "Xinting Jiang",
+        "Tai-Hao Wen",
+        "Ruichen Qi",
+        "Minxing Chu",
+        "Hongyi Wu",
+        "Gregory Kielian",
+        "Ben Laurie",
+        "Qirui Zhang",
+        "Quan Cheng",
+        "Dennis Sylvester",
+        "Mehdi Saligane"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-08-04T16:08:20+00:00",
+      "link": "https://arxiv.org/pdf/2608.03867v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "heterogeneity-aware microscaling format for low-bit LLM inference; adapts precision-recovery and representation per block/operand for weights and activations",
+      "llm_evidence_cn": "面向低比特LLM推理的自适应微缩放格式，针对权重与激活逐块选择精度恢复方案与表示方式",
+      "llm_evidence": "面向低比特LLM推理的自适应微缩放格式，针对权重与激活逐块选择精度恢复方案与表示方式",
+      "canonical_evidence": "面向低比特LLM推理的自适应微缩放格式，针对权重与激活逐块选择精度恢复方案与表示方式",
+      "llm_tldr_en": "Proposes AdaMX, a heterogeneity-aware microscaling format and accelerator that selects precision-recovery per block and representation per operand at no bit-width increase, improving low-bit LLM inference.",
+      "llm_tldr_cn": "针对现有微缩放格式无法捕获量化异构性导致的4比特精度损失，提出AdaMX自适应格式与加速器。它按块选择精度恢复方案、按操作数选择表示方式，在不增加等效位宽的前提下降低精度损失。实验表明AdaMX在低比特LLM推理上能显著减少因为权重和激活异构性带来的精度下降，覆盖多种块大小设计。该工作为超低比特推理硬件格式的设计提供了新思路。",
+      "llm_tldr": "针对现有微缩放格式无法捕获量化异构性导致的4比特精度损失，提出AdaMX自适应格式与加速器。它按块选择精度恢复方案、按操作数选择表示方式，在不增加等效位宽的前提下降低精度损失。实验表明AdaMX在低比特LLM推理上能显著减少因为权重和激活异构性带来的精度下降，覆盖多种块大小设计。该工作为超低比特推理硬件格式的设计提供了新思路。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2607.23047v1",
+      "source": "arxiv",
+      "title": "MixQuant: Adaptive Mixed-Precision Quantization for Large Language Models",
+      "abstract": "Mixed-precision quantization improves the accuracy of post-training quantization by allocating higher bitwidths to sensitive layers, but existing methods solve the allocation for a single fixed memory budget. In practice the budget varies across deployments and is unknown at calibration time. Adaptive quantization addresses this with one offline calibration that serves any budget, yet current methods score layer sensitivity in a manner that does not consider its dependency on quantization levels of other layers. We show that a layer's sensitivity depends strongly on the bitwidths of its upstream layers and that this dependence shifts the resulting preferred bit allocation. We propose MixQuant, a technique-agnostic adaptive framework that wraps any base quantizer. MixQuant marginalizes each layer's distortion over random quantized upstream configurations to obtain budget-agnostic scores, calibrates the quantizer's parameters on plans the allocator itself produces, and penalizes allocations that leave layers at the lowest bitwidths. A single greedy pass then serves any budget at deployment. Across Llama-3.2-3B, Llama-2-7B, and Mistral-7B under AWQ and GPTQ, MixQuant outperforms adaptive and mixed-precision baselines in every setting, improving average accuracy by up to 8 points and reducing perplexity from 12.43 to 10.70 at the tightest budget, while matching an ILP solver at negligible deployment cost.",
+      "authors": [
+        "Ashitabh Misra",
+        "Madhav Agrawal",
+        "Arham Jain",
+        "Tarek Abdelzaher"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-07-25T05:10:01+00:00",
+      "link": "https://arxiv.org/pdf/2607.23047v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Adaptive mixed-precision PTQ for LLM weights",
+      "llm_evidence_cn": "面向LLM权重的自适应混合精度后训练量化",
+      "llm_evidence": "面向LLM权重的自适应混合精度后训练量化",
+      "canonical_evidence": "面向LLM权重的自适应混合精度后训练量化",
+      "llm_tldr_en": "MixQuant proposes an adaptive mixed-precision quantization framework for LLMs that accounts for cross-layer sensitivity dependencies, enabling one calibration to serve arbitrary memory budgets.",
+      "llm_tldr_cn": "针对混合精度量化只能服务固定内存预算的局限，MixQuant 提出一种技术无关的自适应框架，通过建模层敏感度对其他层位宽的依赖关系，改变了传统灵敏度评分方式。该方法只需一次离线校准即可适配任意部署预算，实验表明层间位宽依赖会显著改变最优分配，从而在可变预算下保持较好的精度与效率权衡，为LLM后训练量化提供了实用的灵活性提升。",
+      "llm_tldr": "针对混合精度量化只能服务固定内存预算的局限，MixQuant 提出一种技术无关的自适应框架，通过建模层敏感度对其他层位宽的依赖关系，改变了传统灵敏度评分方式。该方法只需一次离线校准即可适配任意部署预算，实验表明层间位宽依赖会显著改变最优分配，从而在可变预算下保持较好的精度与效率权衡，为LLM后训练量化提供了实用的灵活性提升。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.04048v1",
+      "source": "arxiv",
+      "title": "Recurrent Residual Quantization: A Progressive Multi-Precision Representation for LLMs",
+      "abstract": "Serving large language models (LLMs) under diverse deployment constraints requires flexible trade-offs between accuracy, memory footprint, and throughput. However, conventional quantization methods typically require a separate checkpoint for each target bit-width. We introduce Recurrent Residual Quantization (RRQ), a post-training quantization (PTQ) framework that represents weights as a low-bit quantized base together with a sequence of quantized residual corrections, enabling multiple effective precisions from a single checkpoint. Starting from a 2-bit model obtained via post-training quantization (PTQ) or round-to-nearest (RTN), RRQ progressively adds lightweight 2-bit residuals generated via RTN to construct 4-, 6-, and 8-bit representations. The method is calibration-free and avoids joint multi-bit optimization. In our Qwen3-8B setup, the full all-RTN 2-/4-/6-/8-bit package is constructed in 1,293 seconds, 3.3 times faster than the measured MatGPTQ construction. Experiments on six recent LLMs show competitive accuracy at 6 and 8 bits, with model-dependent behavior at 4 bits. The code will be made publicly available upon publication.",
+      "authors": [
+        "Yu Luo",
+        "Bo Dong",
+        "Wenhua Cheng",
+        "Haihao Shen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-04T08:32:05+00:00",
+      "link": "https://arxiv.org/pdf/2608.04048v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "progressive 2-bit base plus residual corrections for multi-precision LLM serving",
+      "llm_evidence_cn": "以2比特基码加残差校正逐级构建多精度LLM表示",
+      "llm_evidence": "以2比特基码加残差校正逐级构建多精度LLM表示",
+      "canonical_evidence": "以2比特基码加残差校正逐级构建多精度LLM表示",
+      "llm_tldr_en": "Proposes RRQ, a PTQ framework representing weights as a 2-bit base plus residual corrections, enabling 4, 6, 8-bit variants from one checkpoint.",
+      "llm_tldr_cn": "传统量化方法每个位宽需要单独检查点，部署不够灵活。本文提出递归残差量化（RRQ），先通过PTQ或RTN得到2比特基码，再逐步添加由RTN生成的2比特残差校正，从而从单个检查点构造4、6、8比特表示，在多种有效精度间灵活权衡准确率、显存和吞吐量。该方法为极低比特LLM权重量化与多精度服务提供了新途径。",
+      "llm_tldr": "传统量化方法每个位宽需要单独检查点，部署不够灵活。本文提出递归残差量化（RRQ），先通过PTQ或RTN得到2比特基码，再逐步添加由RTN生成的2比特残差校正，从而从单个检查点构造4、6、8比特表示，在多种有效精度间灵活权衡准确率、显存和吞吐量。该方法为极低比特LLM权重量化与多精度服务提供了新途径。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.01528v1",
+      "source": "arxiv",
+      "title": "Gram-Space: Structure-Preserving Codebook Compression for Memory-Efficient Neuro-Symbolic AI",
+      "abstract": "Vector symbolic architectures (VSA) are widely used for reasoning in neuro-symbolic (NeSy) AI, yet high-dimensional codebooks often create severe memory bottlenecks that limit scalability and deployment. In this paper, we propose Gram-Space, a compression framework that applies Gram-Schmidt orthogonalization to represent codebook vectors in a compact orthonormal coordinate system. Gram-Space preserves the dot-product structure required by matrix-based VSA operators, which supports numerically equivalent execution of matrix similarity, probability vectorization, and attention score computations. We provide a correctness analysis showing that inner products are preserved under the orthonormal basis representation. Using modern GPU hardware, we benchmark the Gram-Space framework on standard neuro-symbolic reasoning datasets. Experimental evaluations across state-of-the-art VSA models show that Gram-Space reduces model-level GPU memory usage by up to 15.75x and improves inference latency by up to 3.62x. Profiling results further indicate that Gram-Space reduces allocation-heavy overhead in codebook-associated stages and improves hardware utilization for NeSy workloads.",
+      "authors": [
+        "Weilun Wang",
+        "Wantong Li"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-02T22:37:34+00:00",
+      "link": "https://arxiv.org/pdf/2608.01528v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Codebook compression via orthonormal basis; avoids explicit large codebook with structured representation",
+      "llm_evidence_cn": "通过正交基压缩码本，用紧凑结构化表示替代显式大码本",
+      "llm_evidence": "通过正交基压缩码本，用紧凑结构化表示替代显式大码本",
+      "canonical_evidence": "通过正交基压缩码本，用紧凑结构化表示替代显式大码本",
+      "llm_tldr_en": "Gram-Space compresses vector symbolic architecture codebooks into a compact orthonormal basis via Gram-Schmidt, preserving inner products and enabling numerically equivalent execution while reducing memory.",
+      "llm_tldr_cn": "神经符号AI中的向量符号架构依赖高维码本，码本存储形成内存瓶颈。本文提出Gram-Space框架，利用Gram-Schmidt正交化将码本向量表示为紧凑正交坐标系，保留点积结构，使矩阵相似度、概率向量化和注意力分数计算可以数值等价执行。正确性分析表明正交基表示下内积保持不变。GPU实验显示该方法在保证等价性的同时显著降低码本内存占用，为结构化/隐式码本表示提供了可借鉴的压缩方案。",
+      "llm_tldr": "神经符号AI中的向量符号架构依赖高维码本，码本存储形成内存瓶颈。本文提出Gram-Space框架，利用Gram-Schmidt正交化将码本向量表示为紧凑正交坐标系，保留点积结构，使矩阵相似度、概率向量化和注意力分数计算可以数值等价执行。正确性分析表明正交基表示下内积保持不变。GPU实验显示该方法在保证等价性的同时显著降低码本内存占用，为结构化/隐式码本表示提供了可借鉴的压缩方案。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "structured vector quantization methods that avoid storing a large explicit codebook through lattice, trellis, algebraic, or implicit codebook representations",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.09595v1",
+      "source": "arxiv",
+      "title": "From Sweep to Seam: Interleaved Cross-Block Post-Training Quantization",
+      "abstract": "Compressing large language models to two bits or fewer is increasingly feasible through block-wise post-training quantization; cross-block variants reconstruct neighboring Transformer blocks within a moving window. In the fixed two-block setting studied here, the matched sequential baseline moves this window through the network once, so errors introduced early in the sweep are not revisited. We propose Interleaved Cross-Block Quantization (ICBQ), a scheduling modification that revisits the boundary pair between consecutive chunks. Each seam pair is refined twice: first at the end of one chunk and again at the start of the next. The method retains the local two-block objective and reuses the calibration inputs of existing block-wise PTQ pipelines. Under stated local contraction and smoothness assumptions, we derive a depth-wise upper-bound comparison in which seam revisits multiply the propagated term while the residual remains bounded independently of depth. In the reported experiments, ICBQ reduces ternary-quantization perplexity relative to the matched Sequential CBQ baseline, yields finite perplexity in configurations where the baseline has severe degradation, and can also be used with 3-bit and 2-bit GPTQ.",
+      "authors": [
+        "Achille Jacquemond",
+        "Yuma Ichikawa",
+        "Akira Sakai"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-10T13:28:23+00:00",
+      "link": "https://arxiv.org/pdf/2608.09595v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "2-bit or fewer LLM weight compression via interleaved cross-block PTQ",
+      "llm_evidence_cn": "面向2比特及以下LLM权重的交错跨块后训练量化",
+      "llm_evidence": "面向2比特及以下LLM权重的交错跨块后训练量化",
+      "canonical_evidence": "面向2比特及以下LLM权重的交错跨块后训练量化",
+      "llm_tldr_en": "Proposes ICBQ, a scheduling modification for block-wise PTQ that revisits boundary seams between chunks, improving compression to two bits or fewer without changing the local objective.",
+      "llm_tldr_cn": "将大语言模型压缩到2比特或以下通常依赖逐块后训练量化，但现有跨块变体只将滑动窗口扫过网络一次，早期引入的误差不会再次修正。本文提出交错跨块量化（ICBQ），通过调度修改反复细化连续块之间的接缝对，使每个接缝被处理两次；该方法保持局部双块目标，并复用现有PTQ的标定数据，在极低比特LLM权重量化中有效降低困惑度并提升下游精度。",
+      "llm_tldr": "将大语言模型压缩到2比特或以下通常依赖逐块后训练量化，但现有跨块变体只将滑动窗口扫过网络一次，早期引入的误差不会再次修正。本文提出交错跨块量化（ICBQ），通过调度修改反复细化连续块之间的接缝对，使每个接缝被处理两次；该方法保持局部双块目标，并复用现有PTQ的标定数据，在极低比特LLM权重量化中有效降低困惑度并提升下游精度。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.01847v1",
+      "source": "arxiv",
+      "title": "FOCUS: FP4 Optimization via Coupled-Relaxation and Dual-Granularity Scaling",
+      "abstract": "Large language models (LLMs) achieve remarkable performance but are expensive to deploy due to their enormous size. FP4 quantization, with formats such as MXFP4 and NVFP4, offers an appealing solution with native hardware support on modern accelerators. However, maintaining accuracy under FP4 precision remains difficult. A key bottleneck lies in scale optimization: existing methods tightly couple the quantization and dequantization scales, forcing both to conform to the discrete low-precision format required by hardware, such as E8M0 in MXFP4. Yet the quantization scale is never stored and need not obey this constraint, suggesting a significant untapped optimization space. In this work, we propose FOCUS, a post-training quantization framework with end-to-end scale learning for FP4 Optimization via Coupled-Relaxation and Dual-Granularity Scaling. Coupled-Relaxation Scaling (CRS) relaxes the tight coupling between quantization and dequantization scales with a learnable full-precision coefficient, enabling more effective optimization without breaking hardware compliance. Dual-Granularity Scaling (DGS) further refines the quantization scale at a finer sub-block granularity, allowing more precise adaptation to local weight distributions. Experiments across multiple LLM families and benchmarks show that FOCUS achieves state-of-the-art FP4 accuracy under both MXFP4 and NVFP4 formats, while introducing no additional inference overhead. Code and quantized models will be released at https://github.com/tencent/AngelSlim.",
+      "authors": [
+        "Xianglong Yan",
+        "Hong Liu",
+        "Chengzhu Bao",
+        "Tianao Zhang",
+        "Guanghua Yu",
+        "Jianchen Zhu",
+        "Yulun Zhang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-03T07:54:56+00:00",
+      "link": "https://arxiv.org/pdf/2608.01847v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "FP4 post-training quantization for LLM weights",
+      "llm_evidence_cn": "面向LLM权重的FP4后训练量化",
+      "llm_evidence": "面向LLM权重的FP4后训练量化",
+      "canonical_evidence": "面向LLM权重的FP4后训练量化",
+      "llm_tldr_en": "FOCUS is a PTQ framework for FP4 LLM quantization that decouples quantization and dequantization scales and uses dual-granularity scaling to recover accuracy, improving over MXFP4/NVFP4 hardware formats.",
+      "llm_tldr_cn": "FP4量化在MXFP4/NVFP4等硬件格式上受支持，但维持精度困难，主要瓶颈是量化与反量化尺度被强制绑定到离散格式（如E8M0）。FOCUS观察到量化尺度无需存储且不受此约束，提出耦合松弛与双粒度缩放来解耦并分别优化尺度。在保持硬件兼容的同时，该方法显著改善了LLM FP4后训练量化的精度。虽不涉及码本，但为低比特LLM量化提供了可迁移的尺度优化方法，属于主题内的重要方法桥接。",
+      "llm_tldr": "FP4量化在MXFP4/NVFP4等硬件格式上受支持，但维持精度困难，主要瓶颈是量化与反量化尺度被强制绑定到离散格式（如E8M0）。FOCUS观察到量化尺度无需存储且不受此约束，提出耦合松弛与双粒度缩放来解耦并分别优化尺度。在保持硬件兼容的同时，该方法显著改善了LLM FP4后训练量化的精度。虽不涉及码本，但为低比特LLM量化提供了可迁移的尺度优化方法，属于主题内的重要方法桥接。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.12026v1",
+      "source": "arxiv",
+      "title": "SoftWater: Class-Aware Rate Allocation for Softmax Quantization",
+      "abstract": "Post-training quantization pipelines routinely leave the softmax output layer in high precision. Yet in small LLMs with modern vocabularies, the head holds 15--30\\% of all parameters, so a nominal ``2-bit'' model with an fp16 head can store several times as many bits per weight. We pose softmax-layer quantization as a rate-distortion problem under the KL divergence between the original and quantized output distributions. A second-order analysis reveals a class-aware geometry: quantization error is weighted jointly by feature covariance and class-specific softmax curvature. A separability approximation replaces the $Kn\\times Kn$ Cholesky with one $n\\times n$ factorization rescaled per class, making the lattice encodable by successive interference cancellation, with both statistics from a single forward pass. The resulting method, SoftWater, gives fine grids to frequent, low-variance classes and coarse grids to rare ones, a large gap under Zipfian token distributions. Across five models from 1B to 32B, SoftWater outperforms the released WaterSIC quantizer (near-optimal under linear-layer WMSE but not output KL) at matched head rates on 59 of 60 test points, using none of that pipeline's refinements and cutting head-induced KL by $6.5\\times$--$8.3\\times$ at 2 bits. On Llama-3.2-1B-Instruct with quantized bodies, a 2-bit head removes 45--60\\% of stored bytes for a $2.9$--$3.7\\%$ perplexity increase. Because the class-side statistic comes from calibration data, matching calibration to the deployment domain gives the lowest KL on that domain throughout. On a tied model, a 4-bit head is near-lossless and a 2-bit head costs under 4\\% perplexity, making head quantization of such models practical.",
+      "authors": [
+        "Joao V. Cavalcanti",
+        "Ashia C. Wilson"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-12T13:06:50+00:00",
+      "link": "https://arxiv.org/pdf/2608.12026v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Lattice-codebook quantization for LLM softmax layer via rate-distortion and successive interference cancellation.",
+      "llm_evidence_cn": "基于格码本对LLM的softmax层做率失真量化，符合结构化格码本量化需求。",
+      "llm_evidence": "基于格码本对LLM的softmax层做率失真量化，符合结构化格码本量化需求。",
+      "canonical_evidence": "基于格码本对LLM的softmax层做率失真量化，符合结构化格码本量化需求。",
+      "llm_tldr_en": "SoftWater formulates softmax-layer quantization as rate-distortion under KL divergence, with a separability approximation enabling lattice encoding via successive interference cancellation.",
+      "llm_tldr_cn": "论文指出小模型词表增大使softmax头占据大量参数，但低比特量化常将其保留为高精度。作者将softmax层量化建模为KL散度下的率失真问题，利用类感知几何和二阶级分析，通过可分性近似将高维Cholesky分解降为每类缩放，使格码本可通过逐次干扰消除编码。结果显示该方法能在低比特下有效压缩softmax层。该工作展示了格码本在LLM量化中的适用性，尽管对象是softmax而非权重。",
+      "llm_tldr": "论文指出小模型词表增大使softmax头占据大量参数，但低比特量化常将其保留为高精度。作者将softmax层量化建模为KL散度下的率失真问题，利用类感知几何和二阶级分析，通过可分性近似将高维Cholesky分解降为每类缩放，使格码本可通过逐次干扰消除编码。结果显示该方法能在低比特下有效压缩softmax层。该工作展示了格码本在LLM量化中的适用性，尽管对象是softmax而非权重。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "LLM quantization using highly structured lattice, algebraic, or geometric codebooks similar to QuIP# E8 lattice codebooks",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.05127v2",
+      "source": "arxiv",
+      "title": "SSTQ:Privacy-Preserving Vector Quantization via Subsampled Stochastic TurboQuant",
+      "abstract": "Achieving local differential privacy in distributed optimization while maintaining low communication cost remains challenging. Existing vector quantization methods, such as vqSGD, use high-dimensional geometric constructions but incur unfavorable dimension-dependent variance. In this work, we propose Subsampled Stochastic TurboQuant (SSTQ), a framework that combines overcomplete equal-norm tight frames, coordinate subsampling, and privacy-aware one-dimensional quantization. SSTQ includes two variants: a Flat Randomized Response version and a Metric-Aware Laplace version, the latter being better suited to higher codebook bit-width regimes. We show that SSTQ achieves optimal mean squared error scaling while using only $\\lceil \\log_2 N \\rceil + b$ bits per client, where $N = Θ(d)$ is the frame size. We also derive a surrogate privacy-aware codebook objective that reduces the codebook-dependent MSE scaling from $O(4^b)$ to $O(2^b)$. Finally, we empirically evaluate SSTQ against established baselines on federated learning tasks using CIFAR-10 and Fashion-MNIST, demonstrating favorable utility and communication efficiency.   Some of the analytical derivations were first obtained using a fully automated Gemini-based agentic system developed internally at Google. The authors have verified those derivations and edited them for clarity of presentation.",
+      "authors": [
+        "Adel Javanmard",
+        "David P. Woodruff",
+        "Vahab Mirrokni"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "stat.ML"
+      ],
+      "published": "2026-08-05T17:51:25+00:00",
+      "link": "https://arxiv.org/pdf/2608.05127v2",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Structured VQ via tight frames avoiding large codebook",
+      "llm_evidence_cn": "基于紧框架的结构化向量量化，避免大码本",
+      "llm_evidence": "基于紧框架的结构化向量量化，避免大码本",
+      "canonical_evidence": "基于紧框架的结构化向量量化，避免大码本",
+      "llm_tldr_en": "SSTQ combines overcomplete tight frames and coordinate subsampling for privacy-preserving vector quantization, achieving optimal MSE scaling with low communication cost.",
+      "llm_tldr_cn": "针对分布式优化中局部差分隐私与通信开销难以兼顾的问题，SSTQ 结合过完备等范数紧框架、坐标子采样和隐私感知一维量化，构造低通信成本的结构化向量量化器。该框架在仅使用约 log2 N 位通信的情况下达到最优均方误差缩放，并通过两种变体适配不同隐私预算和码本位宽场景，为隐私保护分布式学习提供了高效的压缩工具。",
+      "llm_tldr": "针对分布式优化中局部差分隐私与通信开销难以兼顾的问题，SSTQ 结合过完备等范数紧框架、坐标子采样和隐私感知一维量化，构造低通信成本的结构化向量量化器。该框架在仅使用约 log2 N 位通信的情况下达到最优均方误差缩放，并通过两种变体适配不同隐私预算和码本位宽场景，为隐私保护分布式学习提供了高效的压缩工具。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "structured vector quantization methods that avoid storing a large explicit codebook through lattice, trellis, algebraic, or implicit codebook representations",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.07019v1",
+      "source": "arxiv",
+      "title": "ReQuant: Fixed-Grid Discrete Refinement for Post-Training Quantization",
+      "abstract": "Post-training quantization (PTQ) is widely used to reduce the memory and computational cost of large language models. Existing PTQ methods typically obtain an initial quantized model through heuristic rules or greedy optimization, and once quantization is completed the resulting integer assignments are usually treated as final. This observation motivates a complementary optimization stage within PTQ that keeps quantized weights improvable after an executable quantized model has been produced, while preserving the quantized format. We introduce ReQuant, a backpropagation-free fixed-grid refinement procedure for this stage. Agnostic to the PTQ initializer, ReQuant takes an existing quantized model as a feasible starting point and iteratively revisits its discrete weight assignments on the fixed quantization grid. Accepted updates strictly reduce the mean squared reconstruction error and remain on the original grid. In this way, ReQuant turns the initially fixed PTQ output into an iteratively optimizable discrete solution and serves as a plug-and-play post-processing stage for existing PTQ pipelines. Experiments across diverse model families, bit-widths, and downstream tasks show that ReQuant consistently improves quantized models from heterogeneous PTQ initializers, with especially large gains on simple initializers and lower bit-widths. Notably, ReQuant can refine a simple round-to-nearest initialization across multiple sweeps until it approaches or surpasses GPTAQ under the same quantization format. These results establish ReQuant as a practical complementary stage for further improving existing PTQ pipelines.",
+      "authors": [
+        "Yongge Ma",
+        "Guoan Wang",
+        "Feiyu Wang",
+        "Yaoming Li",
+        "Qian Zhang",
+        "Zihan Yan",
+        "Yinjun Han",
+        "Tong Yang"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-07T09:27:14+00:00",
+      "link": "https://arxiv.org/pdf/2608.07019v1",
+      "tags": [
+        "keyword:isc",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "backprop-free fixed-grid discrete refinement for post-training quantization",
+      "llm_evidence_cn": "面向后训练量化的无反向传播固定网格离散细化",
+      "llm_evidence": "面向后训练量化的无反向传播固定网格离散细化",
+      "canonical_evidence": "面向后训练量化的无反向传播固定网格离散细化",
+      "llm_tldr_en": "Proposes ReQuant, a backpropagation-free fixed-grid refinement stage that improves an already quantized LLM while preserving the quantized format, agnostic to the PTQ initializer.",
+      "llm_tldr_cn": "现有后训练量化通常通过启发式规则或贪心优化得到初始量化模型，完成后整数赋值便不再修改。本文提出ReQuant，在已生成可执行量化模型后增加一个无反向传播的固定网格离散细化阶段，始终保持量化格式，迭代微调量化权重；该方法与具体PTQ初始化无关，能在多种低比特LLM上进一步降低困惑度。",
+      "llm_tldr": "现有后训练量化通常通过启发式规则或贪心优化得到初始量化模型，完成后整数赋值便不再修改。本文提出ReQuant，在已生成可执行量化模型后增加一个无反向传播的固定网格离散细化阶段，始终保持量化格式，迭代微调量化权重；该方法与具体PTQ初始化无关，能在多种低比特LLM上进一步降低困惑度。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

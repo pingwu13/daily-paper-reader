@@ -1,0 +1,217 @@
+{
+  "date": "20260720-20260818",
+  "date_label": "2026-07-20 ~ 2026-08-18",
+  "generated_at": "2026-08-18 02:37:03 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.06763v1",
+      "route": "20260720-20260818/2608.06763v1-cubicquant-parametric-non-uniform-codebooks-for-high-throughput-llm-inference-with-1-8-bit-weights",
+      "title": "CubicQuant: Parametric Non-Uniform Codebooks for High-Throughput LLM Inference with 1-8-Bit Weights",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向1-8比特LLM权重的参数化非均匀码本",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.08188v1",
+      "route": "20260720-20260818/2608.08188v1-quantization-degradation-in-large-language-models-a-signal-noise-perspective",
+      "title": "Quantization Degradation in Large Language Models: A Signal-Noise Perspective",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "系统研究LLM权重仅后训练量化，覆盖2/3/4比特，并用信噪比解释退化差异",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2607.27694v1",
+      "route": "20260720-20260818/2607.27694v1-gyrot-leveraging-hidden-synergy-between-rotation-and-fine-grained-group-quantization-for-low-bit-llm-inference",
+      "title": "GyRot: Leveraging Hidden Synergy between Rotation and Fine-grained Group Quantization for Low-bit LLM Inference",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向高效推理的低比特LLM量化，结合旋转与细粒度分组量化，契合极低比特权重量化主题。",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.03867v1",
+      "route": "20260720-20260818/2608.03867v1-heterogeneity-aware-microscaling-for-efficient-low-bit-llm-inference",
+      "title": "Heterogeneity-Aware Microscaling for Efficient Low-Bit LLM Inference",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向低比特LLM推理的自适应微缩放格式，针对权重与激活逐块选择精度恢复方案与表示方式",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.04048v1",
+      "route": "20260720-20260818/2608.04048v1-recurrent-residual-quantization-a-progressive-multi-precision-representation-for-llms",
+      "title": "Recurrent Residual Quantization: A Progressive Multi-Precision Representation for LLMs",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "以2比特基码加残差校正逐级构建多精度LLM表示",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.09595v1",
+      "route": "20260720-20260818/2608.09595v1-from-sweep-to-seam-interleaved-cross-block-post-training-quantization",
+      "title": "From Sweep to Seam: Interleaved Cross-Block Post-Training Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向2比特及以下LLM权重的交错跨块后训练量化",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.12026v1",
+      "route": "20260720-20260818/2608.12026v1-softwater-class-aware-rate-allocation-for-softmax-quantization",
+      "title": "SoftWater: Class-Aware Rate Allocation for Softmax Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "基于格码本对LLM的softmax层做率失真量化，符合结构化格码本量化需求。",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2607.22148v1",
+      "route": "20260720-20260818/2607.22148v1-drae-representation-autoencoder-with-hyper-spherical-codes",
+      "title": "dRAE: Representation Autoencoder with Hyper-Spherical Codes",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "用于向量量化的超球面结构化码本",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2607.23047v1",
+      "route": "20260720-20260818/2607.23047v1-mixquant-adaptive-mixed-precision-quantization-for-large-language-models",
+      "title": "MixQuant: Adaptive Mixed-Precision Quantization for Large Language Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向LLM权重的自适应混合精度后训练量化",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.01528v1",
+      "route": "20260720-20260818/2608.01528v1-gram-space-structure-preserving-codebook-compression-for-memory-efficient-neuro-symbolic-ai",
+      "title": "Gram-Space: Structure-Preserving Codebook Compression for Memory-Efficient Neuro-Symbolic AI",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过正交基压缩码本，用紧凑结构化表示替代显式大码本",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.01847v1",
+      "route": "20260720-20260818/2608.01847v1-focus-fp4-optimization-via-coupled-relaxation-and-dual-granularity-scaling",
+      "title": "FOCUS: FP4 Optimization via Coupled-Relaxation and Dual-Granularity Scaling",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向LLM权重的FP4后训练量化",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.05127v2",
+      "route": "20260720-20260818/2608.05127v2-sstqprivacy-preserving-vector-quantization-via-subsampled-stochastic-turboquant",
+      "title": "SSTQ:Privacy-Preserving Vector Quantization via Subsampled Stochastic TurboQuant",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于紧框架的结构化向量量化，避免大码本",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    },
+    {
+      "paper_id": "2608.07019v1",
+      "route": "20260720-20260818/2608.07019v1-requant-fixed-grid-discrete-refinement-for-post-training-quantization",
+      "title": "ReQuant: Fixed-Grid Discrete Refinement for Post-Training Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向后训练量化的无反向传播固定网格离散细化",
+      "first_seen_at": "2026-08-18 02:37:03 UTC",
+      "updated_at": "2026-08-18 02:37:03 UTC"
+    }
+  ]
+}

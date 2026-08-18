@@ -1,0 +1,2352 @@
+MixQuant: Adaptive Mixed-Precision Quantization
+for Large Language Models
+Ashitabh Misra
+University of Illinois at Urbana-Champaign
+misra8@illinois.edu
+Madhav Agrawal
+University of Illinois at Urbana-Champaign
+madhav5@illinois.edu
+Arham Jain
+University of Illinois at Urbana-Champaign
+arhamj3@illinois.edu
+Tarek Abdelzaher
+University of Illinois at Urbana-Champaign
+zaher@illinois.edu
+Abstract
+Mixed-precision quantization improves the accuracy of post-training quantization
+by allocating higher bitwidths to sensitive layers, but existing methods solve the
+allocation for a single fixed memory budget. In practice the budget varies across
+deployments and is unknown at calibration time. Adaptive quantization addresses
+this with one offline calibration that serves any budget, yet current methods score
+layer sensitivity in a manner that does not consider its dependency on quantiza-
+tion levels of other layers. We show that a layer’s sensitivity depends strongly
+on the bitwidths of its upstream layers and that this dependence shifts the re-
+sulting preferred bit allocation. We propose MIXQUANT, a technique-agnostic
+adaptive framework that wraps any base quantizer.
+MIXQUANT marginalizes
+each layer’s distortion over random quantized upstream configurations to obtain
+budget-agnostic scores, calibrates the quantizer’s parameters on plans the allocator
+itself produces, and penalizes allocations that leave layers at the lowest bitwidths.
+A single greedy pass then serves any budget at deployment. Across Llama-3.2-3B,
+Llama-2-7B, and Mistral-7B under AWQ and GPTQ, MIXQUANT outperforms
+adaptive and mixed-precision baselines in every setting, improving average accu-
+racy by up to 8 points and reducing perplexity from 12.43 to 10.70 at the tightest
+budget, while matching an ILP solver at negligible deployment cost.
+1
+Introduction
+Large Language Models (LLMs) underpin a wide range of applications, from dialog systems and
+code assistants to search and document understanding (Touvron et al. 2023, Lewis et al. 2020, Islam
+et al. 2024). Their capability scales with size, and so does their cost: serving a model with tens
+of billions of parameters exceeds the memory and bandwidth of most deployment targets (Touvron
+et al. 2023, Kwon et al. 2023). Among compression techniques such as pruning, distillation, and
+low-rank factorization (Liu et al. 2019, Hinton et al. 2015, Liu and Parhi 2023), post-training quan-
+tization (PTQ) is the most widely adopted, reducing weight precision with only a small calibration
+set and no retraining (Gholami et al. 2021, Rokh et al. 2023).
+Preprint.
+arXiv:2607.23047v1  [cs.LG]  25 Jul 2026
+
+
+Stage 1
+Context-aware Damage Scores
+...
+K random
+quantized
+contexts
+bits b (3→8)
+layers ℓ
+Distortion table D ∈RL×|B|
+¯dℓ(b)
+hi
+lo
+Stage 2
+Plan-aware Technique Params µ
+Mmin
+Mmax
+anchor budgets
+Plans from optimizer O
+µ of T
+[ ]
+clip
+scale
+Hessian
+Stage 3
+Tail-aware Allocation
+3
+4
+5
+6
+7
+8
+allocated bitwidth bℓ
+fraction of layers
+low-bit tail
+thinned, kept
+high-bit tail
+suppressed
+w/o tail penalty
+with γ tail penalty
+Deployment
+Budget M1
+Budget M2
+Budget M3
+Determined at deployment time
+Greedy Solver
+Picks bits by marginal
+damage per byte
++ γ Tail Regularization
+darker = higher bitwidth
+MP model T(b, µ)
+MP model T(b, µ)
+MP model T(b, µ)
+Distortion table D
+Technique params µ
+Tail penalty γ
+Figure 1: Overview of MIXQUANT. Stage 1 builds a budget-agnostic distortion table D ∈RL×|B|
+by scoring each (module, bitwidth) pair under K random quantized upstream contexts (Section 4.1).
+Stage 2 estimates the technique parameters µ on activations induced by anchor plans the greedy
+solver produces across the feasible budget range, rather than on FP16 activations (Section 4.2).
+Stage 3 adds a tail penalty γ that steers spare budget away from the lowest bitwidths (Section 4.3).
+At deployment, each budget Mi is served by a single greedy solve over D, µ, and γ.
+Mixed-precision quantization extends uniform PTQ by exploiting the fact that layers differ widely in
+sensitivity: allocating higher bitwidths to sensitive layers and lower bitwidths elsewhere yields better
+accuracy at the same memory footprint (Wang et al. 2019, Xu et al. 2022). We show that allocations
+that have similar memory consumption can differ in quality (Table 1). Memory budget alone does
+not determine accuracy. Where the bits are placed is what matters. Existing mixed-precision quanti-
+zation methods search for an optimal allocation under a fixed resource constraint (Wang et al. 2019,
+Koryakovskiy et al. 2023). In practice the constraint is neither single nor known: the same model
+is deployed across many devices with different memory capacities, and new deployment targets ap-
+pear after calibration is complete. Moreover, if calibration is slower than the memory availability
+changes, the allocation is always stale. Many budgets make per-budget calibration computationally
+infeasible; unknown budgets make it impossible. A solution must therefore calibrate once, produc-
+ing metrics from which a bit allocation for any budget is derived cheaply at deployment (Jin et al.
+2020, Yu et al. 2021).
+Existing adaptive quantization methods, however, have three limitations. First, adaptive quantization
+techniques developed for Convolutional Neural Networks rely on retraining to recover accuracy (Jin
+et al. 2020, Bulat and Tzimiropoulos 2021, Shkolnik et al. 2020, Sun et al. 2024), which is infeasible
+at LLM scale. Second, post-training adaptive quantization methods for LLMs, such as (Dumitru
+et al. 2024), compute their layer-wise metrics on inputs generated by upstream layers held in FP16
+(we call the upstream bit allocation the context). This context never occurs at deployment, where
+every layer is quantized, and we show that the choice of context shifts both the metrics and the
+resulting bit allocation (Figure 2). Third, methods such as Any-Precision LLM (Park et al. 2024) are
+tied to a single underlying quantization scheme, the non-uniform codebooks of SqueezeLLM (Kim
+et al. 2024), and do not transfer across PTQ techniques.
+Our Solution.
+We propose MIXQUANT, a technique-agnostic adaptive PTQ framework that wraps
+any base quantizer, such as AWQ, GPTQ, and others (Lin et al. 2024, Frantar et al. 2022). It ad-
+dresses these limitations in three stages. First, rather than scoring each layer against an FP16 net-
+work, MIXQUANT measures the output distortion of each (layer, bitwidth) pair under random mixed-
+precision configurations of the layer’s upstream layers, the only layers that shape its input. It then
+marginalizes this distortion over the random configurations via Monte Carlo sampling. Marginal-
+ization removes the dependence on the unknown context, and the resulting distortion table depends
+only on the layer and its bitwidth, so it serves every deployment budget. Second, MIXQUANT re-
+2
+
+
+Table 1: Plans sampled from the main experiments (Tables 2, 3, and 4) at a fixed budget per model.
+Despite near-equal memory, neither perplexity nor accuracy tracks the unweighted average bitwidth:
+the highest-bitwidth plan is not the most accurate. How precision is distributed across layers, not
+the average, determines quality.
+Model
+Mem (GB)
+Unweighted Avg Bitwidth
+Wikitext PPL (↓)
+Avg Task Accuracy
+Llama-3B
+∼1.25
+3.7
+17.1
+40.4
+3.9
+16.6
+44.2
+4.0
+12.4
+47.8
+4.0
+12.5
+48.5
+4.3
+12.9
+46.9
+4.4
+13.2
+46.1
+Llama-7B
+∼3.0
+3.9
+12.2
+43.5
+4.0
+11.9
+45.0
+4.1
+9.9
+44.3
+4.1
+10.1
+44.6
+4.3
+10.3
+42.9
+4.3
+10.3
+42.7
+introduces the information that is known at calibration time, namely the technique and the solver.
+It estimates the technique parameters (AWQ scales and clipping ranges, GPTQ Hessians) on acti-
+vations induced by allocations the solver actually produces, rather than on FP16 activations. Third,
+because quantization error is irreversible along the forward pass, low-bit assignments are dispro-
+portionately damaging; MIXQUANT adds a tail regularization term that steers spare budget toward
+layers still at the lowest bitwidths. Finally, we cast bit allocation as a multiple-choice knapsack
+problem and solve it with a greedy algorithm cheap enough to run at deployment time for each new
+budget. We empirically show that its allocations match the downstream accuracy of an integer linear
+programming solver (Table 5).
+In summary, our main contributions are:
+• We identify deployment-context mismatch in adaptive quantization: per-layer sensitivity
+scores computed on the FP16 model do not reflect the fully quantized networks actually
+deployed. We propose a mean-field remedy, budget-agnostic distortion scores obtained
+by marginalizing each layer’s error over random quantized configurations of its upstream
+layers.
+• We develop MIXQUANT, an end-to-end, technique-agnostic adaptive quantization pipeline
+that combines decoupled distortion scores, plan-aware estimation of technique parameters,
+and tail-regularized greedy allocation, so that a single offline calibration serves any memory
+budget at deployment with one cheap greedy solve.
+• We evaluate MIXQUANT across multiple models, datasets, and commonly used calibration
+metrics, and show that it consistently produces better bit allocations than existing adaptive
+and mixed-precision baselines (Dumitru et al. 2024, Zhao et al. 2026, Dong et al. 2020, Jin
+et al. 2020).
+2
+Related Work
+MIXQUANT builds on two lines of prior work: post-training quantization for LLMs, and adaptive
+quantization. We review each in turn.
+2.1
+Post-Training Quantization for LLMs
+Since retraining billion-parameter models is prohibitively expensive, Post-Training Quantization
+(PTQ) has become the dominant approach for compressing LLMs. Scaling-based methods redis-
+tribute quantization difficulty between weights and activations: SmoothQuant (Xiao et al. 2023) mi-
+grates activation outliers into the weights via a per-channel equivalent transform, while AWQ (Lin
+3
+
+
+L1.output
+L4.key
+L8.query
+L9.gate
+L13.output
+L17.value
+0.00
+2.50
+5.00
+7.50
+10.00
+×102
+Llama-3.2-3B
+L1.output
+L4.key
+L8.query
+L9.gate
+L13.output
+L17.value
+0.00
+0.60
+1.20
+1.80
+2.40
+×102
+Llama-2-7B
+NMSE
+KL Divergence
+(a) Metric variation across contexts. For six representative modules of Llama-3.2-3B (left) and Llama-2-7B
+(right), the relative spread (max −min)/ min of NMSE and KL divergence across contexts. Both metrics
+move by up to two to three orders of magnitude.
+0
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+12
+13
+14
+15
+16
+17
+18
+19
+20
+21
+22
+23
+24
+25
+26
+27
+Transformer Block
+1.1
+1.3
+1.5
+1.7
+1.9
+Memory Bound (GB)
+0
+1
+2
+3
+4
+5
+Bitwidth Spread
+(b) Allocation variation across contexts. Per-linear-layer bitwidth spread (max −min) for Llama-3.2-3B, one
+plan per context, from the ILP solver on the MCKP objective equation 2. The x-axis runs over linear layers,
+labelled by transformer block; the y-axis varies the memory bound. Spread appears across all memory bounds,
+showing that context choice shifts the bit allocation.
+Figure 2: Effect of upstream context, measured over the same 20 random quantized contexts in both
+panels. Both per-module metrics (top) and the downstream plans they induce (bottom) vary with the
+context, so scoring in a single context biases the resulting bit allocation. MIXQUANT removes this
+dependence by averaging over contexts (Section 4.1).
+et al. 2024) protects the few salient weight channels identified by activation magnitude. GPTQ (Fran-
+tar et al. 2022) instead exploits second-order information, quantizing column by column and using
+an approximate Hessian to compensate the error introduced at each step. LQER (Zhang et al. 2024)
+takes a corrective route, absorbing the residual quantization error into an activation-scaled low-rank
+term. Rotation-based methods instead precondition the network: QuaRot (Ashkboos et al. 2024) ap-
+plies randomized Hadamard rotations and SpinQuant (Liu et al. 2025) learns them, both suppressing
+outliers before quantization. Mixed-precision methods instead allocate bits non-uniformly across
+the model: HAWQv2 (Dong et al. 2020) assigns layer bit-widths by average Hessian trace, AMQ
+(Lee et al. 2025) searches per-layer precisions to minimize accuracy loss under a budget, and AQLM
+(Egiazarian et al. 2024) pushes weights to ∼2 bits via learned additive codebooks, all trading preci-
+sion against a target budget. The aforementioned techniques assume the deployment memory budget
+is known a priori. In real-time deployment, where constraints change at runtime, this assumption
+fails—and re-solving the allocation for every new budget is impractical.
+2.2
+Adaptive Quantization
+Adaptive quantization removes this dependence: a single offline calibration yields per-layer scores
+from which an allocation for any budget is recovered by one cheap solve at deployment. Early
+adaptive quantization methods, developed for CNNs and small transformers, achieve this through
+quantization-aware retraining: AdaBits (Jin et al. 2020) jointly trains a single model to run at any of
+a fixed set of bit-widths, BitMixer (Bulat and Tzimiropoulos 2021) trains a meta-network that selects
+arbitrary mixed-precision configurations at runtime, and RobustQuant (Shkolnik et al. 2020) regu-
+4
+
+
+larizes weight kurtosis so layer distributions stay resilient across precisions. All recover accuracy
+through gradient updates, which is infeasible at LLM scale; we therefore focus on retraining-free
+adaptive quantization for LLMs. LIM (Dumitru et al. 2024) scores each transformer block by the
+cosine similarity between its input and output hidden states, a single-pass metric requiring no solver.
+CoopQ (Zhao et al. 2026) attributes a contribution to each layer via Shapley values and allocates bits
+with an ILP. Any-Precision LLM (Park et al. 2024) stores one model that serves multiple bit-widths,
+built on the non-uniform codebooks of SqueezeLLM (Kim et al. 2024).
+3
+Problem Setup
+Setup.
+A pretrained LLM contains linear modules ℓ∈{1, . . . , L}, where module ℓhas Pℓparame-
+ters. Each module is quantized by a PTQ technique T, e.g., AWQ or GPTQ (Lin et al. 2024, Frantar
+et al. 2022). The technique has calibration parameters µ, such as smoothing factors and clipping
+ranges for AWQ or Hessian estimates for GPTQ. Bitwidths are chosen from an ordered set B of ad-
+missible values (B = {3, . . . , 8} in our experiments), and a plan is a vector b = (b1, . . . , bL) ∈BL.
+A plan occupies weight memory mem(b) = 1
+8
+PL
+ℓ=1 Pℓbℓ(reported in bytes). Given a memory
+budget M, the deployment objective is
+min
+b, µ
+L
+ T(b, µ)
+
+s.t.
+mem(b) ≤M,
+(1)
+where L is the loss of the quantized model. In the adaptive setting, the technique T and the allocation
+solver are fixed before calibration, but the budget M is a runtime constraint unknown at calibration
+time. This variation calls for a shared calibration and precomputed metrics independent of M.
+Surrogate.
+Optimizing equation 1 directly is intractable, since L is a black box over a configura-
+tion space that is exponential in the number of modules. We replace L with a sum of per-module
+distortion scores ¯dℓ(b), where ¯dℓ(b) measures the output distortion of quantizing module ℓto b bits.
+We formulate the resulting allocation problem as a multiple-choice knapsack problem (MCKP), a
+formulation shared by prior mixed-precision methods (Yao et al. 2020, Li et al. 2023, Misra et al.
+2025),
+min
+x
+L
+X
+ℓ=1
+X
+b∈B
+¯dℓ(b) xℓ,b
+s.t.
+X
+b∈B
+xℓ,b = 1 ∀ℓ,
+1
+8
+L
+X
+ℓ=1
+X
+b∈B
+Pℓb xℓ,b ≤M,
+(2)
+where xℓ,b ∈{0, 1} indicates the assignment of bitwidth b to module ℓ. The additive objective
+presumes each module’s score is independent of the rest of the plan; Section 4.1 constructs ¯dℓ(b)
+so that this holds by definition. The technique parameters µ do not appear in equation 2; they are
+estimated once during calibration and then held fixed (Section 4.2).
+4
+Method
+MIXQUANT solves the allocation problem equation 2 in three stages, which together estimate its two
+unknowns: the distortion scores ¯dℓ(b) and the technique parameters µ. Figure 1 gives an overview.
+Stage 1 estimates ¯dℓ(b). A module’s distortion depends on its context, the bitwidths of the upstream
+modules that shape its input, and the deployed context is unknown at calibration time. We therefore
+average each score over random quantized upstream configurations, which yields a budget-agnostic
+distortion table (Section 4.1). Stage 2 estimates µ. Unlike the budget, the technique and the solver
+are known before deployment. We generate plans across the feasible budget range with the greedy
+solver, and calibrate µ on the activations these plans induce rather than on FP16 activations (Sec-
+tion 4.2). Stage 3 introduces a tail regularizer. Distortion introduced by a low-bit module cannot
+be undone by any downstream module, however high its precision, and the per-module scores in
+equation 2 do not capture this cost. The regularizer biases the solver against leaving modules at the
+lowest bitwidths (Section 4.3).
+4.1
+Stage 1: Mean-Field Distortion Estimation
+Any per-module distortion score is measured in a context: the bitwidths of the upstream modules
+that shape the input the module receives. Prior work fixes this context to full precision. Layer-
+5
+
+
+and block-wise PTQ reconstructs each unit from FP16 inputs (Nagel et al. 2020, Li et al. 2021).
+Mixed-precision methods rank the sensitivity of a layer while every other layer is left unquantized
+(Dong et al. 2020, Yao et al. 2020). Activation-aware LLM quantizers calibrate their transforms on
+FP16 activations (Lin et al. 2024, Xiao et al. 2023). A fully FP16 upstream is a configuration that
+never occurs at deployment, where every module is quantized. A representative score must instead
+be measured under quantized upstream modules. The deployed plan is unknown at calibration time,
+so we construct a score table that does not depend on it and therefore serves every budget.
+Context-dependent distortion.
+The input to module ℓdrifts from its FP16 value whenever up-
+stream modules are quantized. A per-module score therefore depends on the bitwidth of the module
+and on its upstream context b<ℓ∈Bℓ−1. We instantiate dℓas the normalized mean squared error
+(NMSE) of the module output,
+dℓ(b; b<ℓ) = Ex
+y(b, b<ℓ)
+ℓ
+(x) −yfp16
+ℓ
+(x)
+2
+Ex
+yfp16
+ℓ
+(x)
+2
+,
+(3)
+where x is a calibration sample, y(b, b<ℓ)
+ℓ
+is the output of module ℓquantized to b bits under context
+b<ℓ, and yfp16
+ℓ
+is the FP16 reference. The normalization makes scores comparable across modules.
+This dependence is large in practice, in both the raw metrics and the allocation they induce (Fig-
+ure 2), so a score measured in a single arbitrary context is not representative.
+Averaging over quantized contexts.
+The deployed context is unknown at calibration time, so we
+treat it as random. We draw the upstream bit-widths independently and uniformly over B, written
+π(b<ℓ) = Q
+m<ℓUnif(B), and define the decoupled distortion ¯dℓ(b) as the expected NMSE under
+this prior. We estimate it with K Monte Carlo draws,
+¯dℓ(b) = EB<ℓ∼π
+
+dℓ(b; B<ℓ)
+
+,
+ˆdℓ(b) = 1
+K
+K
+X
+k=1
+dℓ
+ b; b(k)
+<ℓ
+
+,
+b(k)
+<ℓ∼π.
+(4)
+For the sampled context b(k)
+<ℓ, the technique parameters (µ) of the quantized modules are recalibrated
+under that context, so no measurement in the table depends on FP16 calibration. These per-context
+parameters are used only for scoring and are then discarded. The single set of parameters deployed
+with the model is estimated in Stage 2.
+The resulting table depends on (ℓ, b) alone and serves every budget. This averaging is a mean-field
+decoupling: the unknown joint configuration of upstream modules is replaced by its average effect
+under the fixed prior π, so each module’s score becomes independent of the decisions made for other
+modules.
+4.2
+Stage 2: Plan-Aware Technique Parameters
+Stage 1 removes all plan information from the scores, but not all of it is unknown. The technique T
+and the solver are fixed before deployment, and the solver has its own systematic preferences over
+plans. We re-introduce this known structure through the technique parameters µ, by calibrating them
+on plans the solver itself produces.
+We partition the feasible memory range [Mmin, Mmax] into I intervals, where Mmin places every
+module at the smallest bitwidth and Mmax at the largest. From interval i we sample J budgets
+and solve each with the same allocator used at deployment (Section 4.4), which yields J anchor
+plans. We quantize the network according to each anchor plan, calibrate one parameter set on the
+activations it induces, and average the J sets to form µi.
+For GPTQ the parameters are the layer Hessians, for AWQ the smoothing factors and clipping
+ranges. Averaging is exact for Hessians, since they are second moments of the inputs and their mean
+equals the Hessian of the mixed activations. For AWQ it is a heuristic, and we use it uniformly across
+techniques as a simple way to capture the average behavior the technique and solver induce. Buck-
+eting exists because plans at opposite ends of the budget range induce different activation statistics,
+so one parameter set fits neither end well, while within an interval the anchor plans are close enough
+to share one. At deployment, a budget M falling in interval i is served by one greedy solve and the
+precomputed µi.
+6
+
+
+Algorithm 1 Tail-Regularized Greedy Allocation
+Require: distortion table ¯d, budget M, penalty γ
+1: b0 ←smallest uniform bitwidth in B
+2: bℓ←b0 for all ℓ;
+R ←M −mem(b)
+▷remaining budget
+3: Q ←{(˜eℓ(bℓ), ℓ) : bℓ< bmax}
+▷candidate transitions
+4: while Q contains a transition with cost Pℓ(b+
+ℓ−bℓ) ≤R do
+5:
+pop the highest-scoring (˜eℓ, ℓ) with Pℓ(b+
+ℓ−bℓ) ≤R
+6:
+R ←R −Pℓ(b+
+ℓ−bℓ);
+bℓ←b+
+ℓ
+7:
+if bℓ< bmax then
+8:
+push (˜eℓ(bℓ), ℓ) into Q
+9:
+end if
+10: end while
+11: return b
+4.3
+Stage 3: Tail Regularization
+Quantization distortion is irreversible along the forward pass. Once a module’s output is corrupted
+by a low-bit assignment, no downstream module can recover the lost information, however high
+its precision, and the error compounds as it propagates. The lowest bitwidths should therefore
+be conceded sparingly. We make this explicit with a penalty that steers spare budget toward the
+modules still at the lowest bitwidths, so the lowest precisions are used only when the budget leaves
+no alternative.
+Let b0 be the smallest bit-width in B, and let b+ denote the successor of b in the ordered set B.
+Raising a module from b to b+ removes distortion at the cost of additional memory. We score this
+upgrade by the distortion removed per additional memory,
+eℓ(b) =
+¯dℓ(b) −¯dℓ(b+)
+Pℓ(b+ −b)
+,
+(5)
+and discount it by how far the module has already been raised above the floor,
+˜eℓ(b) =
+eℓ(b)
+1 + γ (b −b0),
+γ ≥0.
+(6)
+The depth b −b0 measures how far into the tail an upgrade reaches. Each additional bit granted
+to an already-raised module is progressively discounted relative to a module still at the floor, so
+the budget is pulled toward clearing modules off the lowest bitwidths rather than enriching a few
+modules deeply. The strength γ controls how strongly low bitwidths are discouraged.
+4.4
+Greedy Allocation
+Given a feasible budget M, the allocator starts from the uniform floor plan b = (b0, . . . , b0) and
+maintains a set of candidate upgrades, one per module: the transition from its current bitwidth bℓto
+the successor b+
+ℓ, scored by the penalized efficiency ˜eℓ(bℓ) of equation 6. At each step the highest-
+scoring upgrade that fits the remaining budget is applied. The upgraded module’s old transition is
+removed and its next transition, from b+
+ℓonward, is inserted. The procedure ends when no candidate
+fits the remaining budget. Algorithm 1 gives the pseudocode. The solve performs at most L(|B|−1)
+upgrades, each selecting the best of at most L candidates, so a full allocation costs O(L |B| log L)
+with a priority queue, and is negligible at deployment time.
+5
+Evaluation
+Setup.
+We evaluate MIXQUANT on Llama-3.2-3B, Llama-2-7B, and Mistral-7B-v0.1. Plans as-
+sign per-linear-module bitwidths from B = {3, . . . , 8} using AWQ or GPTQ as the base technique,
+with 8-bit activations. Quantization is simulated (quantize–dequantize to FP16); we report memory
+as packed linear-weight size, excluding scale overhead. Distortion tables and technique parameters
+are calibrated on 128 random windows of length 2048 from the WikiText-2 training split. Unless
+7
+
+
+Table 2: Downstream mixed-precision quantization results on Llama-3.2-3B. Accuracies (%); Wiki.
+= word perplexity (↓). Avg excludes Wiki. Bold = best, underline = second best per column within
+each memory budget.
+AWQ
+GPTQ
+Mem (GB)
+Method
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+1.25
+Quant. Err.
+13.26
+34.3
+71.3
+62.1
+33.8
+34.7
+43.0
+43.1
+46.1
+15.75
+32.8
+70.2
+61.6
+31.7
+30.5
+36.0
+35.4
+42.6
+KL Div
+12.92
+34.8
+71.7
+62.8
+33.5
+36.0
+43.2
+46.6
+46.9
+15.39
+33.6
+70.0
+61.1
+34.0
+31.5
+37.6
+37.2
+43.6
+HAWQ-v2
+12.43
+34.4
+73.3
+64.2
+35.1
+37.0
+44.6
+46.0
+47.8
+13.35
+35.8
+72.6
+63.9
+35.1
+34.7
+40.7
+39.5
+46.0
+Fisher
+12.55 35.6
+73.1
+63.9
+35.2
+37.7
+46.5
+47.6
+48.5
+15.15
+33.9
+71.3
+63.5
+32.8
+31.4
+35.3
+37.2
+43.6
+CoopQ
+16.58 34.5
+73.1
+61.6
+32.1
+32.4
+37.0
+38.6
+44.2
+18.22
+32.3
+69.3
+58.9
+30.7
+30.9
+35.8
+33.5
+41.6
+LIM
+17.08
+35.4
+72.3
+59.9
+25.8
+28.4
+30.0
+31.0
+40.4
+18.98
+32.1
+67.9
+58.5
+29.5
+29.5
+31.2
+30.0
+39.8
+MIXQUANT
+10.70
+43.4
+75.6
+69.0
+39.6
+44.9
+57.7
+58.7
+55.6
+11.19
+42.0
+76.3
+64.5
+40.5
+43.9
+55.4
+55.6
+54.0
+1.5
+Quant. Err.
+11.02
+39.2
+73.9
+65.5
+36.2
+40.0
+48.8
+51.8
+50.8
+10.81
+39.2
+74.6
+64.5
+37.6
+40.1
+47.5
+49.9
+50.5
+KL Div
+11.09
+39.4
+74.0
+64.6
+37.1
+39.9
+48.6
+51.1
+50.7
+12.31
+36.8
+73.2
+64.9
+35.0
+36.3
+46.0
+45.7
+48.3
+HAWQ-v2
+10.70
+39.2
+75.0
+63.5
+38.4
+41.5
+52.4
+53.4
+51.9
+10.84
+39.5
+74.3
+64.2
+36.0
+37.1
+44.8
+47.5
+49.1
+Fisher
+11.00 39.1
+74.1
+64.6
+35.9
+40.3
+49.5
+51.6
+50.7
+12.49
+36.4
+73.6
+63.5
+36.9
+36.3
+43.6
+45.0
+47.9
+CoopQ
+14.70 36.6
+74.1
+64.7
+37.4
+39.1
+48.1
+50.1
+50.0
+15.37
+35.6
+72.1
+62.9
+35.7
+37.5
+46.1
+48.6
+48.3
+LIM
+14.66
+37.4
+73.0
+64.8
+37.3
+37.4
+47.4
+49.3
+49.5
+15.78
+33.6
+72.1
+62.2
+35.9
+37.4
+44.5
+43.9
+47.1
+MIXQUANT
+9.69
+45.9
+76.9
+68.7
+44.8
+48.6
+61.1
+62.0
+58.3
+9.99
+44.9
+76.7
+68.9
+45.1
+48.0
+62.0
+61.6
+58.2
+1.75
+Quant. Err.
+9.87
+43.6
+76.6
+66.6
+42.6
+47.6
+60.0
+59.9
+56.7
+9.90
+43.5
+76.4
+66.9
+42.2
+47.1
+59.0
+56.9
+56.0
+KL Div
+9.90
+43.1
+76.6
+67.9
+40.6
+45.7
+59.3
+59.3
+56.1
+10.97
+42.4
+75.4
+65.6
+40.7
+42.7
+54.4
+52.5
+53.4
+HAWQ-v2
+9.85
+44.1
+76.8
+67.3
+43.0
+47.0
+59.5
+59.3
+56.7
+9.87
+44.0
+76.4
+67.1
+40.8
+46.1
+55.8
+56.3
+55.2
+Fisher
+10.02 41.9
+76.2
+68.0
+39.5
+45.2
+58.3
+57.2
+55.2
+11.20
+40.4
+75.3
+67.1
+39.3
+41.9
+53.0
+50.9
+52.6
+CoopQ
+12.49 41.3
+75.4
+68.3
+42.4
+44.6
+59.0
+57.2
+55.4
+13.00
+38.8
+74.3
+64.9
+43.0
+45.2
+56.2
+55.4
+54.0
+LIM
+12.48
+39.6
+74.6
+67.4
+42.9
+45.5
+57.8
+58.9
+55.3
+13.35
+39.6
+74.2
+65.7
+44.1
+46.5
+60.1
+59.2
+55.6
+MIXQUANT
+9.44
+46.2
+76.7
+69.1
+45.9
+49.3
+63.6
+62.6
+59.0
+9.51
+46.3
+77.0
+69.1
+45.5
+49.1
+62.7
+62.5
+58.9
+stated otherwise, MIXQUANT uses K = 10 Monte Carlo context draws per (module, bitwidth)
+pair (Section 4.1), I = 3 budget intervals with J = 5 anchor plans each (Section 4.2), and tail
+penalty γ = 10 (Section 4.3). We evaluate word-level perplexity on the WikiText-2 validation split
+and accuracy on PIQA, ARC-Challenge, WinoGrande, and MMLU (grouped into humanities, social
+sciences, STEM, and other), all through the EleutherAI lm-evaluation-harness (Gao et al. 2024).
+Baselines.
+The baselines span the space of FP16-prior scoring metrics, alongside existing adaptive
+pipelines. The first four are controlled comparisons constructed by us. Each scores every (module,
+bitwidth) pair against the FP16 model and feeds the resulting table to the same ILP solver, based on
+the MCKP formulation of equation 2. The four therefore differ only in the scoring metric. Quant.
+Err. and KL Div compare the output activations of each quantized module to their full-precision
+counterparts, scoring the pair by the activation error and the KL divergence of the output distribu-
+tions, respectively. HAWQ-v2 adopts the metric of HAWQ-V2 (Dong et al. 2020), which combines
+a Hessian-based importance estimate with the quantization error, so that both the sensitivity of a
+module and the magnitude of its perturbation enter the score. Fisher uses the Fisher approximation
+of the Hessian as a pure importance estimate, capturing sensitivity alone. Together these four cover
+error, distributional divergence, importance, and their combination, the principal axes along which
+prior scoring metrics differ.
+The remaining two baselines are existing adaptive quantization methods and run with their own
+allocation procedures. LIM (Dumitru et al. 2024) scores modules by the cosine similarity between
+input and output of each transformer block. By design, LIM’s methodology does not extend to
+linear-layer level granularity. CoopQ (Zhao et al. 2026) departs from per-module scoring altogether,
+estimating module contributions via Shapley-value distributions and solving a novel ILP formulation
+for adaptive quantization.
+Accuracy across memory budgets.
+Tables 2, 3, and 4 report perplexity and downstream accuracy
+under three memory budgets per model. MIXQUANT attains the best average accuracy and the
+lowest perplexity in every (model, budget, technique) cell, for both AWQ and GPTQ, which supports
+the claim that the pipeline is agnostic to the base technique.
+The margins are largest where quantization is most aggressive, and this is where a context-aware
+score should matter most: at tight budgets many modules sit at the lowest bitwidths, upstream
+contexts drift far from full precision, and the resulting errors are large, irreversible, and propagate
+downstream, so misallocating even a few modules is costly. On Llama-3.2-3B at the 1.25 GB budget,
+8
+
+
+Table 3: Downstream mixed-precision quantization results on Llama-2-7B. Accuracies (%); Wiki.
+= word perplexity (↓). Avg excludes Wiki. Bold = best, underline = second best per column within
+each memory budget.
+AWQ
+GPTQ
+Mem (GB)
+Method
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+3.0
+Quant. Err.
+10.32
+42.8
+75.6
+66.0
+24.7
+27.7
+31.2
+32.0
+42.9
+10.46
+41.7
+76.3
+65.1
+29.5
+29.7
+36.9
+35.5
+45.0
+KL Div
+10.36
+42.3
+76.2
+66.5
+24.9
+28.1
+29.8
+31.4
+42.7
+11.01
+41.4
+76.0
+65.7
+29.3
+29.4
+35.1
+34.8
+44.5
+HAWQ-v2
+9.98
+43.3
+75.9
+67.4
+26.4
+30.1
+32.9
+33.9
+44.3
+10.25
+42.5
+76.7
+65.8
+29.8
+31.2
+37.8
+35.8
+45.7
+Fisher
+10.12 43.0
+76.0
+67.1
+27.6
+30.3
+33.5
+34.8
+44.6
+10.79
+42.3
+76.7
+65.2
+30.5
+29.8
+37.6
+36.0
+45.4
+CoopQ
+11.94 41.2
+75.9
+67.2
+29.8
+28.8
+35.1
+37.0
+45.0
+11.96
+39.8
+76.2
+66.9
+27.5
+31.2
+30.9
+32.5
+43.6
+LIM
+12.20
+40.9
+75.9
+66.1
+29.2
+28.8
+30.9
+32.9
+43.5
+12.10
+40.9
+75.5
+66.5
+24.6
+30.4
+28.5
+31.1
+42.5
+MIXQUANT
+9.50
+45.2
+77.3
+69.1
+31.3
+35.9
+40.9
+41.8
+48.8
+9.70
+44.9
+77.5
+69.1
+31.8
+35.7
+40.2
+39.7
+48.4
+3.5
+Quant. Err.
+9.45
+43.2
+76.6
+69.1
+30.8
+35.2
+40.6
+42.0
+48.2
+9.57
+42.6
+77.3
+65.9
+32.3
+32.9
+40.8
+39.1
+47.3
+KL Div
+9.57
+42.6
+76.9
+67.7
+30.4
+35.0
+39.9
+41.8
+47.8
+10.07
+42.9
+76.6
+66.0
+33.2
+31.2
+39.7
+36.6
+46.6
+HAWQ-v2
+9.42
+43.9
+76.6
+67.8
+29.8
+35.7
+40.4
+42.4
+48.1
+9.53
+43.0
+77.5
+66.2
+33.1
+33.7
+41.1
+39.6
+47.7
+Fisher
+9.51
+44.5
+76.3
+69.4
+28.6
+34.1
+38.8
+40.0
+47.4
+10.02
+41.9
+76.4
+67.9
+33.0
+31.9
+40.2
+38.4
+47.1
+CoopQ
+11.32 42.4
+77.3
+67.6
+28.2
+29.7
+30.8
+35.1
+44.5
+11.25
+42.2
+77.3
+68.7
+30.0
+35.3
+36.1
+39.7
+47.0
+LIM
+11.48
+43.1
+76.6
+66.5
+31.5
+31.8
+36.6
+38.1
+46.3
+11.37
+42.0
+76.6
+68.5
+28.0
+33.8
+34.7
+36.0
+45.7
+MIXQUANT
+9.06
+45.8
+77.7
+69.1
+35.6
+39.0
+47.8
+47.6
+51.8
+9.12
+46.1
+78.0
+68.7
+33.7
+37.9
+45.7
+45.2
+50.8
+4.0
+Quant. Err.
+9.12
+45.5
+77.5
+68.4
+33.7
+38.6
+45.1
+45.5
+50.6
+9.13
+44.5
+77.5
+66.9
+35.4
+38.2
+47.4
+46.5
+50.9
+KL Div
+9.17
+46.6
+77.3
+68.4
+34.2
+37.4
+44.8
+44.6
+50.5
+9.42
+46.1
+77.5
+67.1
+34.5
+38.3
+45.9
+45.8
+50.7
+HAWQ-v2
+9.09
+45.2
+77.2
+68.5
+33.1
+38.7
+45.6
+45.7
+50.6
+9.14
+45.4
+77.7
+67.3
+35.0
+38.0
+46.5
+45.4
+50.8
+Fisher
+9.22
+45.1
+77.3
+68.7
+32.4
+37.5
+44.6
+44.2
+50.0
+9.67
+42.7
+77.4
+68.3
+33.9
+33.9
+43.1
+41.2
+48.6
+CoopQ
+10.68 45.1
+77.0
+69.0
+28.7
+32.0
+35.5
+38.0
+46.5
+10.67
+43.7
+77.5
+68.2
+31.3
+36.6
+41.7
+42.4
+48.8
+LIM
+10.85
+43.4
+77.5
+68.4
+34.3
+36.6
+44.4
+45.6
+50.0
+10.75
+44.2
+77.1
+68.8
+30.2
+36.3
+39.7
+42.0
+48.3
+MIXQUANT
+8.95
+46.2
+77.8
+69.1
+35.1
+39.7
+47.8
+48.8
+52.1
+8.97
+45.8
+78.2
+68.8
+34.9
+40.2
+47.1
+47.3
+51.7
+Table 4: Downstream mixed-precision quantization results on Mistral-7B. Accuracies (%); Wiki. =
+word perplexity (↓). Avg excludes Wiki. Bold = best, underline = second best per column within
+each memory budget.
+AWQ
+GPTQ
+Mem (GB)
+Method
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc. Othr
+Avg
+3.0
+Quant. Err.
+9.36
+46.2
+79.3
+70.0
+43.9
+48.9
+63.3
+60.6
+58.9
+9.51
+46.6
+79.0
+70.8
+43.5
+45.3
+58.1
+56.1
+57.1
+KL Div
+9.31
+46.0
+79.4
+71.0
+42.8
+47.7
+61.7
+58.8
+58.2
+9.42
+46.2
+78.7
+71.7
+43.8
+46.7
+59.2
+58.2
+57.8
+HAWQ-v2
+9.63
+45.0
+79.5
+71.0
+43.6
+48.4
+61.7
+59.1
+58.3
+9.53
+44.9
+78.9
+70.1
+43.5
+46.8
+60.6
+58.6
+57.6
+Fisher
+9.67
+44.5
+79.4
+70.4
+43.4
+48.4
+61.4
+58.4
+58.0
+9.90
+45.8
+78.6
+70.0
+41.0
+43.3
+54.0
+53.2
+55.1
+CoopQ
+10.48 42.9
+78.0
+68.8
+40.6
+44.4
+56.8
+55.0
+55.2
+10.91
+43.9
+78.0
+70.1
+37.3
+39.6
+49.9
+48.5
+52.5
+LIM
+10.62
+43.9
+77.9
+68.0
+40.5
+45.2
+57.2
+55.4
+55.4
+10.86
+44.5
+77.7
+70.4
+38.9
+41.7
+52.7
+50.3
+53.8
+MIXQUANT
+8.92
+51.0
+79.7
+73.6
+47.1
+50.4
+66.1
+64.2
+61.7
+9.10
+50.1
+80.3
+71.6
+47.0
+50.8
+66.7
+64.2
+61.5
+3.5
+Quant. Err.
+8.93
+49.1
+79.8
+72.5
+45.2
+49.8
+63.5
+61.6
+60.2
+9.03
+50.6
+80.0
+72.0
+46.1
+48.6
+63.6
+61.4
+60.3
+KL Div
+8.91
+49.1
+79.8
+72.0
+45.8
+50.2
+63.2
+61.3
+60.2
+9.02
+49.7
+79.4
+72.5
+46.2
+49.1
+63.9
+62.1
+60.4
+HAWQ-v2
+8.91
+49.7
+80.3
+72.5
+45.9
+50.1
+64.1
+63.3
+60.8
+9.00
+49.7
+80.0
+73.4
+46.7
+49.2
+63.6
+62.1
+60.7
+Fisher
+9.28
+48.3
+80.2
+72.9
+45.6
+50.5
+63.5
+62.0
+60.4
+9.16
+48.9
+79.9
+70.6
+46.4
+48.4
+62.7
+59.9
+59.5
+CoopQ
+9.89
+44.6
+78.7
+70.5
+43.4
+46.4
+59.8
+57.8
+57.3
+10.36
+45.6
+78.8
+69.6
+39.5
+41.3
+51.7
+50.5
+53.9
+LIM
+10.19
+46.8
+79.2
+71.3
+44.5
+48.5
+61.1
+60.0
+58.8
+10.32
+46.1
+78.7
+71.0
+42.2
+44.9
+58.9
+57.5
+57.0
+MIXQUANT
+8.37
+52.7
+79.9
+73.6
+49.2
+52.7
+69.1
+66.1
+63.3
+8.37
+52.1
+80.9
+73.5
+49.3
+53.0
+69.1
+66.5
+63.5
+4.0
+Quant. Err.
+8.71
+49.5
+80.5
+73.2
+46.9
+51.5
+65.1
+64.2
+61.6
+8.76
+50.5
+80.3
+74.0
+47.7
+49.6
+65.3
+63.8
+61.6
+KL Div
+8.76
+50.3
+80.7
+73.0
+47.1
+51.2
+64.7
+63.5
+61.5
+8.81
+50.2
+80.0
+72.7
+47.4
+49.2
+65.0
+63.3
+61.1
+HAWQ-v2
+8.58
+50.5
+80.3
+72.3
+46.7
+51.1
+65.8
+63.5
+61.5
+8.66
+49.6
+80.5
+72.8
+48.2
+49.5
+64.8
+62.8
+61.2
+Fisher
+8.82
+49.1
+80.5
+72.7
+46.1
+51.4
+65.0
+63.8
+61.2
+8.90
+49.4
+80.1
+73.2
+46.5
+49.2
+65.2
+62.9
+60.9
+CoopQ
+9.48
+45.3
+79.1
+71.7
+43.6
+47.5
+61.8
+59.4
+58.3
+9.94
+46.1
+78.5
+69.1
+40.9
+43.1
+53.8
+52.2
+54.8
+LIM
+9.80
+48.1
+79.7
+72.8
+45.2
+50.9
+64.7
+62.9
+60.6
+9.94
+49.0
+79.3
+72.9
+47.4
+50.6
+65.5
+62.0
+61.0
+MIXQUANT
+8.20
+53.4
+80.0
+73.1
+49.3
+53.2
+69.8
+67.0
+63.7
+8.23
+53.8
+80.4
+74.0
+50.0
+52.9
+69.7
+67.2
+64.0
+the tightest setting we evaluate, MIXQUANT improves average accuracy over the best baseline by
+7.1 points under AWQ (55.6 vs. 48.5) and 8.0 points under GPTQ (54.0 vs. 46.0), while reducing
+perplexity from 12.43 to 10.70 and from 13.35 to 11.19, respectively. The gains are not confined to
+a single task: at this budget MIXQUANT improves WinoGrande by roughly 5 points and the MMLU
+categories by up to 11 points over the strongest baseline in each column. The pattern persists at
+1.5 GB, where the GPTQ margin is 9.1 points. On Llama-2-7B at 3.0 GB the margin is 4.2 points
+under AWQ, and on Mistral-7B the improvement ranges from 2.1 to 3.7 points across budgets and
+techniques.
+Notably, LIM and CoopQ are not the strongest baselines in most cells. The FP16-prior metrics
+paired with our ILP allocator frequently outperform them. Both LIM and CoopQ were designed and
+9
+
+
+0
+4
+8
+12
+16
+20
+24
+27
+Quant. Error
+KL Div.
+HAWQ-V2
+Fisher
+LIM
+CoopQ
+MixQuant
+Llama-3.2-3B (1.25 GB)
+0
+4
+8
+12
+16
+20
+24
+28
+31
+Quant. Error
+KL Div.
+HAWQ-V2
+Fisher
+LIM
+CoopQ
+MixQuant
+Llama-2-7B (3.0 GB)
+0
+4
+8
+12
+16
+20
+24
+28
+31
+Transformer Block
+Quant. Error
+KL Div.
+HAWQ-V2
+Fisher
+LIM
+CoopQ
+MixQuant
+Mistral-7B (3.0 GB)
+3
+4
+5
+6
+7
+8
+Bitwidth
+Figure 3: Per-linear-layer bitwidth allocations by method. For Llama-3.2-3B (1.25 GB), Llama-2-
+7B (3.0 GB), and Mistral-7B (3.0 GB), the x-axis runs over linear layers, labelled by transformer
+block; the rows are scoring methods; shade encodes the bitwidth assigned to each layer. LIM and
+CoopQ collapse to the extremes of B, while the others spread across the middle bitwidths.
+Table 5: Component ablation on Llama-3.2-3B at the 1.25 GB budget. Accuracies (%); Wiki. =
+word perplexity (↓). Avg excludes Wiki.
+AWQ
+GPTQ
+Model
+Mem
+(GB)
+Variant
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc.
+Othr
+Avg
+Wiki.
+Arc
+PIQA
+Wino
+STEM
+Hum.
+Soc.
+Othr
+Avg
+Mem. budget
+12.97
+35.8
+73.1
+62.2
+37.7
+37.3
+47.6
+49.3
+49.0
+16.19
+34.4
+71.8
+60.2
+32.0
+32.0
+36.7
+38.3
+43.6
+Greedy (rev.)
+17.59
+32.5
+69.9
+59.8
+27.0
+29.3
+30.6
+33.3
+40.3
+24.26
+28.9
+64.3
+55.2
+26.6
+27.8
+28.7
+28.0
+37.1
+Stage 1 + Stage 2 + ILP
+11.02
+41.8
+75.7
+68.4
+40.7
+45.4
+58.2
+59.0
+55.6
+11.33
+42.5
+75.8
+67.0
+42.8
+45.1
+57.3
+57.0
+55.3
+Llama-3.2-3B
+1.25
+MixQuant
+10.75
+43.9
+75.8
+68.4
+40.4
+43.2
+57.9
+56.7
+55.2
+11.25
+42.2
+76.2
+66.6
+39.8
+43.0
+53.7
+55.6
+53.9
+validated on small bitwidth sets, typically {2, 3, 4}, where their tendency to push allocations toward
+the extremes of the set is harmless because the extremes are never far apart. Our setting expands
+the choice set to B = {3, . . . , 8}, which enlarges the plan space by orders of magnitude and widens
+the gap between extremes. Figure 3 shows the bitwidth distributions of the resulting plans: LIM
+and CoopQ concentrate mass at the extremes of B, while MIXQUANT spreads allocations across the
+middle bitwidths.
+On the Llama models, the margins narrow as the budget approaches the memory of the highest
+uniform bitwidth: on Llama-2-7B the AWQ improvement falls from 4.2 points at 3.0 GB to 1.5
+points at 4.0 GB, and under GPTQ to 0.8. This is expected. A generous budget places most modules
+at high bitwidths under any reasonable allocation, and high-bitwidth quantization is robust enough
+that the remaining decisions carry little weight, so accuracies converge toward the plateau of the
+underlying technique. The value of context-aware scoring is concentrated in the low-budget regime.
+Component ablation.
+Table 5 isolates the contribution of the allocator on Llama-3.2-3B at the
+1.25 GB budget. Mem. budget removes the distortion scores entirely: bits are assigned by an ILP
+whose only objective is to fill the budget, i.e., min (M −mem(b)) subject to mem(b) ≤M, so the
+allocation reflects module sizes alone. Greedy (rev.) runs our greedy allocator with the candidate
+ordering reversed, applying the worst-scoring upgrade first. Stage 1 + Stage 2 + ILP keeps the full
+scoring pipeline but replaces the greedy solver with an ILP solution of equation 2. MIXQUANT is
+the full method: the efficiency-greedy allocator with the tail penalty of Section 4.3.
+The score-free and reversed variants collapse, losing 6–17 average points against the full method,
+which confirms that the decoupled distortion table carries real signal: allocating without it, or against
+10
+
+
+it, is severely punished at this budget. The comparison with the ILP variant addresses the solver.
+The ILP is the natural upper bound for our surrogate objective, yet MIXQUANT matches it on av-
+erage (55.2 vs. 55.6 under AWQ, 53.9 vs. 55.3 under GPTQ) and surpasses it on several individual
+tasks, including perplexity under both techniques (10.75 vs. 11.02 and 11.25 vs. 11.33), PIQA, and
+WinoGrande under GPTQ. The greedy solver is also the only variant compatible with the adaptive
+setting: the ILP took upwards of two hours to converge on some budgets, whereas the greedy solve
+costs O(L |B| log L) and runs in negligible time at deployment, where a new budget must be served
+on arrival.
+Sensitivity to the tail penalty.
+Figure 4 sweeps the tail-penalty strength γ and reports the relative
+change in perplexity against the unregularized allocator (γ = 0) across four (model, budget) settings.
+Two observations follow. First, we observe that the penalty helps: no setting is hurt relative to γ = 0,
+and perplexity typically decreases as γ grows from 0. Second, the effect saturates: beyond γ ≈5 the
+curves are flat. Saturation is expected from the mechanism of the penalty. Once γ is large enough to
+redirect the budget away from the tail-most upgrades, only a small number of contested transitions
+remain whose ordering the penalty can still change; increasing γ further re-ranks nothing, and the
+allocator returns the same plan.
+0
+1
+2
+5
+10
+20
+50
+100
+Tail penalty γ
+0
+-0.1
+-0.3
+-1
+-3
+∆ PPL / PPLγ = 0 (%)
+Llama-3.2-3B @ 1.2 GB  (PPL0=11.50)
+Llama-3.2-3B @ 1.5 GB  (PPL0=9.74)
+Llama-2-7B @ 3.0 GB  (PPL0=9.80)
+Llama-2-7B @ 3.5 GB  (PPL0=9.07)
+Figure 4: Effect of the tail penalty. Relative change in WikiText-2 perplexity versus the unregular-
+ized allocator (γ = 0) as the tail-penalty strength γ increases, across four (model, budget) settings;
+PPL0 is the γ = 0 perplexity for each curve. (Section 4.3)
+6
+Conclusion
+We presented MIXQUANT, a technique-agnostic adaptive post-training quantization framework in
+which one offline calibration serves any deployment budget through a single inexpensive greedy
+solve. It starts from a mismatch that prior adaptive quantizers overlook: per-layer sensitivity mea-
+sured against an FP16 network does not reflect the fully quantized model that is actually deployed.
+MIXQUANT closes this gap with two components: mean-field decoupled distortion scores, which
+marginalize each layer’s error over random quantized upstream contexts; and plan-aware technique
+parameters, which are calibrated on the activations the deployed plan induces rather than on FP16 ac-
+tivations. It additionally penalizes retaining low-bit assignments through a tail regularizer that steers
+spare budget away from layers still stuck at the lowest bitwidths. Across Llama-3.2-3B, Llama-
+2-7B, and Mistral-7B, under both AWQ and GPTQ, MIXQUANT produces consistently better bit
+allocations than prior adaptive and mixed-precision baselines. Its greedy allocator matches an ILP
+solver at negligible deployment cost. Future work includes extending MIXQUANT to jointly allo-
+cate precision across weights, activations, and KV-cache, toward maximizing efficiency in adaptive
+settings on the edge.
+11
+
+
+References
+Saleh Ashkboos, Amirkeivan Mohtashami, Maximilian L. Croci, Bo Li, Pashmina Cameron, Mar-
+tin Jaggi, Dan Alistarh, Torsten Hoefler, and James Hensman.
+Quarot: Outlier-free 4-bit
+inference in rotated llms.
+In Amir Globersons, Lester Mackey, Danielle Belgrave, Angela
+Fan, Ulrich Paquet, Jakub M. Tomczak, and Cheng Zhang, editors, Advances in Neural In-
+formation Processing Systems 37: Annual Conference on Neural Information Processing Sys-
+tems 2024, NeurIPS 2024, Vancouver, BC, Canada, December 10 - 15, 2024, 2024.
+URL
+http://papers.nips.cc/paper_files/paper/2024/hash/b5b939436789f76f08b
+9d0da5e81af7c-Abstract-Conference.html.
+Adrian Bulat and Georgios Tzimiropoulos. Bit-mixer: Mixed-precision networks with runtime bit-
+width selection. In Proceedings of the IEEE/CVF International Conference on Computer Vision,
+pages 5188–5197, 2021.
+Zhen Dong, Zhewei Yao, Daiyaan Arfeen, Amir Gholami, Michael W. Mahoney, and Kurt Keutzer.
+HAWQ-V2: hessian aware trace-weighted quantization of neural networks. In Hugo Larochelle,
+Marc’Aurelio Ranzato, Raia Hadsell, Maria-Florina Balcan, and Hsuan-Tien Lin, editors, Ad-
+vances in Neural Information Processing Systems 33: Annual Conference on Neural Infor-
+mation Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual, 2020.
+URL
+https://proceedings.neurips.cc/paper/2020/hash/d77c703536718b95308130ff2
+e5cf9ee-Abstract.html.
+Razvan-Gabriel Dumitru, Vikas Yadav, Rishabh Maheshwary, Paul-Ioan Clotan, Sathwik Tejaswi
+Madhusudhan, and Mihai Surdeanu. Layer-wise quantization: A pragmatic and effective method
+for quantizing llms beyond integer bit-levels. CoRR, abs/2406.17415, 2024. doi: 10.48550/ARX
+IV.2406.17415. URL https://doi.org/10.48550/arXiv.2406.17415.
+Vage Egiazarian, Andrei Panferov, Denis Kuznedelev, Elias Frantar, Artem Babenko, and Dan Al-
+istarh.
+Extreme compression of large language models via additive quantization.
+In Ruslan
+Salakhutdinov, Zico Kolter, Katherine A. Heller, Adrian Weller, Nuria Oliver, Jonathan Scar-
+lett, and Felix Berkenkamp, editors, Forty-first International Conference on Machine Learning,
+ICML 2024, Vienna, Austria, July 21-27, 2024, volume 235 of Proceedings of Machine Learning
+Research, pages 12284–12303. PMLR / OpenReview.net, 2024. URL https://proceedings.
+mlr.press/v235/egiazarian24a.html.
+Elias Frantar, Saleh Ashkboos, Torsten Hoefler, and Dan Alistarh. GPTQ: accurate post-training
+quantization for generative pre-trained transformers. CoRR, abs/2210.17323, 2022. doi: 10.485
+50/ARXIV.2210.17323. URL https://doi.org/10.48550/arXiv.2210.17323.
+Leo Gao, Jonathan Tow, Baber Abbasi, Stella Biderman, Sid Black, Anthony DiPofi, Charles Fos-
+ter, Laurence Golding, Jeffrey Hsu, Alain Le Noac’h, Haonan Li, Kyle McDonell, Niklas Muen-
+nighoff, Chris Ociepa, Jason Phang, Laria Reynolds, Hailey Schoelkopf, Aviya Skowron, Lintang
+Sutawika, Eric Tang, Anish Thite, Ben Wang, Kevin Wang, and Andy Zou. The language model
+evaluation harness, 07 2024. URL https://zenodo.org/records/12608602.
+Amir Gholami, Sehoon Kim, Zhen Dong, Zhewei Yao, Michael W. Mahoney, and Kurt Keutzer. A
+survey of quantization methods for efficient neural network inference. CoRR, abs/2103.13630,
+2021. URL https://arxiv.org/abs/2103.13630.
+Geoffrey E. Hinton, Oriol Vinyals, and Jeffrey Dean. Distilling the knowledge in a neural network.
+CoRR, abs/1503.02531, 2015. URL http://arxiv.org/abs/1503.02531.
+Saidul Islam, Hanae Elmekki, Ahmed Elsebai, Jamal Bentahar, Nagat Drawel, Gaith Rjoub, and
+Witold Pedrycz. A comprehensive survey on applications of transformers for deep learning tasks.
+Expert Syst. Appl., 241:122666, 2024. doi: 10.1016/J.ESWA.2023.122666. URL https:
+//doi.org/10.1016/j.eswa.2023.122666.
+Qing Jin, Linjie Yang, and Zhenyu Liao. Adabits: Neural network quantization with adaptive bit-
+widths. In Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recogni-
+tion, pages 2146–2156, 2020.
+12
+
+
+Sehoon Kim, Coleman Hooper, Amir Gholami, Zhen Dong, Xiuyu Li, Sheng Shen, Michael W.
+Mahoney, and Kurt Keutzer. Squeezellm: Dense-and-sparse quantization. In Ruslan Salakhutdi-
+nov, Zico Kolter, Katherine A. Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix
+Berkenkamp, editors, Forty-first International Conference on Machine Learning, ICML 2024,
+Vienna, Austria, July 21-27, 2024, volume 235 of Proceedings of Machine Learning Research,
+pages 23901–23923. PMLR / OpenReview.net, 2024. URL https://proceedings.mlr.pres
+s/v235/kim24f.html.
+Ivan Koryakovskiy, Alexandra Yakovleva, Valentin Buchnev, Temur Isaev, and Gleb Odinokikh.
+One-shot model for mixed-precision quantization. In Proceedings of the IEEE/CVF Conference
+on Computer Vision and Pattern Recognition, pages 7939–7949, 2023.
+Woosuk Kwon, Zhuohan Li, Siyuan Zhuang, Ying Sheng, Lianmin Zheng, Cody Hao Yu, Joseph
+Gonzalez, Hao Zhang, and Ion Stoica. Efficient memory management for large language model
+serving with pagedattention. In Jason Flinn, Margo I. Seltzer, Peter Druschel, Antoine Kaufmann,
+and Jonathan Mace, editors, Proceedings of the 29th Symposium on Operating Systems Principles,
+SOSP 2023, Koblenz, Germany, October 23-26, 2023, pages 611–626. ACM, 2023. doi: 10.114
+5/3600006.3613165. URL https://doi.org/10.1145/3600006.3613165.
+Sangjun Lee, Seung-taek Woo, Jungyu Jin, Changhun Lee, and Eunhyeok Park. AMQ: enabling
+automl for mixed-precision weight-only quantization of large language models.
+In Christos
+Christodoulopoulos, Tanmoy Chakraborty, Carolyn Rose, and Violet Peng, editors, Proceed-
+ings of the 2025 Conference on Empirical Methods in Natural Language Processing, EMNLP
+2025, Suzhou, China, November 4-9, 2025, pages 35532–35550. Association for Computa-
+tional Linguistics, 2025.
+doi: 10.18653/V1/2025.EMNLP-MAIN.1799.
+URL https:
+//doi.org/10.18653/v1/2025.emnlp-main.1799.
+Patrick Lewis, Ethan Perez, Aleksandra Piktus, Fabio Petroni, Vladimir Karpukhin, Naman Goyal,
+Heinrich K¨uttler, Mike Lewis, Wen-tau Yih, Tim Rockt¨aschel, Sebastian Riedel, and Douwe
+Kiela. Retrieval-augmented generation for knowledge-intensive NLP tasks. In Hugo Larochelle,
+Marc’Aurelio Ranzato, Raia Hadsell, Maria-Florina Balcan, and Hsuan-Tien Lin, editors, Ad-
+vances in Neural Information Processing Systems 33: Annual Conference on Neural Infor-
+mation Processing Systems 2020, NeurIPS 2020, December 6-12, 2020, virtual, 2020.
+URL
+https://proceedings.neurips.cc/paper/2020/hash/6b493230205f780e1bc26945d
+f7481e5-Abstract.html.
+Shiyao Li, Xuefei Ning, Ke Hong, Tengxuan Liu, Luning Wang, Xiuhong Li, Kai Zhong, Guohao
+Dai, Huazhong Yang, and Yu Wang. LLM-MQ: Mixed-precision quantization for efficient LLM
+deployment. In The Efficient Natural Language and Speech Processing Workshop with NeurIPS,
+2023. URL https://neurips.cc/virtual/2023/81141.
+Yuhang Li, Ruihao Gong, Xu Tan, Yang Yang, Peng Hu, Qi Zhang, Fengwei Yu, Wei Wang, and
+Shi Gu. BRECQ: pushing the limit of post-training quantization by block reconstruction. In 9th
+International Conference on Learning Representations, ICLR 2021, Virtual Event, Austria, May
+3-7, 2021. OpenReview.net, 2021. URL https://openreview.net/forum?id=POWv6hDd9X
+H.
+Ji Lin, Jiaming Tang, Haotian Tang, Shang Yang, Wei-Ming Chen, Wei-Chen Wang, Guangxuan
+Xiao, Xingyu Dang, Chuang Gan, and Song Han. AWQ: activation-aware weight quantization for
+on-device LLM compression and acceleration. In Phillip B. Gibbons, Gennady Pekhimenko, and
+Christopher De Sa, editors, Proceedings of the Seventh Annual Conference on Machine Learning
+and Systems, MLSys 2024, Santa Clara, CA, USA, May 13-16, 2024. mlsys.org, 2024. URL
+https://proceedings.mlsys.org/paper_files/paper/2024/hash/42a452cbafa9dd
+64e9ba4aa95cc1ef21-Abstract-Conference.html.
+Xingyi Liu and Keshab K. Parhi. Tensor decomposition for model reduction in neural networks:
+A review. CoRR, abs/2304.13539, 2023. doi: 10.48550/ARXIV.2304.13539. URL https:
+//doi.org/10.48550/arXiv.2304.13539.
+Zechun Liu, Changsheng Zhao, Igor Fedorov, Bilge Soran, Dhruv Choudhary, Raghuraman Kr-
+ishnamoorthi, Vikas Chandra, Yuandong Tian, and Tijmen Blankevoort.
+Spinquant: LLM
+13
+
+
+quantization with learned rotations.
+In The Thirteenth International Conference on Learn-
+ing Representations, ICLR 2025, Singapore, April 24-28, 2025. OpenReview.net, 2025. URL
+https://openreview.net/forum?id=ogO6DGE6FZ.
+Zhuang Liu, Mingjie Sun, Tinghui Zhou, Gao Huang, and Trevor Darrell. Rethinking the value of
+network pruning. In 7th International Conference on Learning Representations, ICLR 2019, New
+Orleans, LA, USA, May 6-9, 2019. OpenReview.net, 2019. URL https://openreview.net/f
+orum?id=rJlnB3C5Ym.
+Ashitabh Misra, Nurani Saoda, and Tarek Abdelzaher. Latency-constrained input-aware quantiza-
+tion of time series inference workflows at the edge. In IEEE INFOCOM 2025 - IEEE Conference
+on Computer Communications, pages 1–10, 2025. doi: 10.1109/INFOCOM55648.2025.110447
+09.
+Markus Nagel, Rana Ali Amjad, Mart van Baalen, Christos Louizos, and Tijmen Blankevoort. Up or
+down? adaptive rounding for post-training quantization. In Proceedings of the 37th International
+Conference on Machine Learning, ICML 2020, 13-18 July 2020, Virtual Event, volume 119 of
+Proceedings of Machine Learning Research, pages 7197–7206. PMLR, 2020. URL http://pr
+oceedings.mlr.press/v119/nagel20a.html.
+Yeonhong Park, Jake Hyun, SangLyul Cho, Bonggeun Sim, and Jae W. Lee. Any-precision LLM:
+low-cost deployment of multiple, different-sized llms. In Ruslan Salakhutdinov, Zico Kolter,
+Katherine A. Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix Berkenkamp, edi-
+tors, Forty-first International Conference on Machine Learning, ICML 2024, Vienna, Austria, July
+21-27, 2024, volume 235 of Proceedings of Machine Learning Research, pages 39682–39701.
+PMLR / OpenReview.net, 2024. URL https://proceedings.mlr.press/v235/park24e.h
+tml.
+Babak Rokh, Ali Azarpeyvand, and Alireza Khanteymoori. A comprehensive survey on model
+quantization for deep neural networks in image classification. ACM Trans. Intell. Syst. Technol.,
+14(6):97:1–97:50, 2023. doi: 10.1145/3623402. URL https://doi.org/10.1145/3623402.
+Moran Shkolnik, Brian Chmiel, Ron Banner, Gil Shomron, Yury Nahshan, Alexander M. Bronstein,
+and Uri C. Weiser. Robust quantization: One model to rule them all. CoRR, abs/2002.07686,
+2020. URL https://arxiv.org/abs/2002.07686.
+Ximeng Sun, Rameswar Panda, Chun-Fu Richard Chen, Naigang Wang, Bowen Pan, Aude Oliva,
+Rogerio Feris, and Kate Saenko. Improved techniques for quantizing deep networks with adaptive
+bit-widths. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer
+Vision, pages 957–967, 2024.
+Hugo Touvron, Louis Martin, Kevin Stone, Peter Albert, Amjad Almahairi, Yasmine Babaei, Niko-
+lay Bashlykov, Soumya Batra, Prajjwal Bhargava, Shruti Bhosale, Dan Bikel, Lukas Blecher,
+Cristian Canton-Ferrer, Moya Chen, Guillem Cucurull, David Esiobu, Jude Fernandes, Jeremy
+Fu, Wenyin Fu, Brian Fuller, Cynthia Gao, Vedanuj Goswami, Naman Goyal, Anthony Hartshorn,
+Saghar Hosseini, Rui Hou, Hakan Inan, Marcin Kardas, Viktor Kerkez, Madian Khabsa, Isabel
+Kloumann, Artem Korenev, Punit Singh Koura, Marie-Anne Lachaux, Thibaut Lavril, Jenya
+Lee, Diana Liskovich, Yinghai Lu, Yuning Mao, Xavier Martinet, Todor Mihaylov, Pushkar
+Mishra, Igor Molybog, Yixin Nie, Andrew Poulton, Jeremy Reizenstein, Rashi Rungta, Kalyan
+Saladi, Alan Schelten, Ruan Silva, Eric Michael Smith, Ranjan Subramanian, Xiaoqing Ellen
+Tan, Binh Tang, Ross Taylor, Adina Williams, Jian Xiang Kuan, Puxin Xu, Zheng Yan, Iliyan
+Zarov, Yuchen Zhang, Angela Fan, Melanie Kambadur, Sharan Narang, Aur´elien Rodriguez,
+Robert Stojnic, Sergey Edunov, and Thomas Scialom.
+Llama 2: Open foundation and fine-
+tuned chat models. CoRR, abs/2307.09288, 2023. doi: 10.48550/ARXIV.2307.09288. URL
+https://doi.org/10.48550/arXiv.2307.09288.
+Kuan Wang, Zhijian Liu, Yujun Lin, Ji Lin, and Song Han. Haq: Hardware-aware automated quan-
+tization with mixed precision. In Proceedings of the IEEE/CVF conference on computer vision
+and pattern recognition, pages 8612–8620, 2019.
+Guangxuan Xiao, Ji Lin, Micka¨el Seznec, Hao Wu, Julien Demouth, and Song Han. Smoothquant:
+Accurate and efficient post-training quantization for large language models. In Andreas Krause,
+14
+
+
+Emma Brunskill, Kyunghyun Cho, Barbara Engelhardt, Sivan Sabato, and Jonathan Scarlett, ed-
+itors, International Conference on Machine Learning, ICML 2023, 23-29 July 2023, Honolulu,
+Hawaii, USA, volume 202 of Proceedings of Machine Learning Research, pages 38087–38099.
+PMLR, 2023. URL https://proceedings.mlr.press/v202/xiao23c.html.
+Ke Xu, Qiantai Feng, Xingyi Zhang, and Dong Wang. Multiquant: Training once for multi-bit
+quantization of neural networks. In Proceedings of the Thirty-First International Joint Conference
+on Artificial Intelligence, IJCAI-2022. International Joint Conferences on Artificial Intelligence
+Organization, July 2022. doi: 10.24963/ijcai.2022/504. URL http://dx.doi.org/10.2496
+3/ijcai.2022/504.
+Zhewei Yao, Zhen Dong, Zhangcheng Zheng, Amir Gholami, Jiali Yu, Eric Tan, Leyuan Wang,
+Qijing Huang, Yida Wang, Michael W. Mahoney, and Kurt Keutzer. HAWQV3: dyadic neural
+network quantization. CoRR, abs/2011.10680, 2020. URL https://arxiv.org/abs/2011.1
+0680.
+Haichao Yu, Haoxiang Li, Humphrey Shi, Thomas S. Huang, and Gang Hua. Any-precision deep
+neural networks. In Thirty-Fifth AAAI Conference on Artificial Intelligence, AAAI 2021, Thirty-
+Third Conference on Innovative Applications of Artificial Intelligence, IAAI 2021, The Eleventh
+Symposium on Educational Advances in Artificial Intelligence, EAAI 2021, Virtual Event, Febru-
+ary 2-9, 2021, pages 10763–10771. AAAI Press, 2021. doi: 10.1609/AAAI.V35I12.17286. URL
+https://doi.org/10.1609/aaai.v35i12.17286.
+Cheng Zhang, Jianyi Cheng, George Anthony Constantinides, and Yiren Zhao. LQER: low-rank
+quantization error reconstruction for llms. In Ruslan Salakhutdinov, Zico Kolter, Katherine A.
+Heller, Adrian Weller, Nuria Oliver, Jonathan Scarlett, and Felix Berkenkamp, editors, Forty-
+first International Conference on Machine Learning, ICML 2024, Vienna, Austria, July 21-27,
+2024, volume 235 of Proceedings of Machine Learning Research, pages 58763–58779. PMLR /
+OpenReview.net, 2024. URL https://proceedings.mlr.press/v235/zhang24j.html.
+Junchen Zhao, Ali Derakhshan, Jayden Kana Hyman, Junhao Dong, Sangeetha Abdu Jyothi, and
+Ian G. Harris. Coopq: Cooperative game inspired layerwise mixed precision quantization for
+llms. In Maria Liakata, Viviane P. Moreira, Jiajun Zhang, and David Jurgens, editors, Findings of
+the Association for Computational Linguistics, ACL 2026, San Diego, California, United States,
+July 2-7, 2026, pages 7566–7578. Association for Computational Linguistics, 2026. URL https:
+//aclanthology.org/2026.findings-acl.373/.
+15

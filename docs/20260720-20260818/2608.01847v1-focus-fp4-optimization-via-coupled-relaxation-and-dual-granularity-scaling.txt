@@ -1,0 +1,1696 @@
+FOCUS: FP4 Optimization via Coupled-Relaxation and Dual-Granularity Scaling
+Xianglong Yan1∗†, Hong Liu2∗, Chengzhu Bao1, Tianao Zhang1,
+Guanghua Yu2, Jianchen Zhu2, Yulun Zhang1‡
+1Shanghai Jiao Tong University
+2Tencent
+Correspondence: yulun100@gmail.com
+Abstract
+Large language models (LLMs) achieve remarkable perfor-
+mance but are expensive to deploy due to their enormous size.
+FP4 quantization, with formats such as MXFP4 and NVFP4,
+offers an appealing solution with native hardware support on
+modern accelerators. However, maintaining accuracy under
+FP4 precision remains difficult. A key bottleneck lies in scale
+optimization: existing methods tightly couple the quantiza-
+tion and dequantization scales, forcing both to conform to
+the discrete low-precision format required by hardware (e.g.,
+E8M0 in MXFP4). Yet the quantization scale is never stored
+and need not obey this constraint, suggesting a significant un-
+tapped optimization space. In this work, we propose FOCUS,
+a post-training quantization framework with end-to-end scale
+learning for FP4 Optimization via Coupled-Relaxation and
+Dual-Granularity Scaling. Coupled-Relaxation Scaling (CRS)
+relaxes the tight coupling between quantization and dequantiza-
+tion scales with a learnable full-precision coefficient, enabling
+more effective optimization without breaking hardware com-
+pliance. Dual-Granularity Scaling (DGS) further refines the
+quantization scale at a finer sub-block granularity, allowing
+more precise adaptation to local weight distributions. Exper-
+iments across multiple LLM families and benchmarks show
+that FOCUS achieves state-of-the-art FP4 accuracy under both
+MXFP4 and NVFP4 formats, while introducing no additional
+inference overhead. We will release the code and quantized
+models of FOCUS at https://github.com/tencent/AngelSlim.
+Introduction
+Large language models (LLMs) (Yang et al. 2025; Dubey et al.
+2024) have demonstrated remarkable capabilities across a
+wide range of tasks. However, modern LLMs (Guo et al. 2025;
+Team et al. 2025; Zeng et al. 2026) have scaled to hundreds
+of billions or even trillions of parameters, posing significant
+challenges for practical deployment due to prohibitive memory
+and computational costs.
+Post-training quantization (PTQ) (Shao et al. 2023; Xiao
+et al. 2023; Liu et al. 2023), which freezes the original
+model weights and optimizes quantization parameters using
+only a small calibration set, has become a widely adopted,
+lightweight, and practical approach for compressing LLMs.
+As the demand for efficiency grows, quantization has been
+∗These authors contributed equally.
+†Work done during an internship at Tencent.
+‡Corresponding author.
+90
+92
+94
+96
+98
+100
+Recovery Rate (%)
+96.1
+96.9
+95.9
+94.9
+96.3
+98.2
+91.4
+93.3
+94.9
+96.2
+NVFP4
+MXFP4
+RTN
+GPTQ
+MR-GPTQ
+4over6
+RaZeR
+FOCUS
+Figure 1: FP4 quantization performance on Qwen3-4B.
+Recovery rate is the average zero-shot accuracy relative to
+FP16. Our method consistently outperforms all baselines
+under both NVFP4 and MXFP4 formats.
+pushed from 8-bit (Dettmers et al. 2022) to 4-bit (Ashkboos
+et al. 2024) and even lower precision (Yan et al. 2026; Li
+et al. 2025). Recently, microscaling floating-point formats
+such as MXFP4 (Rouhani et al. 2023) and NVFP4 (Nvidia
+et al. 2025) have emerged with native hardware support
+on modern accelerators (e.g., NVIDIA Blackwell (NVIDIA
+2024)), offering a promising path toward efficient W4A4
+inference. These formats adopt a block-wise scaling scheme:
+a group of values (32 for MXFP4, 16 for NVFP4) shares a
+low-precision scale (E8M0 for MXFP4, E4M3 for NVFP4),
+enabling compact representation while preserving dynamic
+range (Chen et al. 2025).
+Despite the hardware support, maintaining model accu-
+racy under FP4 precision remains challenging (see Figure 1).
+Recent efforts have explored various directions, including
+residual compensation (Meng et al. 2026), format-aware
+rounding (Li et al. 2026a), redundant zero remapping (Chen
+et al. 2026), and transformation-based methods (Egiazarian
+et al. 2026; Shao et al. 2026; Lin et al. 2026; Li et al. 2026b).
+Among them, transformation-based methods achieve strong
+performance by reshaping weight and activation distribu-
+tions, but they introduce online computational overhead (e.g.,
+Hadamard rotation) that requires additional adaptation in
+inference frameworks. Beyond these, another line of work
+focuses on scale optimization (Cook et al. 2025; Chhugani
+et al. 2026), yet these approaches rely on simple heuristic
+arXiv:2608.01847v1  [cs.AI]  3 Aug 2026
+
+
+   FP16 
+ Weights
+(a) Standard FP4 Quantization
+Dequantized 
+    Weights
+   FP4 
+Weights
+➗Sq
+✖Sdq
+Quantize to FP4
+Quantization
+      Scale 
+Dequantization 
+        Scale
+Dequantize
+        Sq = Sdq
+   Tight Coupling
+➗Sq
+✖Sdq
+Quantize to FP4
+Quantization
+      Scale 
+Dequantization 
+        Scale
+Dequantize
+        Sq ≠ Sdq
+ Relaxed Coupling
+Precision: E8M0/E4M3
+Granularity: 32/16
+Precision: E8M0/E4M3
+Granularity: 32/16
+Precision: Free
+Granularity: Free
+Precision: E8M0/E4M3
+Granularity: 32/16
+(b) FOCUS
+   FP16 
+ Weights
+Dequantized 
+    Weights
+   FP4 
+Weights
+Figure 2: Standard FP4 quantization vs. FOCUS. (a) Con-
+ventional methods tightly couple Sq and Sdq, constraining
+both to the same low-precision format and block granularity.
+(b) FOCUS relaxes this coupling, freeing the quantization
+scale from the hardware-imposed precision and granularity
+constraints.
+rules and yield limited improvements. Overall, scale opti-
+mization for FP4 formats remains largely underexplored in
+current LLM quantization, and no existing method leverages
+learnable, gradient-based scale optimization.
+However, optimizing scales for FP4 formats is inherently
+difficult (Zhang et al. 2026). The scale factor itself must be
+quantized to a low-precision format, restricting optimization
+to a discrete space. Furthermore, existing methods (Cook
+et al. 2025; Chhugani et al. 2026) tightly couple the quanti-
+zation and dequantization scales into a single shared value,
+forcing both to bear the precision loss from this hardware
+constraint. We note that only the dequantization scale is stored
+and deployed at inference time, and thus must conform to
+hardware requirements. The quantization scale, by contrast,
+is used solely during the offline quantization process and is
+never retained. This leads to a key insight: the quantization
+scale need not share the same precision format or block-size
+granularity as the dequantization scale, and can be optimized
+without any hardware or inference constraint. We illustrate
+this in Figure 2.
+Building on this insight, we propose FOCUS, a post-
+training quantization (PTQ) framework with end-to-end scale
+learning for FP4 Optimization via Coupled-Relaxation and
+Dual-Granularity Scaling. FOCUS exploits the freedom of
+the quantization scale along two dimensions. Along the pre-
+cision dimension, the quantization scale need not conform
+to the discrete low-precision format imposed by hardware.
+Coupled-Relaxation Scaling (CRS) leverages this by intro-
+ducing a learnable full-precision coefficient that relaxes the
+tight coupling between quantization and dequantization scales.
+This lifts the quantization scale optimization from the dis-
+crete low-precision space to a continuous full-precision space
+amenable to gradient-based learning. Along the granularity
+dimension, the quantization scale likewise need not follow
+the predefined block size. Dual-Granularity Scaling (DGS)
+utilizes this by assigning quantization scales at sub-block
+level. This allows the quantization scale to operate at a finer
+granularity than the dequantization scale, capturing local
+weight variations that a block-wise scale cannot represent.
+Extensive experiments across multiple LLM families
+demonstrate that FOCUS achieves state-of-the-art (SOTA)
+FP4 accuracy under both MXFP4 and NVFP4 formats. As
+illustrated in Figure 1, FOCUS recovers 98.2% of the FP16
+zero-shot accuracy on Qwen3-4B under NVFP4, consistently
+outperforming all existing baselines. Moreover, since FOCUS
+only learns scale parameters, quantizing Qwen3-4B takes
+only 19 minutes on a single H20 GPU with no additional
+inference overhead.
+Our key contributions are summarized below:
+• We identify that the quantization scale is free from hard-
+ware constraints, and propose FOCUS, a PTQ scale learn-
+ing framework for MXFP4 and NVFP4 that exploits this
+freedom in both precision and granularity.
+• We propose Coupled-Relaxation Scaling (CRS), which
+introduces a learnable full-precision coefficient to relax
+the quantization-dequantization scale coupling, lifting
+optimization from discrete to continuous space.
+• We propose Dual-Granularity Scaling (DGS), which as-
+signs quantization scales at sub-block level, capturing local
+weight variations that a single block-wise scale cannot
+represent.
+• Extensive experiments demonstrate that FOCUS achieves
+SOTA FP4 accuracy under both MXFP4 and NVFP4, with
+no inference overhead and seamless framework compati-
+bility.
+Related Work
+PTQ with Learnable Quantization Parameters
+To improve the accuracy of post-training quantization (PTQ),
+recent works introduce learnable parameters into the quan-
+tization pipeline while keeping the original model weights
+frozen. Several methods learn quantization scales or clipping
+bounds: OmniQuant (Shao et al. 2023) jointly optimizes
+learnable weight clipping and equivalent transformations via
+block-wise distillation, while LRQuant (Zhao et al. 2024)
+learns smoothing parameters for enhanced robustness. A com-
+plementary direction reshapes distributions through learned
+transformations. AffineQuant (Ma et al. 2024) extends equiv-
+alent transformations to full affine mappings. SpinQuant (Liu
+et al. 2025) and OSTQuant (Hu et al. 2025) further optimize
+learned rotation and scaling transformations. FlatQuant (Sun
+et al. 2025) accelerates such optimization while maintaining
+strong performance. On the rounding side, AdaRound (Nagel
+et al. 2020) formulates rounding as continuous optimization,
+which BRECQ (Li et al. 2021) extends with block-wise recon-
+struction. However, these methods are designed for uniform
+integer grids, where quantization levels are evenly spaced
+and scales remain in full precision. FP4 formats like MXFP4
+and NVFP4 introduce non-uniform grids and low-precision
+scales (e.g., E8M0), making existing approaches not directly
+transferable.
+
+
+(a) End-to-end Scale Learning Baseline
+(b) Coupled-Relaxation Scaling (CRS)
+(c) Dual-Granularity Scaling (DGS)
+(d) Output Model
+Wfp16
+Wfp4
+Wdq
+🔥
+quant
+dequant
+  Weight 
+Quantizer
+quant to FP8 (STE)
+➗
+✖
+FP16 Model
+FP4 Model
+  Weight 
+Quantizer
+ Act Quantizer
+    (Dynamic)
+KL Loss
+Wfp4
+Layer 1
+Layer 2
+Layer i
+Layer N
+…
+…
+Frozen
+Sfp16
+Sq
+Sdq
+Sdq
+Layer 1
+FP4 Model
+Layer 2
+Layer i
+Layer N
+…
+…
+Stored
+Wfp16
+Wfp4
+Wdq
+quant
+dequant
+➗
+✖
+🔥
+Sfp16
+Sq
+Sdq
+Wfp16
+Sq
+Discarded
+Sfp8
+quant to FP8 (STE)
+✖C
+Wfp16
+Block i
+C
+Relaxation
+Coefficient
+🔥
+🔥
+Wfp4
+Wdq
+Sfp8
+✖Sdq
+dequant
+🔥
+Sfp16
+quant
+✖C1
+🔥
+✖C2
+🔥
+✖C3
+🔥
+✖C4
+🔥
+Partition
+ Sub 
+block
+ Sub 
+block
+ Sub 
+block
+ Sub 
+block
+quant to FP8
+      (STE) 
+Figure 3: Overview of FOCUS. (a) End-to-end Scale Learning Baseline: learns FP8 scales via STE while weights are frozen
+during quantization and dequantization. (b) Coupled-Relaxation Scaling (CRS): introduces learnable relaxation coefficients for
+additional flexibility beyond FP8 precision. (c) Dual-Granularity Scaling (DGS): partitions each block into sub-blocks with
+independent coefficients for fine-grained scale adjustment. (d) Output Model: only FP4 weights and dequantization scales are
+stored, while quantization scales are discarded.
+LLM Quantization with FP4
+Recent FP4 formats such as MXFP4 (Rouhani et al. 2023) and
+NVFP4 (Nvidia et al. 2025) use block-wise shared scale fac-
+tors, offering better dynamic range than integer formats. A line
+of work addresses the incompatibility between global rotations
+and block-wise scaling by proposing block-wise (Egiazarian
+et al. 2026; Shao et al. 2026) or outlier-aware (Lin et al.
+2026) rotation strategies, while BATQuant (Li et al. 2026b)
+restricts affine transformations to align with the microscaling
+granularity. Another line focuses on the scale factor itself:
+Zhang et al. (2026) identify it as a critical error source, Four
+Over Six (Cook et al. 2025) adaptively selects between scale
+candidates, Chhugani et al. (2026) propose overflow-aware
+scaling to improve fidelity, and Bao et al. (2026) optimize
+NVFP4 scales via closed-form analytical updates with de-
+coupled scale search. Beyond these, ARCQuant (Meng et al.
+2026) compensates error via residual channels, RaZeR (Chen
+et al. 2026) exploits redundant zeros to extend representable
+values, and FAAR (Li et al. 2026a) proposes format-aware
+adaptive rounding for NVFP4. Despite these efforts, existing
+methods either introduce additional inference overhead or
+optimize scales without end-to-end task-level supervision. No
+prior work directly learns FP4 scales through gradient-based
+optimization, which we address in this work.
+Methodology
+In this section, we present FOCUS as illustrated in Figure 3.
+We begin with FP4 preliminaries, then introduce a scale-
+learning baseline and the key insight behind FOCUS. We
+next present two core components, CRS and DGS, which
+relax the precision and granularity constraints on quantization
+scales. Finally, we discuss deployment considerations without
+transformation-based overhead.
+Preliminaries
+Both NVFP4 and MXFP4 represent weights using FP4
+(E2M1) elements with block-wise scaling. Given a full-
+precision tensor X partitioned into blocks {Xi} of size
+B, each block is quantized and dequantized as:
+¯Xi = QE2M1(Xi / Si) ,
+ˆXi = ¯Xi · Si,
+(1)
+where Si is the per-block effective scale, QE2M1(·) rounds
+each element to the nearest E2M1 value, ¯Xi is the quantized
+FP4 weight matrix, and ˆXi is the dequantized reconstruction.
+NVFP4 adopts a two-level scaling mechanism with block
+size B = 16. A tensor-wide FP32 global scale α is first
+computed, followed by per-block FP8 (E4M3) scales ∆i:
+α = max(|X|)
+MFP4·MFP8 ,
+∆i = QE4M3
+
+max(|Xi|)
+α·MFP4
+
+,
+(2)
+where MFP4 = 6 and MFP8 = 448 denote the maximum
+representable values of E2M1 and E4M3, and the effective
+per-block scale is Si = α · ∆i.
+MXFP4 follows the OCP Microscaling specification (Open
+Compute Project Foundation (MX Alliance) 2023) with block
+size B = 32. Each block shares a single E8M0 scale factor
+that encodes only a power-of-two exponent:
+Si = QE8M0(max(|Xi|) / MFP4) ,
+(3)
+where QE8M0(·) rounds the scale to the nearest power of
+two (typically ceiling in practice). Compared to NVFP4,
+MXFP4 uses a larger block size and a more restrictive scale
+format (E8M0 vs. E4M3), making its scale factor coarser and
+optimization more challenging.
+Baseline Framework and Key Insight
+Scale Learning Baseline. Unlike coarse per-channel or per-
+tensor scales in integer quantization, the block-wise scales
+in NVFP4 and MXFP4 operate at a fine granularity (block
+
+
+size 16 and 32, respectively), making their quality critically
+important to quantization accuracy. The default absmax initial-
+ization (Eqs. 2–3) often yields suboptimal scale values. Recent
+works have proposed improvements: MR-GPTQ (Egiazarian
+et al. 2026) applies MSE-based scale search, while some
+works (Cook et al. 2025; Chhugani et al. 2026) adjust the
+maximum-value mapping rule. However, these methods re-
+main rule-based and operate only on a per-layer basis without
+leveraging global task loss information, still incurring notable
+accuracy loss. Inspired by end-to-end quantization-aware
+optimization (Liu et al. 2025; Hu et al. 2025), we construct a
+baseline that optimizes Si end-to-end.
+We freeze the original model weights and optimize only
+the weight block scales, while keeping activation quantization
+fully dynamic. For NVFP4, we further freeze the tensor-wide
+scale α and learn only ∆i, while for MXFP4, Si is the sole
+block-wise scale. Each learnable scale is maintained as a full-
+precision (FP16) copy Sfp
+i for gradient-based optimization,
+initialized via absmax. During the forward pass, it is quantized
+on-the-fly to its hardware-mandated format before being
+applied:
+Si = Qfmt
+
+Sfp
+i
+
+,
+(4)
+where Qfmt denotes quantization to the target scale format
+(E4M3 or E8M0). The quantized Si is then used in Eq. 1
+for weight quantization and dequantization. The Straight-
+Through Estimator (STE) (Bengio, Léonard, and Courville
+2013) is applied to all non-differentiable operations, allowing
+gradients to flow through to Sfp
+i . Following Hu et al. (2025),
+we use a knowledge distillation loss for end-to-end scale
+optimization.
+Key Insight. In the baseline above, the same quantized
+scale Si serves both as the quantization scale (dividing the
+weights to obtain FP4 values) and the dequantization scale
+(multiplying to reconstruct the weights). To make this distinc-
+tion explicit, we rewrite the process as:
+¯
+Wi = QE2M1
+ Wi / Sq
+i
+
+,
+ˆ
+Wi = ¯
+Wi · Sdq
+i ,
+(5)
+where the baseline enforces Sq
+i = Sdq
+i
+= Qfmt(Sfp
+i ), i.e., the
+two scales are tightly coupled.
+However, these two scales serve fundamentally different
+roles. The dequantization scale Sdq
+i
+must be stored and de-
+ployed at inference time, and therefore must conform to the
+hardware-mandated format (E4M3 or E8M0). The quanti-
+zation scale Sq
+i , by contrast, is used only during the offline
+quantization process and is never retained. Its role is solely to
+determine the FP4 weight matrix ¯
+Wi, i.e., to find the best pos-
+sible FP4 assignment for each block. Since Sq
+i is not subject
+to any hardware or inference constraint, its optimization space
+can be significantly enlarged to yield better FP4 matrices.
+Specifically, the baseline unnecessarily restricts Sq
+i along
+two dimensions:
+• Precision. Sq
+i is forced into the same discrete low-precision
+format as Sdq
+i (e.g., E8M0, encoding only power-of-two
+values), severely limiting the optimization landscape.
+• Granularity. Sq
+i is forced to share the same block size
+as Sdq
+i (16 or 32 elements), unable to adapt to intra-block
+weight variation.
+NVFP4
+MXFP4
+K = 2
+Partition
+K = 4    Sub-block size = 8 
+Partition
+Sub-block
+Sub-block
+Block i (Block size = 16)
+Block i (Block size = 32)
+Wi
+Wi
+1
+Wi
+2
+Wi
+1
+Wi
+2
+Wi
+3
+Wi
+4
+Sub-block
+Sub-block
+Sub-block
+Sub-block
+Wi
+Ci
+1
+Ci
+2
+Ci
+1
+Ci
+2
+Ci
+3
+Ci
+4
+Sub-block size = 8 
+Figure 4: Sub-block partition in Dual-Granularity Scaling for
+NVFP4 and MXFP4.
+These observations motivate our two techniques: Coupled-
+Relaxation Scaling releases the precision constraint on Sq
+i , and
+Dual-Granularity Scaling releases the granularity constraint.
+Both aim to enlarge the optimization space of Sq
+i for finding
+better FP4 weight matrices, while keeping Sdq
+i fully hardware-
+compliant.
+Coupled-Relaxation Scaling
+As identified above, the quantization scale Sq
+i is never stored
+or used at inference time. Only the FP4 matrix ¯
+Wi and the
+dequantization scale Sdq
+i are retained. Therefore, Sq
+i need not
+obey the hardware precision constraint. A natural approach is
+to fully decouple the two scales: let Sq
+i be a free full-precision
+parameter independent of Sdq
+i . However, full decoupling leads
+to training instability, as the two scales receive conflicting
+gradients and cause optimization to oscillate (see Appendix).
+We instead propose Coupled-Relaxation Scaling (CRS),
+which retains the coupling structure but relaxes its tightness.
+Specifically, we introduce a learnable full-precision coefficient
+ci (initialized to 1) and define the quantization scale as:
+Sq
+i = Sdq
+i · ci,
+where
+Sdq
+i
+= Qfmt(Sfp
+i ).
+(6)
+The quantization and dequantization are then:
+¯
+Wi = QE2M1
+ Wi / Sq
+i
+
+,
+ˆ
+Wi = ¯
+Wi · Sdq
+i .
+(7)
+Since ci is continuous and anchored to Sdq
+i , the optimization
+of the quantization scale is lifted from the discrete hardware
+format to a continuous space, while the shared structure
+ensures training stability.
+We note that CRS introduces an asymmetry: the quantiza-
+tion and dequantization scales are no longer mathematically
+equivalent. However, the goal of FP4 quantization is not to
+preserve this equivalence, but to find the FP4 matrix ¯
+Wi and
+dequantization scale Sdq
+i that maximize end-to-end model per-
+formance. Starting from ci = 1 (equivalent to the baseline),
+the coefficient is driven by the task loss to discover better FP4
+assignments.
+Dual-Granularity Scaling
+CRS relaxes the precision constraint on the quantization
+scale Sq
+i via a per-block coefficient ci. We further relax the
+granularity constraint: since Sq
+i is not retained at inference, it
+need not share the same block size as Sdq
+i and can operate at
+a finer granularity to further increase optimization freedom.
+Specifically, we subdivide each hardware block (size 32
+for MXFP4, 16 for NVFP4) into K equal sub-blocks, each
+assigned an independent full-precision coefficient ck
+i . Only
+the quantization scale operates at finer granularity via the
+
+
+Model
+Format
+Method
+Wiki2(↓)
+C4(↓)
+ARC-C
+ARC-E
+Hella.
+PiQA
+Winog.
+Avg.(↑)
+Qwen3
+4B
+FP16
+FP16
+13.66
+16.63
+54.18
+78.07
+68.50
+74.81
+65.67
+68.25
+MXFP4
+RTN
+18.60
+20.62
+46.08
+70.41
+62.91
+71.60
+60.77
+62.35
+GPTQ
+16.85
+19.37
+47.95
+72.81
+63.09
+72.91
+61.48
+63.65
+MR-GPTQ
+15.48
+18.38
+48.89
+74.37
+63.39
+73.23
+64.09
+64.79
+FOCUS
+12.85
+17.77
+49.15
+74.83
+66.42
+73.61
+64.25
+65.65
+NVFP4
+RTN
+13.88
+17.29
+51.54
+74.33
+65.72
+74.27
+62.04
+65.58
+GPTQ
+13.91
+17.30
+51.28
+75.46
+66.59
+74.59
+62.83
+66.15
+MR-GPTQ
+14.64
+17.60
+49.57
+75.34
+65.86
+72.91
+63.61
+65.46
+4over6
+14.17
+17.28
+48.63
+74.58
+66.39
+71.93
+62.19
+64.74
+RaZeR
+14.11
+17.26
+50.34
+74.75
+67.10
+73.29
+63.06
+65.71
+FOCUS
+12.57
+16.97
+52.56
+76.01
+67.26
+75.03
+64.40
+67.05
+Qwen3
+8B
+FP16
+FP16
+9.73
+13.30
+56.14
+80.72
+74.98
+77.91
+67.96
+71.54
+MXFP4
+RTN
+11.77
+15.77
+50.34
+71.13
+69.63
+73.29
+63.06
+65.49
+GPTQ
+11.64
+15.48
+50.77
+74.92
+69.79
+75.14
+66.61
+67.45
+MR-GPTQ
+11.45
+15.41
+53.24
+76.68
+69.66
+75.35
+67.01
+68.39
+FOCUS
+9.76
+14.28
+53.58
+75.76
+73.47
+76.50
+67.64
+69.39
+NVFP4
+RTN
+10.04
+13.77
+54.78
+79.29
+73.14
+77.31
+66.46
+70.20
+GPTQ
+10.12
+13.71
+54.01
+79.42
+72.90
+76.33
+68.67
+70.27
+MR-GPTQ
+10.28
+13.87
+53.75
+79.25
+72.95
+77.64
+67.01
+70.12
+4over6
+10.00
+13.72
+54.78
+78.28
+73.13
+75.52
+66.93
+69.73
+RaZeR
+9.99
+13.64
+54.69
+79.21
+73.51
+76.39
+68.90
+70.54
+FOCUS
+9.47
+13.62
+56.14
+80.05
+73.67
+77.31
+69.69
+71.37
+Table 1: FP4 quantization results on Qwen3. Perplexity on WikiText2 and C4, and accuracy (%) on five zero-shot tasks. Best
+and second-best results (excluding FP16) within each format are marked in bold and underlined.
+same multiplicative form as CRS, while the dequantization
+scale Sdq
+i remains shared across the entire block:
+¯
+Wk
+i = QE2M1
+
+Wk
+i
+Sdq
+i ·ck
+i
+
+,
+ˆ
+Wk
+i = ¯
+Wk
+i · Sdq
+i ,
+(8)
+where Wk
+i denotes the k-th sub-block within block i, and each
+ck
+i is initialized to 1. We set the sub-block size to 8 for both
+formats, yielding K=4 for MXFP4 and K=2 for NVFP4 (see
+Figure 4). When K=1, DGS reduces to CRS. By allowing
+each sub-block to independently adjust its rounding boundary,
+DGS captures intra-block weight variation that a single block-
+level coefficient cannot. As with CRS, all coefficients are
+discarded after training, and the deployed model remains in
+the standard hardware format with no inference overhead. The
+additional training cost is negligible, as FOCUS only learns
+lightweight scale parameters without modifying the weights
+(see Appendix).
+FOCUS without Extra Transforms
+Several recent SOTA FP4 methods (Shao et al. 2026; Egiazar-
+ian et al. 2026) apply Hadamard transforms to smooth distri-
+butions before quantization. FOCUS does not rely on such
+transforms, and we discuss the relationship below.
+Practical issues of Hadamard transforms. While theoreti-
+cally fusible into adjacent layers, existing methods (Egiazarian
+et al. 2026) do not actually fuse the Hadamard transform in
+their implementations. We conduct fusion experiments and
+find that fusing the transform and re-quantizing degrades
+accuracy compared to online computation (see Appendix).
+Without fusion, every linear layer incurs additional Hadamard
+overhead at inference, making the model incompatible with
+mainstream inference frameworks.
+Orthogonality with FOCUS. FOCUS operates entirely
+within the scale optimization space and introduces no struc-
+tural modification to the model. The deployed model remains
+in the standard MXFP4/NVFP4 format, fully compatible with
+hardware-native execution. Moreover, FOCUS is complemen-
+tary to transform-based methods and can be combined with
+them (see Appendix).
+Experiments
+Experimental Settings
+Implementation Details. All experiments are conducted us-
+ing PyTorch (Paszke et al. 2019) and HuggingFace Transform-
+ers (Wolf et al. 2020) on a single NVIDIA H20 GPU. Follow-
+ing Hu et al. (2025), we adopt the KL-Top loss with k = 1000
+as the training objective. We quantize both weights and activa-
+tions of all linear layers to FP4. We use AdamW (Loshchilov
+and Hutter 2019) as the optimizer with a constant learning
+rate schedule. For MXFP4, the learning rates for the block-
+wise scale and the relaxation coefficient are set to 2 × 10−2
+and 5 × 10−2, respectively. For NVFP4, the corresponding
+learning rates are 5 × 10−3 and 1 × 10−3. We train for 1
+epoch with a global batch size of 32, using 1,248 samples
+from the WikiText2 (Merity et al. 2017) training set with
+a sequence length of 2,048. For DGS, each MXFP4 block
+(32 elements) is partitioned into 4 sub-blocks of 8 elements,
+and each NVFP4 block (16 elements) is partitioned into 2
+sub-blocks of 8 elements (ablated in Table 5).
+Models and Evaluation. We evaluate FOCUS on five rep-
+resentative LLMs spanning different model families and sizes:
+LLaMA-3.1-8B-Instruct, LLaMA-3.2-1B-Instruct, LLaMA-
+3.2-3B-Instruct (Dubey et al. 2024), Qwen3-4B, and Qwen3-
+8B (Yang et al. 2025). For evaluation, we report perplexity
+on WikiText2 (Merity et al. 2017) and C4 (Raffel et al. 2020)
+with a sequence length of 2,048 tokens, and assess zero-shot
+accuracy on five common-sense reasoning benchmarks: ARC-
+Challenge (Clark et al. 2018), ARC-Easy (Clark et al. 2018),
+HellaSwag (Zellers et al. 2019), PIQA (Bisk et al. 2020), and
+
+
+Model
+Format
+Method
+Wiki2(↓)
+C4(↓)
+ARC-C
+ARC-E
+Hella.
+PiQA
+Winog.
+Avg.(↑)
+LLaMA-3.2
+1B-Instruct
+FP16
+FP16
+13.16
+18.52
+37.54
+63.68
+61.56
+75.14
+61.72
+59.93
+MXFP4
+RTN
+21.06
+28.10
+32.34
+57.62
+52.37
+69.59
+57.38
+53.86
+GPTQ
+20.75
+26.70
+33.02
+56.44
+53.89
+69.91
+56.83
+54.02
+MR-GPTQ
+17.00
+22.96
+34.47
+59.85
+55.13
+71.65
+58.33
+55.89
+FOCUS
+16.46
+22.87
+36.60
+60.60
+56.12
+71.55
+57.14
+56.40
+NVFP4
+RTN
+15.52
+21.50
+35.24
+60.40
+57.81
+72.52
+60.85
+57.36
+GPTQ
+15.15
+20.84
+36.43
+60.86
+58.51
+72.80
+60.30
+57.78
+MR-GPTQ
+15.19
+20.59
+34.98
+60.82
+57.82
+72.69
+59.98
+57.26
+4over6
+15.34
+21.53
+35.92
+59.72
+57.91
+72.52
+60.85
+57.38
+RaZeR
+14.79
+20.79
+35.75
+60.35
+58.87
+72.25
+59.04
+57.25
+FOCUS
+14.83
+20.69
+36.52
+61.15
+59.47
+73.12
+60.06
+58.06
+LLaMA-3.2
+3B-Instruct
+FP16
+FP16
+11.04
+14.48
+45.99
+71.30
+71.59
+76.99
+68.90
+66.95
+MXFP4
+RTN
+15.15
+18.98
+42.49
+65.99
+65.90
+73.61
+64.72
+62.54
+GPTQ
+14.72
+18.08
+43.34
+66.71
+66.23
+74.86
+66.61
+63.55
+MR-GPTQ
+13.29
+16.56
+43.43
+70.66
+67.72
+76.06
+65.19
+64.61
+FOCUS
+12.30
+16.64
+45.14
+69.44
+69.21
+76.12
+65.11
+65.00
+NVFP4
+RTN
+11.91
+15.49
+44.97
+70.58
+70.04
+75.79
+66.06
+65.49
+GPTQ
+12.16
+15.54
+43.43
+68.39
+70.37
+75.95
+66.85
+65.00
+MR-GPTQ
+12.09
+15.63
+45.31
+70.03
+69.53
+77.09
+67.96
+65.98
+4over6
+11.95
+15.51
+44.37
+69.57
+70.00
+75.90
+67.40
+65.45
+RaZeR
+11.65
+15.28
+44.88
+68.14
+70.82
+76.12
+67.40
+65.47
+FOCUS
+11.48
+15.59
+44.54
+70.29
+70.91
+76.39
+68.75
+66.18
+LLaMA-3.1
+8B-Instruct
+FP16
+FP16
+7.22
+10.39
+55.63
+79.84
+79.54
+81.50
+73.48
+74.00
+MXFP4
+RTN
+9.59
+13.49
+47.87
+74.79
+74.99
+77.31
+68.35
+68.66
+GPTQ
+8.99
+12.75
+49.66
+74.62
+76.05
+79.05
+71.35
+70.15
+MR-GPTQ
+8.37
+12.13
+51.71
+76.89
+75.53
+79.05
+72.22
+71.08
+FOCUS
+8.40
+12.17
+52.30
+78.93
+76.75
+79.11
+72.30
+71.88
+NVFP4
+RTN
+7.89
+11.37
+52.65
+77.02
+77.95
+80.14
+72.22
+72.00
+GPTQ
+7.90
+11.39
+54.10
+78.16
+77.72
+78.56
+72.22
+72.15
+MR-GPTQ
+7.97
+11.41
+53.33
+78.66
+77.50
+80.09
+71.43
+72.20
+4over6
+7.92
+11.36
+53.58
+76.68
+78.01
+79.05
+72.30
+71.92
+RaZeR
+7.98
+11.32
+53.24
+77.23
+78.15
+79.54
+71.98
+72.03
+FOCUS
+7.89
+11.32
+52.73
+77.74
+78.90
+80.36
+72.53
+72.45
+Table 2: FP4 quantization results on LLaMA3. Perplexity on WikiText2 and C4, and accuracy (%) on five zero-shot tasks. Best
+and second-best results (excluding FP16) within each format are marked in bold and underlined.
+Winogrande (Sakaguchi et al. 2020). Furthermore, to evaluate
+the reasoning capabilities of quantized models, we conduct
+chain-of-thought (CoT) evaluations on GSM8K (Cobbe et al.
+2021) and MMLU (Hendrycks et al. 2021).
+Baselines. We compare FOCUS against both classic and
+recent PTQ methods under the two FP4 formats. For both
+MXFP4 and NVFP4, we include RTN (round-to-nearest),
+GPTQ (Frantar et al. 2023), and MR-GPTQ (Egiazarian et al.
+2026) as common baselines. For NVFP4, we additionally
+compare with two format-specific methods: 4over6 (Cook
+et al. 2025) and RaZeR (Chen et al. 2026), the current SOTA
+under this format.
+Main Results
+Language Modeling (Perplexity). As shown in Tables 1
+and 2, FOCUS achieves the lowest perplexity in nearly all
+settings across five models. Notably, on Qwen3-8B, FOCUS
+attains 9.76 (MXFP4) and 9.47 (NVFP4) on WikiText2, nearly
+matching the FP16 baseline of 9.73. The gains are particularly
+significant under MXFP4, where FOCUS reduces perplexity
+by 1.5–2.5 points over MR-GPTQ on Qwen models, demon-
+strating the effectiveness of scale optimization under more
+restrictive quantization constraints. Under NVFP4, FOCUS
+remains best or competitive, outperforming format-specific
+methods such as RaZeR and 4over6 by clear margins.
+Model
+Method
+GSM8K-CoT
+MMLU-CoT
+LLaMA-3.2
+3B-Instruct
+FP16
+77.86
+64.57
+RTN
+55.42
+53.96
+GPTQ
+51.10
+51.60
+MR-GPTQ
+60.20
+55.16
+FOCUS
+64.14
+59.09
+LLaMA-3.1
+8B-Instruct
+FP16
+85.67
+72.71
+RTN
+59.29
+57.90
+GPTQ
+63.84
+61.81
+MR-GPTQ
+72.40
+63.39
+FOCUS
+73.31
+65.53
+Table 3: Chain-of-thought reasoning results on GSM8K
+and MMLU under MXFP4 format. Best results (excluding
+FP16) are in bold.
+Zero-Shot Tasks. We further evaluate on five zero-shot
+benchmarks and report the average accuracy in Tables 1
+and 2. FOCUS consistently achieves the highest average
+across nearly all model-format combinations. On Qwen3-4B,
+FOCUS obtains 67.05% (NVFP4) and 65.65% (MXFP4),
+recovering 98.2% and 96.2% of the FP16 accuracy (68.25%),
+respectively. On Qwen3-8B NVFP4, FOCUS reaches 71.37%,
+recovering 99.8% of FP16 (71.54%), while the best compet-
+ing method RaZeR achieves only 70.54%. Under MXFP4,
+FOCUS outperforms MR-GPTQ by 1.0% in average accuracy.
+
+
+Format
+Method
+Wiki2↓
+C4↓
+Avg.↑
+NVFP4
+RTN
+13.88
+17.29
+65.58
+Baseline
+12.63
+17.02
+65.92
++ CRS
+12.61
+16.98
+66.91
++ CRS + DGS
+12.57
+16.97
+67.05
+MXFP4
+RTN
+18.60
+20.62
+62.35
+Baseline
+12.96
+17.98
+64.69
++ CRS
+12.99
+17.95
+64.81
++ CRS + DGS
+12.85
+17.77
+65.65
+Table 4: Effect of CRS and DGS. Each proposed component
+is progressively added to the naive scale learning baseline on
+Qwen3-4B. Best results are in bold.
+Reasoning Tasks. Table 3 reports chain-of-thought evalu-
+ation results on GSM8K and MMLU under MXFP4. We ob-
+serve that FP4 quantization incurs more pronounced degrada-
+tion on reasoning tasks compared to perplexity and zero-shot
+benchmarks, indicating that multi-step reasoning is particu-
+larly sensitive to quantization noise. Nevertheless, FOCUS
+consistently preserves reasoning capability better than all
+competing methods. On LLaMA-3.1-8B-Instruct, FOCUS
+achieves 73.31% on GSM8K and 65.53% on MMLU, out-
+performing MR-GPTQ by 0.9 and 2.1 points, respectively.
+On LLaMA-3.2-3B-Instruct, FOCUS leads with 64.14%
+(GSM8K) and 59.09% (MMLU), surpassing MR-GPTQ by
+approximately 4 points on both benchmarks. These results
+show that FOCUS improves both token-level prediction and
+multi-step reasoning.
+Ablation Study
+Effect of CRS and DGS. Table 4 presents an ablation study on
+Qwen3-4B, progressively adding each proposed component.
+Starting from RTN, the naive scale learning baseline already
+yields substantial gains, particularly under MXFP4 where
+Wiki2 perplexity drops from 18.60 to 12.96, confirming the
+value of end-to-end scale optimization. Adding CRS further
+improves zero-shot accuracy by up to 1.0% under NVFP4,
+validating that relaxing the coupling between quantization
+and dequantization scales enables better FP4 assignments.
+Incorporating DGS provides further gains under both formats,
+showing that sub-block granularity refines FP4 assignments
+beyond block-level relaxation alone. The full method achieves
+the best results in all settings, improving zero-shot average
+by 1.13% and 0.96% over the baseline under NVFP4 and
+MXFP4, respectively.
+Effect of sub-block size in DGS. Table 5 investigates
+the impact of sub-block granularity in DGS. When the sub-
+block size equals the native block size (32 for MXFP4, 16
+for NVFP4), DGS reduces to CRS, as each block shares a
+single relaxation coefficient. Decreasing the sub-block size
+introduces finer-grained coefficients, enabling more precise
+control over rounding boundaries at the cost of additional
+trainable parameters during calibration. For MXFP4, reducing
+the sub-block size from 32 to 16 yields a notable improvement
+(e.g., Avg.: 64.81 →65.65), while further reduction to 8
+achieves comparable performance. For NVFP4, sub-block
+sizes 8 and 4 perform similarly, so we use size 8 for both
+formats to balance accuracy and cost.
+Format
+Sub-block Size
+Wiki2↓
+C4↓
+Avg.↑
+NVFP4
+16 (CRS)
+12.61
+16.96
+66.91
+8
+12.57
+16.97
+67.05
+4
+12.57
+16.91
+67.05
+2
+12.62
+16.92
+66.94
+MXFP4
+32 (CRS)
+12.99
+17.95
+64.81
+16
+12.98
+17.79
+65.65
+8
+12.85
+17.77
+65.65
+4
+12.83
+17.78
+64.94
+Table 5: Effect of sub-block size in DGS. Evaluated on
+Qwen3-4B. Setting sub-block size to the native block size
+reduces DGS to CRS. Best results are in bold.
+Quantization Cost
+As a PTQ method, FOCUS freezes the model weights and
+optimizes only scales and relaxation coefficients end-to-end,
+yielding a lightweight quantization process. We compare its
+cost with MR-GPTQ (Egiazarian et al. 2026), the previous
+SOTA supporting both MXFP4 and NVFP4. As shown in
+Table 6, FOCUS quantizes faster, reducing time by 34%
+on Qwen3-4B and 28% on Qwen3-8B. MR-GPTQ requires
+several costly stages, including GPTQ-based reconstruction,
+online Hadamard transformation, activation reordering, and
+MSE-based scale search. In contrast, FOCUS jointly op-
+timizes all scales with standard forward-backward passes,
+without iterative layer-wise processing. Although it uses more
+peak GPU memory for learnable coefficients and optimizer
+states, the overhead is moderate, and both methods run on a
+single NVIDIA H20 GPU.
+Model
+Method
+GPU Memory
+Time
+Qwen3-4B
+MR-GPTQ
+45 GB
+29 min
+FOCUS
+77 GB
+19 min
+Qwen3-8B
+MR-GPTQ
+62 GB
+40 min
+FOCUS
+85 GB
+29 min
+Table 6: Quantization cost on one NVIDIA H20 GPU.
+Conclusion
+We present FOCUS, a post-training quantization framework
+that rethinks scale optimization for FP4 formats. Build-
+ing on the observation that the quantization scale is free
+from hardware constraints, we construct an efficient end-to-
+end scale learning framework that exploits this overlooked
+freedom along two complementary dimensions. Coupled-
+Relaxation Scaling (CRS) lifts scale optimization from a
+discrete hardware-constrained space to a continuous one
+by introducing a learnable coefficient that relaxes the cou-
+pling between the quantization and dequantization scales.
+Dual-Granularity Scaling (DGS) further extends this idea to
+the sub-block level, enabling the relaxed scale to adapt to
+local weight variations within each block. Together, these
+techniques enable FOCUS to find superior FP4 assignments
+during calibration, while the deployed model remains in stan-
+dard MXFP4/NVFP4 format with no additional inference cost.
+Experiments confirm that FOCUS achieves state-of-the-art
+FP4 accuracy under both formats, substantially closing the
+gap to full-precision performance.
+
+
+References
+Ashkboos, S.; Mohtashami, A.; Croci, M. L.; Li, B.; Cameron,
+P.; Jaggi, M.; Alistarh, D.; Hoefler, T.; and Hensman, J.
+2024. Quarot: Outlier-free 4-bit inference in rotated llms. In
+NeurIPS.
+Bao, C.; Yan, X.; Li, Z.; Qin, G.; Yu, G.; and Zhang, Y. 2026.
+SOAR: Scale Optimization for Accurate Reconstruction in
+NVFP4 Quantization. arXiv preprint arXiv:2605.12245.
+Bengio, Y.; Léonard, N.; and Courville, A. 2013. Estimat-
+ing or propagating gradients through stochastic neurons for
+conditional computation. arXiv preprint arXiv:1308.3432.
+Bisk, Y.; Zellers, R.; Gao, J.; Choi, Y.; et al. 2020. Piqa:
+Reasoning about physical commonsense in natural language.
+In AAAI.
+Chen, M.; Wu, M.; Jin, H.; Yuan, Z.; Liu, J.; Zhang, C.; Li,
+Y.; Huang, J.; Ma, J.; Xue, Z.; et al. 2025. INT vs FP: A
+Comprehensive Study of Fine-Grained Low-bit Quantization
+Formats. arXiv preprint arXiv:2510.25602.
+Chen, Y.; Dai, X.; Hyun, J.; Chang, C.-C.; Jang, W.; Wu, Y.;
+Tambe, T.; sun Seo, J.; and Abdelfattah, M. S. 2026. RaZeR:
+Pushing the Limits of NVFP4 Quantization with Redundant
+Zero Remapping. arXiv preprint arXiv:2501.04052v2.
+Chhugani, J.; Jeong, G.; Su, B.-Y.; Pan, Y.; Yang, H.; Ankit,
+A.; Yu, J.; Deng, S.; Chen, Y.; Satish, N.; and Kim, C.
+2026. Unveiling the Potential of Quantization with MXFP4:
+Strategies for Quantization Error Reduction. In ICML.
+Clark, P.; Cowhey, I.; Etzioni, O.; Khot, T.; Sabharwal, A.;
+Schoenick, C.; and Tafjord, O. 2018. Think you have solved
+question answering? try arc, the ai2 reasoning challenge.
+arXiv preprint arXiv:1803.05457.
+Cobbe, K.; Kosaraju, V.; Bavarian, M.; Chen, M.; Jun, H.;
+Kaiser, L.; Plappert, M.; Tworek, J.; Hilton, J.; Nakano, R.;
+et al. 2021. Training verifiers to solve math word problems.
+arXiv preprint arXiv:2110.14168.
+Cook, J.; Guo, J.; Xiao, G.; Lin, Y.; and Han, S. 2025. Four
+Over Six: More Accurate NVFP4 Quantization with Adaptive
+Block Scaling. arXiv preprint arXiv:2512.02010.
+Dettmers, T.; Lewis, M.; Belkada, Y.; and Zettlemoyer, L.
+2022. GPT3.int8(): 8-bit Matrix Multiplication for Trans-
+formers at Scale. In NeurIPS.
+Dubey, A.; Jauhri, A.; Pandey, A.; Kadian, A.; Al-Dahle, A.;
+Letman, A.; Mathur, A.; Schelten, A.; Yang, A.; Fan, A.;
+et al. 2024. The llama 3 herd of models. arXiv preprint
+arXiv:2407.21783.
+Egiazarian, V.; Castro, R. L.; Kuznedelev, D.; Panferov, A.;
+Kurtic, E.; Pandit, S.; Marques, A. N.; Kurtz, M.; Ashkboos,
+S.; Hoefler, T.; and Alistarh, D. 2026. Bridging the Gap
+Between Promise and Performance for Microscaling FP4
+Quantization. In ICLR.
+Frantar, E.; Ashkboos, S.; Hoefler, T.; and Alistarh, D. 2023.
+GPTQ: Accurate Post-Training Quantization for Generative
+Pre-trained Transformers. In ICLR.
+Guo, D.; Yang, D.; Zhang, H.; Song, J.; Zhang, R.; Xu, R.;
+Zhu, Q.; Ma, S.; Wang, P.; Bi, X.; et al. 2025. Deepseek-r1:
+Incentivizing reasoning capability in llms via reinforcement
+learning. arXiv preprint arXiv:2501.12948.
+Hendrycks, D.; Burns, C.; Basart, S.; Zou, A.; Mazeika,
+M.; Song, D.; and Steinhardt, J. 2021. Measuring massive
+multitask language understanding. In ICLR.
+Hu, X.; Cheng, Y.; Yang, D.; Chen, Z.; Xu, Z.; Yu, J.; Chen, X.;
+Yuan, Z.; Jiang, Z.; and Zhou, S. 2025. OSTQuant: Refining
+Large Language Model Quantization with Orthogonal and
+Scaling Transformations for Better Distribution Fitting. In
+ICLR.
+Li, H.; Tian, S.; Lin, C.; Zhao, Z.; and Zhan, K. 2026a. FAAR:
+Format-Aware Adaptive Rounding for NVFP4. arXiv preprint
+arXiv:2603.22370.
+Li, J.-F.; Zhang, M.; Xia, X.; Bao, H.; Bai, H.; Dong, Z.;
+and Yu, X. 2026b. BATQuant: Outlier-resilient MXFP4
+Quantization via Learnable Block-wise Optimization. arXiv
+preprint arXiv:2603.16590.
+Li, Y.; Gong, R.; Tan, X.; Yang, Y.; Hu, P.; Zhang, Q.; Yu,
+F.; Wang, W.; and Gu, S. 2021. BRECQ: Pushing the Limit
+of Post-Training Quantization by Block Reconstruction. In
+ICLR.
+Li, Z.; Yan, X.; Zhang, T.; Qin, H.; Xie, D.; Tian, J.; Kong,
+L.; Zhang, Y.; Yang, X.; et al. 2025. Arb-llm: Alternating
+refined binarizations for large language models. In ICLR.
+Lin, H.; Jia, X.; Xu, H.; Yao, B.; Guo, X.; Wu, Y.; Lu, Z.; Wei,
+Y.; Zhang, Q.; and Sun, Z. 2026. DuQuant++: Fine-grained
+Rotation Enhances Microscaling FP4 Quantization. arXiv
+preprint arXiv:2604.17789.
+Liu, S.-y.; Liu, Z.; Huang, X.; Dong, P.; and Cheng, K.-T.
+2023. Llm-fp4: 4-bit floating-point quantized transformers.
+In EMNLP.
+Liu, Z.; Zhao, C.; Fedorov, I.; Soran, B.; Choudhary, D.;
+Krishnamoorthi, R.; Chandra, V.; Tian, Y.; and Blankevoort, T.
+2025. SpinQuant: LLM Quantization with Learned Rotations.
+In ICLR.
+Loshchilov, I.; and Hutter, F. 2019. Decoupled Weight Decay
+Regularization. In ICLR.
+Ma, Y.; Li, H.; Zheng, X.; Ling, F.; Xiao, X.; Wang, R.;
+Wen, S.; Chao, F.; and Ji, R. 2024. AffineQuant: Affine
+Transformation Quantization for Large Language Models. In
+ICLR.
+Meng, H.; Luo, Y.; Zhao, Y.; Liu, W.; Zhang, P.; and Ma,
+X. 2026. ARCQuant: Boosting NVFP4 Quantization with
+Augmented Residual Channels for LLMs. In ACL.
+Merity, S.; Xiong, C.; Bradbury, J.; and Socher, R. 2017.
+Pointer sentinel mixture models. In ICLR.
+Nagel, M.; Amjad, R. A.; Van Baalen, M.; Louizos, C.; and
+Blankevoort, T. 2020. Up or Down? Adaptive Rounding for
+Post-Training Quantization. In ICML.
+Nvidia; Abecassis, F.; Agrusa, A.; Ahn, D.; Alben, J.; Al-
+borghetti, S.; Andersch, M.; Arayandi, S.; Bjorlin, A.; Blake-
+man, A.; Briones, E.; et al. 2025. Pretraining Large Language
+Models with NVFP4. arXiv preprint arXiv:2509.25149.
+NVIDIA, S. C. 2024. NVIDIA Blackwell Architecture Tech-
+nical Brief.
+Open Compute Project Foundation (MX Alliance). 2023.
+OCP Microscaling Formats (MX) Specification Version 1.0.
+Open Compute Project Foundation Technical Specification.
+
+
+Paszke, A.; Gross, S.; Massa, F.; Lerer, A.; Bradbury, J.;
+Chanan, G.; Killeen, T.; Lin, Z.; Gimelshein, N.; Antiga, L.;
+et al. 2019. Pytorch: An imperative style, high-performance
+deep learning library. In NeurIPS.
+Raffel, C.; Shazeer, N.; Roberts, A.; Lee, K.; Narang, S.;
+Matena, M.; Zhou, Y.; Li, W.; and Liu, P. J. 2020. Exploring
+the limits of transfer learning with a unified text-to-text
+transformer. JMLR.
+Rouhani, B. D.; Zhao, R.; More, A.; Hall, M.; Khodamoradi,
+A.; Deng, S.; Choudhary, D.; Cornea, M.; Dellinger, E.;
+Denolf, K.; et al. 2023. Microscaling Data Formats for Deep
+Learning. arXiv preprint arXiv:2310.10537.
+Sakaguchi, K.; Le Bras, R.; Bhagavatula, C.; and Choi, Y.
+2020. WINOGRANDE: An Adversarial Winograd Schema
+Challenge at Scale. In AAAI.
+Shao, W.; Chen, M.; Zhang, Z.; Xu, P.; Zhao, L.; Li, Z.; Zhang,
+K.; Gao, P.; Qiao, Y.; and Luo, P. 2023. OmniQuant: Om-
+nidirectionally Calibrated Quantization for Large Language
+Models. In ICLR.
+Shao, Y.; Wang, P.; Chen, Y.; Xu, C.; Wei, Z.; and Cheng, J.
+2026. Block Rotation is All You Need for MXFP4 Quantiza-
+tion. In ICML.
+Sun, Y.; Liu, R.; Bai, H.; Bao, H.; Zhao, K.; Li, Y.; Hu, J.; Yu,
+X.; Hou, L.; and Yuan, C. 2025. FlatQuant: Flatness Matters
+for LLM Quantization. In ICML.
+Team, K.; Bai, Y.; Bao, Y.; Charles, Y.; Chen, C.; Chen, G.;
+Chen, H.; Chen, H.; Chen, J.; Chen, N.; et al. 2025. Kimi k2:
+Open agentic intelligence. arXiv preprint arXiv:2507.20534.
+Wolf, T.; Debut, L.; Sanh, V.; Chaumond, J.; Delangue,
+C.; Moi, A.; Cistac, P.; Rault, T.; Louf, R.; Funtowicz, M.;
+et al. 2020. Transformers: State-of-the-art natural language
+processing. In EMNLP.
+Xiao, G.; Lin, J.; Seznec, M.; Wu, H.; Demouth, J.; and Han,
+S. 2023. SmoothQuant: Accurate and Efficient Post-Training
+Quantization for Large Language Models. In ICML.
+Yan, X.; Bao, C.; Li, Z.; Zhang, T.; Yang, K.; Qin, H.; Xie,
+R.; Sun, X.; and Zhang, Y. 2026. PT2-LLM: Post-Training
+Ternarization for Large Language Models. In ICLR.
+Yang, A.; Li, A.; Yang, B.; Zhang, B.; Hui, B.; Zheng, B.; Yu,
+B.; Gao, C.; Huang, C.; Lv, C.; et al. 2025. Qwen3 Technical
+Report. arXiv preprint arXiv:2505.09388.
+Zellers, R.; Holtzman, A.; Bisk, Y.; Farhadi, A.; and Choi, Y.
+2019. Hellaswag: Can a machine really finish your sentence?
+In ACL.
+Zeng, A.; Lv, X.; Hou, Z.; Du, Z.; Zheng, Q.; Chen, B.;
+Yin, D.; Ge, C.; Huang, C.; Xie, C.; et al. 2026. Glm-5:
+from vibe coding to agentic engineering. arXiv preprint
+arXiv:2602.15763.
+Zhang, M.; Li, J.-F.; Sun, Z.; Bai, H.; Zhen, H.-L.; Dong, Z.;
+and Yu, X. 2026. Benchmarking Post-Training Quantization
+of Large Language Models under Microscaling Floating Point
+Formats. arXiv preprint arXiv:2601.09555.
+Zhao, J.; Zhang, M.; Zeng, C.; Wang, M.; Liu, X.; and Nie,
+L. 2024. LRQuant: Learnable and Robust Post-Training
+Quantization for Large Language Models. In ACL.

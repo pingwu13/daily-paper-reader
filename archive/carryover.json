@@ -1,10 +1,15 @@
 {
-  "generated_at": "2026-08-18T02:25:13.739214+00:00",
-  "updated_date": "20260720-20260818",
+  "generated_at": "2026-08-22T20:45:32.768390+00:00",
+  "updated_date": "20260822",
   "carryover_days": 9,
   "tag_states": {
     "isc": {
-      "updated_date": "20260720-20260818",
+      "updated_date": "20260822",
+      "carryover_days": 9,
+      "items": []
+    },
+    "elblq": {
+      "updated_date": "20260822",
       "carryover_days": 9,
       "items": []
     }

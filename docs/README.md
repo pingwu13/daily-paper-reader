@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-07-20 ~ 2026-08-18</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-22</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 13 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>11</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>4</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-18 02:37:03 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-22 20:50:30 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日共处理13篇大模型量化论文，精读2篇、速读11篇，聚焦低比特推理与精度优化。</p>
-<p>最值得看CubicQuant的参数化非均匀码本（1-8比特权重）与量化退化的信号-噪声解释，一个给性能、一个给机理。</p>
-<p>普通读者建议从GyRot、异构微缩放和递归残差量化三篇速读入手，快速对比不同低比特方案的适用场景。</p>
+<p>今日聚焦LLM量化：精读2篇高分论文，速读1篇，带你追踪低比特推理前沿。</p>
+<p>最值得关注：SchurQuant用逐层离散优化实现高质量量化（10分），FluxBin以算法-内核协同打造极致低比特推理（9分）。</p>
+<p>建议普通读者优先了解低比特量化如何兼顾速度与精度，可先从这两篇入手。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="CubicQuant: Parametric Non-Uniform Codebooks for High-Throughput LLM Inference with 1-8-Bit Weights">CubicQuant: Parametric Non-Uniform Codebooks for High-Throughput LLM Inference with 1-8-Bit Weights</span></li><li><span class="dpr-home-dashboard-paper-title" title="Quantization Degradation in Large Language Models: A Signal-Noise Perspective">Quantization Degradation in Large Language Models: A Signal-Noise Perspective</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="SchurQuant: Groupwise Discrete Optimization for Layer-Wise LLM Quantization">SchurQuant: Groupwise Discrete Optimization for Layer-Wise LLM Quantization</span></li><li><span class="dpr-home-dashboard-paper-title" title="FluxBin: Flexible LUT-based Ultra-low-bit LLM Inference by Algorithm-Kernel Synergy">FluxBin: Flexible LUT-based Ultra-low-bit LLM Inference by Algorithm-Kernel Synergy</span></li><li><span class="dpr-home-dashboard-paper-title" title="QUASAR: Lowering the Loss Floor of Quantization-Aware Training with Loss-Aware Reconstruction">QUASAR: Lowering the Loss Floor of Quantization-Aware Training with Loss-Aware Reconstruction</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span><span class="dpr-home-dashboard-tag">isc <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>4</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -86,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">11 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="GyRot: Leveraging Hidden Synergy between Rotation and Fine-grained Group Quantization for Low-bit LLM Inference">GyRot: Leveraging Hidden Synergy between Rotation and Fine-grained Group Quantization for Low-bit LLM Inference</span></li><li><span class="dpr-home-dashboard-paper-title" title="Heterogeneity-Aware Microscaling for Efficient Low-Bit LLM Inference">Heterogeneity-Aware Microscaling for Efficient Low-Bit LLM Inference</span></li><li><span class="dpr-home-dashboard-paper-title" title="Recurrent Residual Quantization: A Progressive Multi-Precision Representation for LLMs">Recurrent Residual Quantization: A Progressive Multi-Precision Representation for LLMs</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="QuaSAR: Quantization Compensation via Stable Activation-Aware Rank Truncation">QuaSAR: Quantization Compensation via Stable Activation-Aware Rank Truncation</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>7</strong></span><span class="dpr-home-dashboard-tag">isc <strong>4</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
 </section>
 </div>
 

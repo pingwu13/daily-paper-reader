@@ -1,0 +1,224 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-22T20:45:32.767325+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 4,
+    "deep_cap": 7,
+    "deep_selected": 4,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2608.15567v1",
+      "source": "arxiv",
+      "title": "SchurQuant: Groupwise Discrete Optimization for Layer-Wise LLM Quantization",
+      "abstract": "Weight-only post-training quantization (PTQ) enables the deployment of large language models under tight memory budgets, but accuracy often collapses at 2-3 bits. Existing backpropagation-free PTQ optimizers have two limitations: group decisions ignore the correction that the remaining continuous suffix can absorb, and discrete refinements typically keep the affine quantization grid fixed. We introduce SCHUROPT, which analytically eliminates the suffix's optimal continuous response, yielding an exact groupwise quadratic with Schur-complement curvature. It then alternates closed-form row-wise scale/zero-point refitting with coordinate descent over integer codes. With the GPTQ objective fixed, SCHUROPT improves mean zero-shot accuracy on 2-bit Qwen3-4B by 11.88 percentage points (pp). At higher precision, however, tighter reconstruction does not consistently improve end-model metrics. SCHURQUANT therefore combines SCHUROPT with quantized-prefix teacher reconstruction, reference-weight regularization, residual-add targets, and teacher-decision token weighting. Across eight Llama and Qwen models, SCHURQUANT achieves the highest mean zero-shot accuracy among the evaluated backpropagation free PTQ baselines, outperforming the strongest baseline by 9.65 pp at 2 bits.",
+      "authors": [
+        "Gunjun Lee",
+        "Sehwan Son",
+        "Younjoo Lee",
+        "Byungjun Kim",
+        "Jung Ho Ahn"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-16T06:29:10+00:00",
+      "link": "https://arxiv.org/pdf/2608.15567v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Weight-only PTQ for LLMs at 2-3 bits; Schur-complement groupwise optimization to preserve zero-shot accuracy",
+      "llm_evidence_cn": "面向LLM的2-3比特权重量化PTQ，用Schur补分组优化保持零样本准确率",
+      "llm_evidence": "面向LLM的2-3比特权重量化PTQ，用Schur补分组优化保持零样本准确率",
+      "canonical_evidence": "面向LLM的2-3比特权重量化PTQ，用Schur补分组优化保持零样本准确率",
+      "llm_tldr_en": "Weight-only PTQ often collapses at 2-3 bits; SCHUROPT uses Schur-complement groupwise quadratic optimization with coordinate descent to improve 2-bit LLM zero-shot accuracy.",
+      "llm_tldr_cn": "大语言模型部署常受内存限制，权重量化到2-3比特时精度容易崩塌。论文提出SCHUROPT，利用Schur补结构精确刻画剩余后缀的影响，得到组间二次优化目标，并在整数码上执行坐标下降，同时重拟合行级尺度与零点。实验表明在相同GPTQ目标下，该方法能提升2比特Qwen模型的平均零样本准确率，为低比特PTQ优化提供了新的思路。",
+      "llm_tldr": "大语言模型部署常受内存限制，权重量化到2-3比特时精度容易崩塌。论文提出SCHUROPT，利用Schur补结构精确刻画剩余后缀的影响，得到组间二次优化目标，并在整数码上执行坐标下降，同时重拟合行级尺度与零点。实验表明在相同GPTQ目标下，该方法能提升2比特Qwen模型的平均零样本准确率，为低比特PTQ优化提供了新的思路。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.15602v1",
+      "source": "arxiv",
+      "title": "FluxBin: Flexible LUT-based Ultra-low-bit LLM Inference by Algorithm-Kernel Synergy",
+      "abstract": "While binary quantization theoretically promises extreme compression and acceleration for Large Language Models (LLMs), existing research often overlooks the necessity of specialized hardware kernels, thus failing to unleash the full acceleration potential due to persistent reliance on expensive floating-point arithmetic or runtime dequantization overheads. To bridge this gap, we propose FluxBin (\\textbf{F}lexible \\textbf{L}UT-based \\textbf{U}ltra-low-bit e\\textbf{X}ecution with \\textbf{Bin}ary bases), an algorithm-kernel co-design that synergizes post-training quantization with a highly optimized CUDA kernel. Algorithmically, we introduce Decoupled Row-Column Binary Decomposition to enhance representational capacity while maintaining hardware efficiency, complemented by a Hessian-guided saliency-aware hybrid bases that preserve critical information. At the kernel level, we implement a Lookup Table Building Approach with Scale Fusion to reduce floating-point arithmetic, featuring a Virtual Columnar Mapping that transforms irregular, sparse, and salient matrices into dense execution. Extensive evaluations demonstrate FluxBin achieves up to $5.92\\times$ speedup and $10.19\\times$ energy savings across diverse model architectures, delivering comparable accuracy to heavily fine-tuned methods. This effectively enables the deployment of 70B-scale models on one single A100 GPU with a $4\\times$ memory reduction. Code is available at https://github.com/nicyyyy/FluxBin.",
+      "authors": [
+        "Qingyao Yang",
+        "Runming Yang",
+        "He Xiao",
+        "Wendong Xu",
+        "Junyu Chen",
+        "Haobo Liu",
+        "Chenchen Ding",
+        "Ruihan Hu",
+        "Yik-Chung Wu",
+        "Ngai Wong"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-16T08:01:06+00:00",
+      "link": "https://arxiv.org/pdf/2608.15602v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Algorithm-kernel co-design for ultra-low-bit LLM inference with optimized CUDA kernel",
+      "llm_evidence_cn": "面向超低比特大语言模型推理的算法-内核协同设计与CUDA内核优化",
+      "llm_evidence": "面向超低比特大语言模型推理的算法-内核协同设计与CUDA内核优化",
+      "canonical_evidence": "面向超低比特大语言模型推理的算法-内核协同设计与CUDA内核优化",
+      "llm_tldr_en": "FluxBin co-designs post-training quantization with an optimized CUDA kernel using decoupled row-column binary decomposition; it enables flexible LUT-based ultra-low-bit LLM inference, demonstrating that specialized kernels are essential to unlock acceleration.",
+      "llm_tldr_cn": "现有二元量化研究往往忽略专用硬件内核，导致加速潜力无法充分发挥。为此，本文提出FluxBin，将后训练量化与高度优化的CUDA内核进行协同设计，算法上引入解耦行列二元分解以增强表征能力，同时维持硬件友好性。实验表明该算法-内核协同方案能够实现灵活查找表驱动的超低比特大语言模型推理，验证了专用内核在超低比特部署中的必要性。",
+      "llm_tldr": "现有二元量化研究往往忽略专用硬件内核，导致加速潜力无法充分发挥。为此，本文提出FluxBin，将后训练量化与高度优化的CUDA内核进行协同设计，算法上引入解耦行列二元分解以增强表征能力，同时维持硬件友好性。实验表明该算法-内核协同方案能够实现灵活查找表驱动的超低比特大语言模型推理，验证了专用内核在超低比特部署中的必要性。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.15531v1",
+      "source": "arxiv",
+      "title": "FlashQuant: Sparse-Dense Fusion for Memory-Efficient Outlier-Aware LLM Inference",
+      "abstract": "Low-bit quantization reduces the memory footprint and computational cost of large language model (LLM) inference. However, high-magnitude outlier weights can induce substantial quantization errors and degrade model accuracy. Outlier-aware quantization addresses this issue by retaining outliers in high precision while quantizing the remaining weights, resulting in a low-bit dense GEMM path and a high-precision sparse SpMM path. Existing implementations execute these paths in separate GPU kernels, despite their shared activations and outputs, thereby missing opportunities for intra-operator reuse and incurring redundant global-memory accesses. This inefficiency is particularly pronounced in memory-bound decoding workloads. We propose FlashQuant, a content-sharing execution framework for outlier-aware W4A16 decoding. FlashQuant fuses the dense GEMM and sparse outlier SpMM paths into a single GPU kernel, enabling on-chip reuse of activation and output tiles across heterogeneous computations. It introduces three key techniques: sparse-dense tiling, which aligns outlier processing with dense GEMM tiles; Tile-COO outlier encoding, which enables efficient sparse access and reduces shared-memory bank conflicts; and pipelined scheduling, which overlaps computation with data movement. Experiments show that FlashQuant reduces outlier-processing overhead, achieving $2.74\\times - 4.18\\times$ speedup over cuBLAS BF16 and up to $1.53\\times$ speedup over the strongest unfused outlier-aware baseline.",
+      "authors": [
+        "Junqing Lin",
+        "Jingwei Sun",
+        "Zhengding Hu",
+        "Guangzhong Sun"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-08-16T04:57:39+00:00",
+      "link": "https://arxiv.org/pdf/2608.15531v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "low-bit LLM quantization with outlier-aware sparse-dense fused GPU kernels, improving memory-efficient inference",
+      "llm_evidence_cn": "利用离群值感知的稀疏-稠密融合GPU内核实现低比特LLM推理，提升内存效率",
+      "llm_evidence": "利用离群值感知的稀疏-稠密融合GPU内核实现低比特LLM推理，提升内存效率",
+      "canonical_evidence": "利用离群值感知的稀疏-稠密融合GPU内核实现低比特LLM推理，提升内存效率",
+      "llm_tldr_en": "FlashQuant fuses low-bit dense GEMM and high-precision sparse SpMM into one GPU kernel for outlier-aware LLM inference, reducing memory traffic and improving decoding efficiency.",
+      "llm_tldr_cn": "LLM低比特量化中，高幅值离群权重会显著增大量化误差。现有方法分别执行低比特稠密GEMM和高精度稀疏SpMM两条路径，导致冗余的全局内存访问。FlashQuant提出将两路径融合为一个GPU内核，复用激活与输出，实现算子内复用并减少内存通信。实验表明该方法显著降低了解码任务的内存瓶颈，提升低比特LLM推理效率。",
+      "llm_tldr": "LLM低比特量化中，高幅值离群权重会显著增大量化误差。现有方法分别执行低比特稠密GEMM和高精度稀疏SpMM两条路径，导致冗余的全局内存访问。FlashQuant提出将两路径融合为一个GPU内核，复用激活与输出，实现算子内复用并减少内存通信。实验表明该方法显著降低了解码任务的内存瓶颈，提升低比特LLM推理效率。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.13966v1",
+      "source": "arxiv",
+      "title": "QUASAR: Lowering the Loss Floor of Quantization-Aware Training with Loss-Aware Reconstruction",
+      "abstract": "As large language model inference shifts toward lower precision, post-training quantization (PTQ) becomes increasingly brittle, making quantization-aware training (QAT) essential for preserving model quality. However, QAT computes the loss and surrogate gradients using a lossy reconstruction of latent full-precision weights, while applying updates to the latent weights themselves. This mismatch can lead to suboptimal training trajectories and a higher loss floor. Second-order PTQ methods mitigate a similar gap by minimizing loss-aware reconstruction error, but doing it once for a frozen model can take hours; repeating this process throughout QAT as the weights evolve is impractical. We introduce QUASAR, a QAT method that continuously performs lightweight, loss-aware reconstruction in the training loop to lower the loss floor and improve the resulting low-bit model. At each training step, QUASAR uses the exponential moving average of squared gradients as online saliency estimates, searches over a small set of clipping ranges, and fits affine dequantizers via saliency-weighted least squares. Our analysis shows that the loss-aware reconstruction error is the only reconstruction-dependent term in the QAT convergence bound and controls the loss of the final quantized model, establishing QUASAR's objective as a principled optimization target. QUASAR modifies only the training procedure and supports standard deployment formats, including integer quantization and NVFP4, with no inference-time changes or overhead. Across Qwen3 and Llama-3.1, QUASAR achieves the lowest held-out KL divergence among competitive QAT methods at 2, 3, and 4 bits, reducing KL by at least 10% at 3 and 4 bits and by 29% at 2 bits. At 2 bits, it improves average accuracy across eight tasks by 3.5-4.3 percentage points over strong QAT and PTQ baselines.",
+      "authors": [
+        "Vincent Counathe",
+        "Ben Athiwaratkun",
+        "Christopher De Sa",
+        "Tianyi Zhang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL",
+        "stat.ML"
+      ],
+      "published": "2026-08-14T05:29:58+00:00",
+      "link": "https://arxiv.org/pdf/2608.13966v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Quantization-aware training for low-precision LLM inference, loss-aware reconstruction lowers the loss floor",
+      "llm_evidence_cn": "面向低精度大模型推理的量化感知训练，用损失感知重建降低损失下限",
+      "llm_evidence": "面向低精度大模型推理的量化感知训练，用损失感知重建降低损失下限",
+      "canonical_evidence": "面向低精度大模型推理的量化感知训练，用损失感知重建降低损失下限",
+      "llm_tldr_en": "QUASAR addresses the mismatch between lossy reconstructed weights and latent full-precision updates in QAT by continuously minimizing loss-aware reconstruction error, lowering the loss floor and improving model quality at low precision.",
+      "llm_tldr_cn": "大语言模型推理走向低精度时，后训练量化容易变脆，量化感知训练成为保持质量的关键。然而QAT用有损重建的权重计算损失与替代梯度，却更新潜在的全精度权重，造成训练轨迹次优与损失下限偏高。本文提出QUASAR，将损失感知重建与QAT结合，在训练过程中连续最小化重建误差。实验表明QUASAR在多种低比特设定下显著降低损失下限，并优于现有QAT与PTQ方法。",
+      "llm_tldr": "大语言模型推理走向低精度时，后训练量化容易变脆，量化感知训练成为保持质量的关键。然而QAT用有损重建的权重计算损失与替代梯度，却更新潜在的全精度权重，造成训练轨迹次优与损失下限偏高。本文提出QUASAR，将损失感知重建与QAT结合，在训练过程中连续最小化重建误差。实验表明QUASAR在多种低比特设定下显著降低损失下限，并优于现有QAT与PTQ方法。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.14149v1",
+      "source": "arxiv",
+      "title": "QuaSAR: Quantization Compensation via Stable Activation-Aware Rank Truncation",
+      "abstract": "Recent training-free post-training quantization methods restore model accuracy through closed-form residual compensation. To constrain additional model storage overhead, several existing methods gate layer selection by goodness-of-fit, retaining only those layers whose compensation yields a positive residual fit score and discarding the rest. In this paper, we show that, under the low-bit W4A4 setting, this gating mechanism fails to distinguish poorly predictable quantization error from numerical solver failure. Rank-deficient input activations yield severely ill-conditioned or numerically singular Gram matrices, causing the closed-form solver to become unstable and produce spuriously negative fit scores. Consequently, existing goodness-of-fit gates misclassify affected layers as uncompensable and discard them. Many of these discarded layers can nevertheless provide substantial error recovery when their compensation is computed using a numerically stable solver. To address this problem, we propose a parameter-free truncated pseudoinverse solver which removes collapsed directions prior to inversion. On ViT-B with the W4A4 setting, our training-free method achieves 81.42\\% top-1 accuracy, outperforming prior post-training methods and fine-tuning-based baselines. Combined with joint low-rank and quantization compression, the proposed method reaches a deployable operating point of 80.26\\% accuracy at 54.7 MB, providing a well-balanced trade-off between model size and accuracy.",
+      "authors": [
+        "Lin-Fa Lee",
+        "Yi-Yu Chang",
+        "Kuo-Hei Yeh"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.CR"
+      ],
+      "published": "2026-08-14T10:00:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.14149v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "training-free post-training quantization for low-bit LLMs, activation-aware rank truncation to stabilize compensation",
+      "llm_evidence_cn": "针对低比特LLM的无训练后量化，利用激活感知的秩截断稳定补偿",
+      "llm_evidence": "针对低比特LLM的无训练后量化，利用激活感知的秩截断稳定补偿",
+      "canonical_evidence": "针对低比特LLM的无训练后量化，利用激活感知的秩截断稳定补偿",
+      "llm_tldr_en": "QuaSAR identifies numerical solver failure in low-bit PTQ and proposes stable activation-aware rank truncation to improve accuracy recovery, targeting W4A4 LLM quantization.",
+      "llm_tldr_cn": "该论文指出在低比特W4A4设置下，现有无训练后量化补偿方法会因输入激活秩亏导致Gram矩阵病态，使得数值求解不稳定，其拟合优度门控失效。作者提出基于激活感知的秩截断（QuaSAR）来稳定闭式补偿求解，从而可靠恢复量化模型精度。实验表明该方法在低比特LLM量化中有效提升补偿效果，并避免层选择误导。",
+      "llm_tldr": "该论文指出在低比特W4A4设置下，现有无训练后量化补偿方法会因输入激活秩亏导致Gram矩阵病态，使得数值求解不稳定，其拟合优度门控失效。作者提出基于激活感知的秩截断（QuaSAR）来稳定闭式补偿求解，从而可靠恢复量化模型精度。实验表明该方法在低比特LLM量化中有效提升补偿效果，并避免层选择误导。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

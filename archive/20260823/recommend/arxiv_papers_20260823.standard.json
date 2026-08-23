@@ -1,0 +1,55 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-23T20:31:56.945379+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2608.18578v2",
+      "source": "arxiv",
+      "title": "Compress and Forget: bitsandbytes Quantization Amplifies Proactive Interference in LLMs",
+      "abstract": "Proactive interference (PI) is a documented failure mode in large language models in which retrieval of a repeatedly overwritten value degrades as prior overwrites accumulate, mirroring a classical phenomenon in human working memory. Post-training quantization (PTQ) is now the default deployment path for open-weight models, yet its effect on this failure mode has not been tested. We evaluate three precision levels (FP16, INT8, INT4/NF4, via bitsandbytes) across three architecturally distinct instruction-tuned models (Qwen2.5-7B-Instruct, Mistral-7B-Instruct-v0.3, Phi-3.5-mini-instruct), holding the retrieval task fixed. INT4 quantization significantly reduces accuracy under high interference in every model (e.g., from 81.0% to 68.3% for Qwen), confirmed by paired McNemar's tests ($p \\le 2.6 \\times 10^{-6}$) and a mixed-effects regression spanning all interference levels; INT8, often assumed safe, also carries a smaller but real penalty in two of three models. The effect is specific to semantically similar (word-type) distractors and reverses sign under a numeric control condition, and is mechanistically linked to a rise in same-key intrusion errors under INT4 (from 21.5% to 24.6% of trials, $p = 4.8 \\times 10^{-7}$). A follow-up ablation shows the effect originates in the quantized transformer backbone rather than the output projection layer. These results suggest that bitsandbytes 4-bit quantization can impose an additional cost on applications relying on long, updatable, semantically dense contexts, even when aggregate benchmark accuracy appears largely unaffected. We release our code and tokenizer-verified vocabulary construction method at https://github.com/ShayanShahrabi/compress-and-forget",
+      "authors": [
+        "Shayan Shahrabi-Farahani",
+        "Dara Rahmati"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.LG"
+      ],
+      "published": "2026-08-19T06:17:13+00:00",
+      "link": "https://arxiv.org/pdf/2608.18578v2",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Post-training quantization of LLM weights (INT4/NF4) and its accuracy impact",
+      "llm_evidence_cn": "LLM权重的后训练量化（INT4/NF4）及其精度影响",
+      "llm_evidence": "LLM权重的后训练量化（INT4/NF4）及其精度影响",
+      "canonical_evidence": "LLM权重的后训练量化（INT4/NF4）及其精度影响",
+      "llm_tldr_en": "Post-training quantization, especially INT4/NF4, amplifies proactive interference in LLMs: systematic evaluation across three instruction-tuned models shows significant accuracy drops under high interference, highlighting reliability risks for memory-based tasks.",
+      "llm_tldr_cn": "主动干扰是大语言模型在工作记忆中被反复覆盖后检索能力下降的已知失效模式，而后训练量化（PTQ）对这种模式的影响尚不明确。本文使用bitsandbytes的FP16、INT8、INT4/NF4量化，在三个不同架构的指令微调模型上固定检索任务进行评估。结果显示，INT4量化在高干扰条件下显著降低每个模型的准确率（如从81.0%降至68.3%）。这表明低比特量化会加剧LLM的主动干扰，部署量化模型时需警惕其对记忆相关任务的可靠性影响。",
+      "llm_tldr": "主动干扰是大语言模型在工作记忆中被反复覆盖后检索能力下降的已知失效模式，而后训练量化（PTQ）对这种模式的影响尚不明确。本文使用bitsandbytes的FP16、INT8、INT4/NF4量化，在三个不同架构的指令微调模型上固定检索任务进行评估。结果显示，INT4量化在高干扰条件下显著降低每个模型的准确率（如从81.0%降至68.3%）。这表明低比特量化会加剧LLM的主动干扰，部署量化模型时需警惕其对记忆相关任务的可靠性影响。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

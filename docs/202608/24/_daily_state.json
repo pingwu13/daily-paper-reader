@@ -1,0 +1,57 @@
+{
+  "date": "20260824",
+  "date_label": "",
+  "generated_at": "2026-08-24 20:24:33 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.21134v1",
+      "route": "202608/24/2608.21134v1-llama-mobile-efficient-27-bit-quantization-of-vlms",
+      "title": "Llama-Mobile: Efficient 2.7-Bit Quantization of VLMs",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "对基于LLM的视觉语言模型实现2.7比特每参数量化并支持Arm CPU高效执行，直接面向低比特权重量化",
+      "first_seen_at": "2026-08-24 20:24:33 UTC",
+      "updated_at": "2026-08-24 20:24:33 UTC"
+    },
+    {
+      "paper_id": "2608.19388v1",
+      "route": "202608/24/2608.19388v1-quantization-beyond-uniform-bit-allocation",
+      "title": "Quantization Beyond Uniform Bit Allocation",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "乘积量化与可变比特分配用于向量压缩",
+      "first_seen_at": "2026-08-24 20:24:33 UTC",
+      "updated_at": "2026-08-24 20:24:33 UTC"
+    },
+    {
+      "paper_id": "2608.20988v1",
+      "route": "202608/24/2608.20988v1-jacobian-guided-noise-injection-for-quantization-robustness-in-large-language-models",
+      "title": "Jacobian-guided Noise Injection for Quantization Robustness in Large Language Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "通过雅可比引导的噪声注入提升LLM量化鲁棒性，支持极低比特量化目标",
+      "first_seen_at": "2026-08-24 20:24:33 UTC",
+      "updated_at": "2026-08-24 20:24:33 UTC"
+    }
+  ]
+}

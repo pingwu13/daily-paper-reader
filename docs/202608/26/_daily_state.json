@@ -1,0 +1,89 @@
+{
+  "date": "20260826",
+  "date_label": "",
+  "generated_at": "2026-08-26 22:06:07 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.23144v1",
+      "route": "202608/26/2608.23144v1-activation-weighted-seeded-residual-coding-for-low-bit-llm-weight-repair",
+      "title": "Activation-Weighted Seeded Residual Coding for Low-Bit LLM Weight Repair",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "isc"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "使用确定性种子生成基向量编码LLM权重残差，仅存储种子选择器与系数，符合紧凑参数结构生成码字的要求。",
+      "first_seen_at": "2026-08-26 22:06:07 UTC",
+      "updated_at": "2026-08-26 22:06:07 UTC"
+    },
+    {
+      "paper_id": "2608.17336v1",
+      "route": "202608/26/2608.17336v1-tilemix-tile-centric-mixed-precision-attention-for-llm-inference-acceleration",
+      "title": "TileMix: Tile-Centric Mixed-Precision Attention for LLM Inference Acceleration",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向LLM注意力推理的以瓦片为中心的混合精度GPU内核，支持INT8/FP16分数计算",
+      "first_seen_at": "2026-08-26 22:06:07 UTC",
+      "updated_at": "2026-08-26 22:06:07 UTC"
+    },
+    {
+      "paper_id": "2608.21019v1",
+      "route": "202608/26/2608.21019v1-target-aware-calibration-data-selection-for-preserving-uncertainty-in-quantized-language-models",
+      "title": "Target-Aware Calibration Data Selection for Preserving Uncertainty in Quantized Language Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向量化语言模型的标定数据选择方法，以保持不确定性行为",
+      "first_seen_at": "2026-08-26 22:06:07 UTC",
+      "updated_at": "2026-08-26 22:06:07 UTC"
+    },
+    {
+      "paper_id": "2608.24070v1",
+      "route": "202608/26/2608.24070v1-compression-trinity-exploring-sparsity-quantization-and-low-rank-approximations-for-llm-compression",
+      "title": "Compression Trinity: Exploring Sparsity, Quantization, and Low-Rank Approximations for LLM Compression",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "结合量化、稀疏与低秩的LLM压缩",
+      "first_seen_at": "2026-08-26 22:06:07 UTC",
+      "updated_at": "2026-08-26 22:06:07 UTC"
+    },
+    {
+      "paper_id": "2608.24173v1",
+      "route": "202608/26/2608.24173v1-sandwichquant-which-parameters-matter-before-and-after-quantization",
+      "title": "SandwichQuant: Which Parameters Matter Before and After Quantization?",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "量化校正与参数子空间分析，可用于后训练量化精度恢复",
+      "first_seen_at": "2026-08-26 22:06:07 UTC",
+      "updated_at": "2026-08-26 22:06:07 UTC"
+    }
+  ]
+}

@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-24</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-26</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 5 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>4</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-24 20:24:33 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-08-26 22:06:07 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读1篇、速读2篇，共3篇论文，聚焦大模型量化与压缩。最值得关注的是《Llama-Mobile》的2.7-bit VLM量化方案（9.0分），以及非均匀位分配、Jacobian引导噪声注入两个改进方向。下一步可先尝试将Llama-Mobile方法应用于自有模型，再用后两篇思路优化位分配与鲁棒性。</p>
+<p>今日聚焦LLM压缩与推理加速，精读低比特权重修复，速读混合精度注意力、校准数据选择及三大压缩技术对比。最值得关注的是精读提出的激活加权残差编码（8.0分），以及TileMix的平铺混合精度注意力方案，两者均直击低比特部署中的关键瓶颈。建议先浏览精读的权重修复思路，再结合TileMix了解注意力加速，整体把握量化与推理优化的协同方向。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -74,9 +74,9 @@
     <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Llama-Mobile: Efficient 2.7-Bit Quantization of VLMs">Llama-Mobile: Efficient 2.7-Bit Quantization of VLMs</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Activation-Weighted Seeded Residual Coding for Low-Bit LLM Weight Repair">Activation-Weighted Seeded Residual Coding for Low-Bit LLM Weight Repair</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">isc <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -84,12 +84,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">4 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Quantization Beyond Uniform Bit Allocation">Quantization Beyond Uniform Bit Allocation</span></li><li><span class="dpr-home-dashboard-paper-title" title="Jacobian-guided Noise Injection for Quantization Robustness in Large Language Models">Jacobian-guided Noise Injection for Quantization Robustness in Large Language Models</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="TileMix: Tile-Centric Mixed-Precision Attention for LLM Inference Acceleration">TileMix: Tile-Centric Mixed-Precision Attention for LLM Inference Acceleration</span></li><li><span class="dpr-home-dashboard-paper-title" title="Target-Aware Calibration Data Selection for Preserving Uncertainty in Quantized Language Models">Target-Aware Calibration Data Selection for Preserving Uncertainty in Quantized Language Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="Compression Trinity: Exploring Sparsity, Quantization, and Low-Rank Approximations for LLM Compression">Compression Trinity: Exploring Sparsity, Quantization, and Low-Rank Approximations for LLM Compression</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>4</strong></span></div>
 </section>
 </div>
 

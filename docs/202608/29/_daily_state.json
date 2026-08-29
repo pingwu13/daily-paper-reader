@@ -1,0 +1,105 @@
+{
+  "date": "20260829",
+  "date_label": "",
+  "generated_at": "2026-08-29 22:56:01 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.25188v1",
+      "route": "202608/29/2608.25188v1-transforms-for-llm-quantization-the-great-inversion-and-format-co-design",
+      "title": "Transforms for LLM Quantization: The Great Inversion and Format Co-Design",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "系统化LLM量化前的线性变换预处理，与低比特量化中的非相干处理及Hadamard旋转直接对应",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    },
+    {
+      "paper_id": "2608.24945v1",
+      "route": "202608/29/2608.24945v1-fampwq-fisher-information-based-adaptive-mixed-precision-weight-quantization-for-effective-llm-inference",
+      "title": "FAMPWQ: Fisher Information-based Adaptive Mixed Precision Weight Quantization for Effective LLM Inference",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "基于Fisher信息的自适应混合精度权重量化，逐层选择低比特位宽用于大模型高效推理",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    },
+    {
+      "paper_id": "2608.26926v1",
+      "route": "202608/29/2608.26926v1-a-layer-importance-metric-for-quantization-accounting-for-the-speed-quality-trade-off-in-autoregressive-models",
+      "title": "A Layer Importance Metric for Quantization Accounting for the Speed-Quality Trade-off in Autoregressive Models",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "小语言模型权重量化，面向低比特权衡的层重要性",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    },
+    {
+      "paper_id": "2608.20953v1",
+      "route": "202608/29/2608.20953v1-quantization-aware-healing-a-practical-recipe-for-recovering-compressed-4-bit-llms",
+      "title": "Quantization-Aware Healing: A Practical Recipe for Recovering Compressed, 4-Bit LLMs",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "提出量化感知修复方法恢复4位量化LLM精度，与低比特PTQ能力保持方法相关",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    },
+    {
+      "paper_id": "2608.23816v1",
+      "route": "202608/29/2608.23816v1-aqlora-a-zero-search-recipe-for-fast-quantized-lora-fine-tuning",
+      "title": "AQLoRA: A Zero-Search Recipe for Fast Quantized LoRA Fine-Tuning",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "量化LLM权重、4比特NF4、自适应层精度LoRA微调",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    },
+    {
+      "paper_id": "2608.24469v1",
+      "route": "202608/29/2608.24469v1-low-rank-ternary-adaptation-for-fine-tuning-transformers",
+      "title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向大模型三元极低比特权重的低秩适配方法",
+      "first_seen_at": "2026-08-29 22:56:01 UTC",
+      "updated_at": "2026-08-29 22:56:01 UTC"
+    }
+  ]
+}

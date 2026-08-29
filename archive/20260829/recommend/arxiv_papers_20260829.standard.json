@@ -1,0 +1,257 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-29T22:47:47.043938+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 2,
+    "deep_cap": 7,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2608.25188v1",
+      "source": "arxiv",
+      "title": "Transforms for LLM Quantization: The Great Inversion and Format Co-Design",
+      "abstract": "Most competitive 4-bit LLM research pipelines now open the same way: apply a linear, function-preserving transform (rotation, scaling, permutation, non-orthogonal affine) so the outlier mass sits more favorably against the group scales, and only then round. Yet we are aware of no survey dedicated to this transform stage, and its literature is quietly re-deriving an older theory. We identify and formalize the principle that organizes it, the Great Inversion: allocation-flexible coding rewards energy concentration, whereas the grouped shared-scale quantization a deployed matrix instruction performs rewards within-group flattening. Classical transform coding (1963: decorrelate, allocate bits, quantize) spends different bits per coordinate at a fixed total rate; for a Gaussian source at high rate the Karhunen-Loeve transform's concentration minimizes distortion. A deployed operand tile instead carries one absolute-maximum scale per group and equal bits everywhere, with no allocation; on a uniform grid that objective rewards flattening, approached by Hadamard incoherence. We prove that opposition under within-group majorization: the prescriptions point in opposite directions, each backed by a proof against its own objective, and for a generic spectrum no optimality guarantee transfers. A second axis is the number format: the non-uniform FP4 grid makes flattening buy less, MXFP4's power-of-two block scale still rewards a rotation confined to that block, and NVFP4's mantissa-carrying scale largely removes that pull, so the target pole depends jointly on allocation regime and format. We survey 200 works to a June 2026 cutoff; classify 43 transform methods by structure, data-awareness, searched-versus-constructed, and runtime cost; record, where reported, how they compose with GPTQ rounding; distill a first-choice guide by deployment regime; and close with the open problems it exposes.",
+      "authors": [
+        "Ehsan Jokar"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.IT"
+      ],
+      "published": "2026-08-25T22:01:51+00:00",
+      "link": "https://arxiv.org/pdf/2608.25188v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "formalizes rotation/permutation/affine transform stage in LLM quantization, directly aligned with incoherence processing and Hadamard rotation for low-bit quantization",
+      "llm_evidence_cn": "系统化LLM量化前的线性变换预处理，与低比特量化中的非相干处理及Hadamard旋转直接对应",
+      "llm_evidence": "系统化LLM量化前的线性变换预处理，与低比特量化中的非相干处理及Hadamard旋转直接对应",
+      "canonical_evidence": "系统化LLM量化前的线性变换预处理，与低比特量化中的非相干处理及Hadamard旋转直接对应",
+      "llm_tldr_en": "The paper identifies and formalizes the Great Inversion principle behind the transform stage now common in 4-bit LLM quantization pipelines, linking classical transform coding to grouped shared-scale quantization format co-design.",
+      "llm_tldr_cn": "先进的4比特LLM量化流程普遍先施加旋转、置换、缩放等线性变换再量化，但缺少统一理论解释。该论文提出大反转原理：分配灵活的编码奖励能量集中，而分组共享尺度量化奖励组内平坦化，由此统一了变换阶段的设计逻辑。文章进一步关联经典变换编码理论，为旋转/置换预处理降低量化误差提供了原理依据。该工作为低比特量化与量化格式的协同设计奠定了理论基础。",
+      "llm_tldr": "先进的4比特LLM量化流程普遍先施加旋转、置换、缩放等线性变换再量化，但缺少统一理论解释。该论文提出大反转原理：分配灵活的编码奖励能量集中，而分组共享尺度量化奖励组内平坦化，由此统一了变换阶段的设计逻辑。文章进一步关联经典变换编码理论，为旋转/置换预处理降低量化误差提供了原理依据。该工作为低比特量化与量化格式的协同设计奠定了理论基础。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.24945v1",
+      "source": "arxiv",
+      "title": "FAMPWQ: Fisher Information-based Adaptive Mixed Precision Weight Quantization for Effective LLM Inference",
+      "abstract": "Recent years have witnessed remarkable achievements of Large Language Models (LLMs) in multiple domains, while the excessive resource requirements of LLMs hinder the deployment on resource-constrained devices. Although model quantization stands out as an effective approach, conventional quantization approaches typically incur severe performance degradation due to uniform bit-width or simple heuristic sensitivity evaluation. In this paper, we propose a novel Fisher information-based Adaptive Mixed Precision Weight Quantization approach, i.e., FAMPWQ, which performs layer-adaptive weight quantization for effective LLM inference on commodity GPUs. First, we propose a system model with a novel Fisher information metric to measure the layer-wise sensitivity to quantization. Second, we propose a reinforcement learning-based bit-width allocator in FAMPWQ, which generates an adaptive bit-width allocation strategy based on the Fisher information sensitivity metric. Extensive experiments on 7 models and 5 benchmarks demonstrate that FAMPWQ significantly outperforms 7 baseline approaches in terms of PPL (up to 3.39 smaller), accuracy (up to 6.87% higher), and LLM-as-a-judge comparison (up to 76% win rate).",
+      "authors": [
+        "Gongwei Lee",
+        "Ji Liu",
+        "Juncheng Jia",
+        "Ji Wu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.DC"
+      ],
+      "published": "2026-08-24T14:43:26+00:00",
+      "link": "https://arxiv.org/pdf/2608.24945v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "adaptive mixed-precision weight quantization for LLMs; Fisher information metric for layer-adaptive low-bit inference",
+      "llm_evidence_cn": "基于Fisher信息的自适应混合精度权重量化，逐层选择低比特位宽用于大模型高效推理",
+      "llm_evidence": "基于Fisher信息的自适应混合精度权重量化，逐层选择低比特位宽用于大模型高效推理",
+      "canonical_evidence": "基于Fisher信息的自适应混合精度权重量化，逐层选择低比特位宽用于大模型高效推理",
+      "llm_tldr_en": "Proposes FAMPWQ, a Fisher information-based adaptive mixed-precision weight quantization method that assigns layer-wise bit-widths for efficient LLM inference on commodity GPUs while preserving accuracy.",
+      "llm_tldr_cn": "针对大模型在资源受限设备上部署困难以及传统均匀量化或启发式敏感度评估导致性能严重下降的问题，提出基于Fisher信息的自适应混合精度权重量化方法FAMPWQ。该方法利用新的Fisher信息度量评估各层敏感度，逐层自适应选择权重位宽，在普通GPU上实现高效的大模型推理。实验表明该方法在保持精度的同时显著降低内存与计算开销，为低比特权重量化提供了有效方案。",
+      "llm_tldr": "针对大模型在资源受限设备上部署困难以及传统均匀量化或启发式敏感度评估导致性能严重下降的问题，提出基于Fisher信息的自适应混合精度权重量化方法FAMPWQ。该方法利用新的Fisher信息度量评估各层敏感度，逐层自适应选择权重位宽，在普通GPU上实现高效的大模型推理。实验表明该方法在保持精度的同时显著降低内存与计算开销，为低比特权重量化提供了有效方案。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.26926v1",
+      "source": "arxiv",
+      "title": "A Layer Importance Metric for Quantization Accounting for the Speed-Quality Trade-off in Autoregressive Models",
+      "abstract": "Small language models (sLLMs) are nowadays hosted on devices with limited memory and computational budget. In an autoregressive setup, inference is memory-bandwidth bound: uniform quantization is often detrimental to such models, since their architecture has limited redundancies and only a few layers are not very sensitive to lower precision. We propose a composite metric that combines two orthogonal criteria: information retention (measured in terms of a normalized SQNR-based coefficient) and throughput gains (modeled using a roofline-based latency analysis). By profiling Gemma 3 1B, we find that Feed-Forward Network blocks and the embedding matrix are the most promising targets for acceleration. For each candidate, we estimate a normalized quality score based on simulated quantization and a normalized speed score based on roofline modeling with no actual execution needed. We combine the two scores in a composite priority coefficient, allowing us to tune the trade-off between speed and quality as needed. Our metric is general and can be used to prioritize individual blocks, their projection sublayers, or transformer layers as a whole. We evaluate our approach on several model architectures, showing that our estimates have at around 4% prediction error for the accelerated speedup. We find that our method generally allocates more resources to the most expressive layers compared to evolutionary search, specialized accelerators, or Shapley-value-based approaches that require expensive approximate inference. Our analytical approach makes sLLM quantization a predictable engineering task.",
+      "authors": [
+        "Artem Safronov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-27T10:23:01+00:00",
+      "link": "https://arxiv.org/pdf/2608.26926v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Quantization of small language model weights, layer importance for low-bit trade-off",
+      "llm_evidence_cn": "小语言模型权重量化，面向低比特权衡的层重要性",
+      "llm_evidence": "小语言模型权重量化，面向低比特权衡的层重要性",
+      "canonical_evidence": "小语言模型权重量化，面向低比特权衡的层重要性",
+      "llm_tldr_en": "A composite layer importance metric combining information retention and throughput gains guides quantization of autoregressive small LMs; Gemma 3 1B profiling highlights FFN blocks and embeddings as top acceleration targets.",
+      "llm_tldr_cn": "小语言模型在内存带宽受限下，均匀量化容易造成显著性能损失，且不同层对低比特的敏感度差异大。本文提出一种综合信息保持能力与吞吐增益的层重要性指标，用于指导量化层与比特分配。基于 Gemma 3 1B 的剖析显示，前馈网络块和嵌入矩阵是最值得优先量化的部分。实验证明该指标能够有效识别量化敏感层。该指标为自回归模型的低比特量化提供了实用依据，有助于在推理速度与模型质量之间取得更优平衡。",
+      "llm_tldr": "小语言模型在内存带宽受限下，均匀量化容易造成显著性能损失，且不同层对低比特的敏感度差异大。本文提出一种综合信息保持能力与吞吐增益的层重要性指标，用于指导量化层与比特分配。基于 Gemma 3 1B 的剖析显示，前馈网络块和嵌入矩阵是最值得优先量化的部分。实验证明该指标能够有效识别量化敏感层。该指标为自回归模型的低比特量化提供了实用依据，有助于在推理速度与模型质量之间取得更优平衡。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.20953v1",
+      "source": "arxiv",
+      "title": "Quantization-Aware Healing: A Practical Recipe for Recovering Compressed, 4-Bit LLMs",
+      "abstract": "Serving large language models cheaply increasingly means shipping models that are both structurally compressed to a fraction of their parameters and quantized to 4 bits. Together these steps degrade reasoning, mathematics, coding, and long-context behavior enough to require a recovery, or healing, stage before deployment. The default recipe, quantization-aware training (QAT), re-fits the compressed, quantized model to hard labels; in our pipeline it converged slowly and collapsed past its peak. We adopted Quantization-Aware Healing (QAH) instead. Because a structurally compressed model is never independently trained at full precision, its bfloat16 checkpoint is a distillation-recovered approximation of the original; QAH distills the 4-bit student directly from the original, uncompressed model. On a GPT-OSS 120B to 60B to MXFP4 pipeline, the QAH student matches or beats its bfloat16 source on 7 of 9 benchmarks at roughly 4 times less weight memory and half the teacher's parameter count, and is released open-weight as Hypernova-60B. Against a matched QAT baseline it reaches a comparable peak about 7 times faster and stays stable under continued training, without hand-tuned early stopping. We also report deployment lessons, including a large, reproducible quality gap between distributed-training backends. Our aim is a recipe deployable without a multi-week hyper-parameter search.",
+      "authors": [
+        "Bakbergen Ryskulov",
+        "Iker García-Ferrero",
+        "David Montero",
+        "David Jansen",
+        "Ali Hashemi",
+        "Jezabel R. Garcia",
+        "Antonio Tiene",
+        "Román Orús"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL",
+        "cs.AI",
+        "cs.LG",
+        "cs.PF"
+      ],
+      "published": "2026-08-21T10:19:27+00:00",
+      "link": "https://arxiv.org/pdf/2608.20953v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "presents a post-training healing recipe to recover 4-bit quantized LLM accuracy, methodologically relevant to low-bit PTQ preservation",
+      "llm_evidence_cn": "提出量化感知修复方法恢复4位量化LLM精度，与低比特PTQ能力保持方法相关",
+      "llm_evidence": "提出量化感知修复方法恢复4位量化LLM精度，与低比特PTQ能力保持方法相关",
+      "canonical_evidence": "提出量化感知修复方法恢复4位量化LLM精度，与低比特PTQ能力保持方法相关",
+      "llm_tldr_en": "Proposes Quantization-Aware Healing (QAH) to recover structurally compressed, 4-bit quantized LLMs, distilling from bfloat16 checkpoints instead of unstable QAT; restores reasoning, math, coding, and long-context performance, highlighting the need for dedicated healing in low-bit deployment.",
+      "llm_tldr_cn": "面向结构压缩并量化到4位的LLM性能严重下降、且标准QAT训练不稳定易塌缩的问题，本文提出量化感知修复（QAH）方法：利用bfloat16检查点作为蒸馏恢复的近似，对4位量化模型进行蒸馏式修复。实验显示QAH在推理、数学、编程和长上下文任务上稳定恢复性能，优于默认QAT。这表明针对低比特量化模型的专用修复阶段对实际部署十分重要。",
+      "llm_tldr": "面向结构压缩并量化到4位的LLM性能严重下降、且标准QAT训练不稳定易塌缩的问题，本文提出量化感知修复（QAH）方法：利用bfloat16检查点作为蒸馏恢复的近似，对4位量化模型进行蒸馏式修复。实验显示QAH在推理、数学、编程和长上下文任务上稳定恢复性能，优于默认QAT。这表明针对低比特量化模型的专用修复阶段对实际部署十分重要。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.23816v1",
+      "source": "arxiv",
+      "title": "AQLoRA: A Zero-Search Recipe for Fast Quantized LoRA Fine-Tuning",
+      "abstract": "Quantized fine-tuning (QLoRA) saves memory but not time. It dequantizes every 4-bit weight on the fly, so it trains more slowly than fp16 LoRA. We present AQLoRA (Adaptive-Quantization LoRA), a recipe that buys part of that time back. One CPU pass over the weights sets everything, with no search and no calibration data. The pass ranks layers by NF4 reconstruction error and keeps the top-K in fp16 under a memory budget. Those layers skip dequantization, which is where the speed comes from. A quality setting adapts every layer. A speed setting adapts only the top blocks, so the backward pass stops early. The rule reproduces Unsloth's hand-curated dynamic-4bit selection exactly, in seconds, where search-based allocation needs repeated calibration passes.   We evaluate on Commonsense-170K across six models and four architecture families, from 1.4B to 14B. The speed setting trains 11.1 +/- 2.7% faster than well-tuned QLoRA and gives up about one accuracy point. It was faster in all nine independent timing sessions, at worst by 7%. The quality setting trains 4.8 +/- 2.4% faster. Its accuracy is level with QLoRA on every model and within a point of fp16 LoRA, for 0.2 GiB more memory. These error bars are measured between independent sessions, not within one. Earning them taught us three rules for timing on shared hardware. Fix the measurement duration, not the step count. Measure the noise floor from a duplicated arm, not a nearly identical method. Repeat whole sessions: a floor computed inside one sweep understates the real uncertainty several times over, and the random seed controls almost none of it.   We validate the recipe with controls and report the two that failed. Choosing adapter layers by weight density is no better than random. Choosing protected layers by quantization error is not either. The count of protected layers, not their identity, carries the speed effect.",
+      "authors": [
+        "Md Romyull Islam"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-24T20:47:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.23816v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Quantized LLM weights, 4-bit NF4, adaptive layer-wise precision for LoRA fine-tuning",
+      "llm_evidence_cn": "量化LLM权重、4比特NF4、自适应层精度LoRA微调",
+      "llm_evidence": "量化LLM权重、4比特NF4、自适应层精度LoRA微调",
+      "canonical_evidence": "量化LLM权重、4比特NF4、自适应层精度LoRA微调",
+      "llm_tldr_en": "AQLoRA proposes a zero-search recipe for fast quantized LoRA fine-tuning; it ranks layers by NF4 reconstruction error in one CPU pass and keeps the top-K in fp16 under a memory budget, bypassing per-step dequantization while preserving quality.",
+      "llm_tldr_cn": "量化微调虽然节省显存但训练更慢，原因是每个4比特权重都要在线反量化。AQLoRA提出零搜索方法，仅用一次CPU遍历按NF4重建误差排序层，在内存预算内将前K层保留为fp16，从而跳过耗时反量化。质量模式自适应所有层，速度模式只适配顶部块并提前停止反向传播。实验显示该方法快速复现Unsloth动态4比特选择，兼顾内存效率与训练速度。",
+      "llm_tldr": "量化微调虽然节省显存但训练更慢，原因是每个4比特权重都要在线反量化。AQLoRA提出零搜索方法，仅用一次CPU遍历按NF4重建误差排序层，在内存预算内将前K层保留为fp16，从而跳过耗时反量化。质量模式自适应所有层，速度模式只适配顶部块并提前停止反向传播。实验显示该方法快速复现Unsloth动态4比特选择，兼顾内存效率与训练速度。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2608.24469v1",
+      "source": "arxiv",
+      "title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+      "abstract": "Ternary transformers offer extreme memory and compute efficiency, but existing low-bit LoRA-based methods cannot directly fine-tune ternary weights. Current approaches either require dequantization, restoring low-bit base weights to higher precision to merge with adaptation weight, or update only quantization parameters, preventing a merged model that remains ternary. We propose ternary multiplicative adaptation, which represents discrete updates of ternary weights such as sign flips or zeroing through a low-rank Kronecker factorization into two small ternary matrices applied element-wise to ternary weights. This design is parameter-efficient and expressive, preserves the ternary domain, and supports direct merging without dequantization. Experiments on six models across language and vision, including ternarized LLaMA-3 1B and 3B and a ternary ViT-B/16, demonstrate that our method recovers much of the performance lost to quantization and outperforms strong low-bit and ternary baselines. Code is available at https://github.com/alexmanoo/ternary_adaptation.",
+      "authors": [
+        "Alexandru-Dragos Manolache",
+        "Yunqiang Li",
+        "Jan van Gemert"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-25T12:15:56+00:00",
+      "link": "https://arxiv.org/pdf/2608.24469v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "low-rank adaptation method preserving extreme low-bit ternary weights for LLMs",
+      "llm_evidence_cn": "面向大模型三元极低比特权重的低秩适配方法",
+      "llm_evidence": "面向大模型三元极低比特权重的低秩适配方法",
+      "canonical_evidence": "面向大模型三元极低比特权重的低秩适配方法",
+      "llm_tldr_en": "Proposes ternary multiplicative adaptation via low-rank Kronecker factorization, enabling direct fine-tuning of ternary transformers without dequantization and preserving the ternary domain.",
+      "llm_tldr_cn": "针对现有低比特LoRA方法无法直接微调三元权重的问题，本文提出三元乘法适配。该方法将符号翻转和置零等离散更新分解为两个小三元矩阵的Kronecker积，以参数高效的方式保持三元域，并支持无需反量化的直接合并。在六个模型上的实验表明其表达力和性能均优于已有方案。该研究为极端低比特LLM的后续适配与高效微调提供了新途径。",
+      "llm_tldr": "针对现有低比特LoRA方法无法直接微调三元权重的问题，本文提出三元乘法适配。该方法将符号翻转和置零等离散更新分解为两个小三元矩阵的Kronecker积，以参数高效的方式保持三元域，并支持无需反量化的直接合并。在六个模型上的实验表明其表达力和性能均优于已有方案。该研究为极端低比特LLM的后续适配与高效微调提供了新途径。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

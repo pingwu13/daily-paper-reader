@@ -1,0 +1,39 @@
+{
+  "label": "2026-08-30",
+  "date": "2026-08-30",
+  "generated_at": "2026-08-30T22:56:38",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202608/30/2608.22110v1-what-actually-runs-a-measurement-study-of-language-model-placement-and-decode-speed-on-the-apple-neural-engine",
+      "section": "quick",
+      "title_en": "What actually runs: a measurement study of language model placement and decode speed on the Apple Neural Engine",
+      "authors": "Shahir M A",
+      "date": "2026-08-22",
+      "pdf": "https://arxiv.org/pdf/2608.22110v1",
+      "score": "7.0",
+      "evidence": "针对Apple神经引擎上量化语言模型部署与解码速度的测量研究，与量化LLM推理的硬件部署相关。",
+      "tldr": "语言模型能否进入苹果神经引擎取决于表达方式而非计算内容，且受权重编码制约。基于64种原语扫掠、配对模型训练和内存计数器测量发现：融合RMSNorm可上引擎而等价分解只跑CPU；fp16模型被全放CPU，int8或2-bit下驻留83%并快1.8-2.2倍。解码成本约为每token流式0.77倍编码宽度。三元模型最小最快，25M仅0.63ms/token，比初始fp16小9.8倍快3倍，启示是先选编码再分配字节预算。",
+      "tags": "query:elblq",
+      "abstract_en": "We ask what gets a language model onto the Apple Neural Engine (ANE) and what makes it fast there, and we answer with three measurements. We sweep a 64-shape matrix of LLM primitives that varies how a computation is expressed while holding what it computes fixed, recording per-operation device support. We then train matched models across size and precision, with quantized checkpoints byte-identical in structure to their fp16 counterparts, so every deployment measurement is of a real trained artifact. And we read the ANE's memory-controller byte counters during inference, establishing what actually ran rather than what the compiler intended. We support every headline claim with at least two of these three measurement paths. We find that placement is a property of how a computation is expressed, not of what it computes: a fused RMSNorm is fully ANE-eligible while its arithmetically identical decomposition is CPU-only. Weight encoding gates the accelerator: CoreML assigns a 25.85M-parameter conv-heavy fp16 model entirely to the CPU (our counters confirm zero bytes through the engine), while the same graph in int8 or 2-bit returns to ~83% residency and runs 1.8-2.2x faster, and a smaller 22.29M all-attention fp16 model sits at 98.9%. Decode cost is bytes streamed per token, at a constant ~0.77 fraction of nominal encoding width across fp16, int8 and 2-bit. The smallest and fastest models we measured are ternary, and at matched size the operator mix barely moves either axis: every resident 25M ternary model lands within 10.0-10.8 MB and 0.62-0.64 ms/token. The headline pair is half-attention ternary at 25M (10.5 MB, 0.63 ms) and 50M (16.8 MB, 0.86 ms) - 9.8x and 6.1x smaller, 3.0x and 2.2x faster than the conv-heavy fp16 design this work began with. From these measurements we draw a design procedure: choose the encoding first, then spend the byte budget on parameters.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/30/2608.22979v1-sa-rsq-a-versatile-sparse-representation-framework-for-multi-modal-recommender-systems",
+      "section": "quick",
+      "title_en": "SA-RSQ: A Versatile Sparse Representation Framework for Multi-modal Recommender Systems",
+      "authors": "Xiang Wang, Shigang Quan, Tingzhen Chang, Kang Yang, Sitong Chen, Yabo Fan, Xingxing Wang, Zhaodian He",
+      "date": "2026-08-24",
+      "pdf": "https://arxiv.org/pdf/2608.22979v1",
+      "score": "6.0",
+      "evidence": "基于学习码本的残差软量化，用于紧凑表示",
+      "tldr": "多模态高维特征在工业推荐中带来高存储与延迟，硬量化有边界畸变，密集软量化受存储预算限制。提出SA-RSQ，利用Top-K稀疏路由与softmax权重存储(索引,概率)元组，解耦单物品存储与码本维度，并通过路由权重与加权重建传播梯度。在食品配送广告数据上，8-48字节预算下取得良好重建与CTR权衡，在线A/B测试CTR提升2.51%，CPM提升3.66%。",
+      "tags": "query:elblq",
+      "abstract_en": "Deploying high-dimensional multimodal features in industrial recommender systems incurs substantial storage and latency overhead. Hard quantization is compact but introduces boundary distortion, whereas dense soft quantization couples representation quality to the limited storage budget. We propose Sparse Activation-based Residual Soft Quantization (SA-RSQ), which uses Top-K sparse routing and softmax weights to store compact (Index, Probability) tuples. The stored tuples decouple per-item storage from codebook dimensionality; for a fixed selected support, gradients propagate through the routing weights and weighted reconstruction without relying on a straight-through estimator. Experiments on a proprietary food-delivery advertising dataset show favorable reconstruction-performance and CTR trade-offs across storage budgets of 8-48 bytes per item. A preliminary Next-Distribution Prediction study and a one-week online A/B test further demonstrate the practical potential of SA-RSQ, with relative lifts of +2.51% in CTR and +3.66% in CPM.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

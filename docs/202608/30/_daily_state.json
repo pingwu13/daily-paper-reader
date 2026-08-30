@@ -1,0 +1,41 @@
+{
+  "date": "20260830",
+  "date_label": "",
+  "generated_at": "2026-08-30 22:56:35 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.22110v1",
+      "route": "202608/30/2608.22110v1-what-actually-runs-a-measurement-study-of-language-model-placement-and-decode-speed-on-the-apple-neural-engine",
+      "title": "What actually runs: a measurement study of language model placement and decode speed on the Apple Neural Engine",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "针对Apple神经引擎上量化语言模型部署与解码速度的测量研究，与量化LLM推理的硬件部署相关。",
+      "first_seen_at": "2026-08-30 22:56:35 UTC",
+      "updated_at": "2026-08-30 22:56:35 UTC"
+    },
+    {
+      "paper_id": "2608.22979v1",
+      "route": "202608/30/2608.22979v1-sa-rsq-a-versatile-sparse-representation-framework-for-multi-modal-recommender-systems",
+      "title": "SA-RSQ: A Versatile Sparse Representation Framework for Multi-modal Recommender Systems",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "基于学习码本的残差软量化，用于紧凑表示",
+      "first_seen_at": "2026-08-30 22:56:35 UTC",
+      "updated_at": "2026-08-30 22:56:35 UTC"
+    }
+  ]
+}

@@ -1,0 +1,100 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-08-30T22:54:49.593227+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2608.22110v1",
+      "source": "arxiv",
+      "title": "What actually runs: a measurement study of language model placement and decode speed on the Apple Neural Engine",
+      "abstract": "We ask what gets a language model onto the Apple Neural Engine (ANE) and what makes it fast there, and we answer with three measurements. We sweep a 64-shape matrix of LLM primitives that varies how a computation is expressed while holding what it computes fixed, recording per-operation device support. We then train matched models across size and precision, with quantized checkpoints byte-identical in structure to their fp16 counterparts, so every deployment measurement is of a real trained artifact. And we read the ANE's memory-controller byte counters during inference, establishing what actually ran rather than what the compiler intended. We support every headline claim with at least two of these three measurement paths. We find that placement is a property of how a computation is expressed, not of what it computes: a fused RMSNorm is fully ANE-eligible while its arithmetically identical decomposition is CPU-only. Weight encoding gates the accelerator: CoreML assigns a 25.85M-parameter conv-heavy fp16 model entirely to the CPU (our counters confirm zero bytes through the engine), while the same graph in int8 or 2-bit returns to ~83% residency and runs 1.8-2.2x faster, and a smaller 22.29M all-attention fp16 model sits at 98.9%. Decode cost is bytes streamed per token, at a constant ~0.77 fraction of nominal encoding width across fp16, int8 and 2-bit. The smallest and fastest models we measured are ternary, and at matched size the operator mix barely moves either axis: every resident 25M ternary model lands within 10.0-10.8 MB and 0.62-0.64 ms/token. The headline pair is half-attention ternary at 25M (10.5 MB, 0.63 ms) and 50M (16.8 MB, 0.86 ms) - 9.8x and 6.1x smaller, 3.0x and 2.2x faster than the conv-heavy fp16 design this work began with. From these measurements we draw a design procedure: choose the encoding first, then spend the byte budget on parameters.",
+      "authors": [
+        "Shahir M A"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AR",
+        "cs.PF"
+      ],
+      "published": "2026-08-22T21:22:24+00:00",
+      "link": "https://arxiv.org/pdf/2608.22110v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Measurement study of quantized LLM placement and decode speed on Apple Neural Engine; relevant to hardware deployment of quantized LLM inference.",
+      "llm_evidence_cn": "针对Apple神经引擎上量化语言模型部署与解码速度的测量研究，与量化LLM推理的硬件部署相关。",
+      "llm_evidence": "针对Apple神经引擎上量化语言模型部署与解码速度的测量研究，与量化LLM推理的硬件部署相关。",
+      "canonical_evidence": "针对Apple神经引擎上量化语言模型部署与解码速度的测量研究，与量化LLM推理的硬件部署相关。",
+      "llm_tldr_en": "This paper measures what gets a language model onto the Apple Neural Engine and what makes it fast, sweeping 64 shapes of LLM primitives, training matched quantized models, and reading memory-controller counters. It reveals actual device support and performance for quantized LLM inference.",
+      "llm_tldr_cn": "针对“什么能让语言模型在Apple神经引擎上运行并变快”的问题，本文通过64种LLM原语计算形态扫描、训练与fp16结构逐字节一致的量化检查点，以及读取内存控制器字节计数器三种测量手段，揭示量化模型在ANE上的真实设备支持与解码速度。研究发现部署性能取决于算子表达方式与硬件支持，为量化LLM在专用硬件上的高效推理提供了实证依据，但对极低比特权重量化方法本身没有提出新方法。",
+      "llm_tldr": "针对“什么能让语言模型在Apple神经引擎上运行并变快”的问题，本文通过64种LLM原语计算形态扫描、训练与fp16结构逐字节一致的量化检查点，以及读取内存控制器字节计数器三种测量手段，揭示量化模型在ANE上的真实设备支持与解码速度。研究发现部署性能取决于算子表达方式与硬件支持，为量化LLM在专用硬件上的高效推理提供了实证依据，但对极低比特权重量化方法本身没有提出新方法。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.22979v1",
+      "source": "arxiv",
+      "title": "SA-RSQ: A Versatile Sparse Representation Framework for Multi-modal Recommender Systems",
+      "abstract": "Deploying high-dimensional multimodal features in industrial recommender systems incurs substantial storage and latency overhead. Hard quantization is compact but introduces boundary distortion, whereas dense soft quantization couples representation quality to the limited storage budget. We propose Sparse Activation-based Residual Soft Quantization (SA-RSQ), which uses Top-K sparse routing and softmax weights to store compact (Index, Probability) tuples. The stored tuples decouple per-item storage from codebook dimensionality; for a fixed selected support, gradients propagate through the routing weights and weighted reconstruction without relying on a straight-through estimator. Experiments on a proprietary food-delivery advertising dataset show favorable reconstruction-performance and CTR trade-offs across storage budgets of 8-48 bytes per item. A preliminary Next-Distribution Prediction study and a one-week online A/B test further demonstrate the practical potential of SA-RSQ, with relative lifts of +2.51% in CTR and +3.66% in CPM.",
+      "authors": [
+        "Xiang Wang",
+        "Shigang Quan",
+        "Tingzhen Chang",
+        "Kang Yang",
+        "Sitong Chen",
+        "Yabo Fan",
+        "Xingxing Wang",
+        "Zhaodian He"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-24T08:39:36+00:00",
+      "link": "https://arxiv.org/pdf/2608.22979v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "learned codebook-based residual soft quantization for compact representation",
+      "llm_evidence_cn": "基于学习码本的残差软量化，用于紧凑表示",
+      "llm_evidence": "基于学习码本的残差软量化，用于紧凑表示",
+      "canonical_evidence": "基于学习码本的残差软量化，用于紧凑表示",
+      "llm_tldr_en": "SA-RSQ stores (index, probability) tuples via Top-K sparse routing and softmax weights, decoupling storage from codebook size without straight-through estimators. Advertising-data experiments show compact high-quality representation, offering a transferable codebook framework.",
+      "llm_tldr_cn": "高维度多模态特征在推荐系统中存储开销大，现有量化方法各有缺陷。本文提出SA-RSQ，用Top-K稀疏路由和Softmax权重存储紧凑的(索引,概率)元组，把每项存储与码本维度解耦，并且无需直通估计器即可传播梯度。在专有外卖广告数据上的结果表明，该方法能以更小存储获得高质量表示。该框架为码本量化在低比特压缩中的迁移提供了通用思路。",
+      "llm_tldr": "高维度多模态特征在推荐系统中存储开销大，现有量化方法各有缺陷。本文提出SA-RSQ，用Top-K稀疏路由和Softmax权重存储紧凑的(索引,概率)元组，把每项存储与码本维度解耦，并且无需直通估计器即可传播梯度。在专有外卖广告数据上的结果表明，该方法能以更小存储获得高质量表示。该框架为码本量化在低比特压缩中的迁移提供了通用思路。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "learned codebook quantization for large language model weights",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

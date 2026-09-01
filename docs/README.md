@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-30</span>
+      <span class="dpr-home-dashboard-kicker">2026-08-31</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>0</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
     <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-08-30 22:56:35 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-01 00:44:12 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,9 +62,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日速读2篇论文，聚焦Apple Neural Engine语言模型部署与多模态推荐稀疏表示。</p>
-<p>最值得关注：ANE上语言模型实际放置与解码速度的测量分析（7.0分），以及SA-RSQ稀疏框架（6.0分）。</p>
-<p>建议优先精读ANE性能研究，后续可关注多模态推荐系统优化方向。</p>
+<p>今日聚焦大模型量化与微调，精读1篇、速读2篇，共3篇论文。最值得关注的是《H-Scale》中的Hessian引导缩放优化，可提升NVFP4亚字节推理精度；低秩三元适应也为高效微调提供了轻量思路。建议普通读者优先关注量化与微调结合的实际部署方案，从H-Scale入手验证效果。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -73,12 +71,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">0 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference">H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference</span></li></ul>
   </div>
-
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -89,7 +87,7 @@
     <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="What actually runs: a measurement study of language model placement and decode speed on the Apple Neural Engine">What actually runs: a measurement study of language model placement and decode speed on the Apple Neural Engine</span></li><li><span class="dpr-home-dashboard-paper-title" title="SA-RSQ: A Versatile Sparse Representation Framework for Multi-modal Recommender Systems">SA-RSQ: A Versatile Sparse Representation Framework for Multi-modal Recommender Systems</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Low-Rank Ternary Adaptation for Fine-Tuning Transformers">Low-Rank Ternary Adaptation for Fine-Tuning Transformers</span></li><li><span class="dpr-home-dashboard-paper-title" title="A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint">A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint</span></li></ul>
   </div>
   <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>2</strong></span></div>
 </section>

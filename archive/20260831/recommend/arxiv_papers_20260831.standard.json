@@ -1,0 +1,135 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-01T00:40:46.248966+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2608.28113v1",
+      "source": "arxiv",
+      "title": "H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference",
+      "abstract": "The NVIDIA Blackwell architecture, with native support for the ultra-fine-grained NVFP4 format, opens new opportunities for accelerating large language model (LLM) inference. NVFP4's micro-block design, such as a group size of 16, offers strong representational flexibility for capturing local weight distributions and isolating outliers, but it also introduces a large and highly sensitive space of per-group scaling factors. Existing post-training quantization (PTQ) methods primarily focus on refining quantized weight values, leaving this scale-selection step underexplored. To address this gap, we propose \\textbf{H-Scale}, a lightweight post-processing method for NVFP4 per-group scale refinement. Instead of minimizing plain weight reconstruction error, H-Scale selects hardware-valid group scales using a diagonal second-order proxy derived from calibration activations, thereby targeting layer output perturbation more directly. It is designed as a drop-in replacement for RTN-style scale selection in diverse NVFP4 pipelines, requires only modest offline calibration, and introduces strictly zero overhead at inference time. Under a fixed evaluation protocol, experiments on mainstream LLMs show that H-Scale generally improves a broad range of NVFP4 baselines and brings several variants closer to the BF16 reference.",
+      "authors": [
+        "Hao Yu",
+        "Zheng Li",
+        "Dayiheng Liu",
+        "Jianwei Zhang"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-28T09:22:17+00:00",
+      "link": "https://arxiv.org/pdf/2608.28113v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Hessian-guided scale refinement for sub-byte NVFP4 LLM weight post-training quantization",
+      "llm_evidence_cn": "面向亚字节NVFP4 LLM权重的海森引导缩放因子精细化后训练量化",
+      "llm_evidence": "面向亚字节NVFP4 LLM权重的海森引导缩放因子精细化后训练量化",
+      "canonical_evidence": "面向亚字节NVFP4 LLM权重的海森引导缩放因子精细化后训练量化",
+      "llm_tldr_en": "Proposes H-Scale, a lightweight post-training quantization post-processing method that refines per-group scale factors for NVFP4 sub-byte LLM inference using Hessian information, improving quantized model quality.",
+      "llm_tldr_cn": "现有后训练量化方法主要关注量化权重值的优化，而忽略了NVFP4等亚字节格式中分组缩放因子的精细选择。H-Scale利用海森信息引导缩放因子精细化，以轻量级后处理方式显著提升量化模型的输出质量，而不改变已训练的权重。在NVIDIA Blackwell架构上，该方法可有效改善超细粒度NVFP4格式下LLM推理的精度。",
+      "llm_tldr": "现有后训练量化方法主要关注量化权重值的优化，而忽略了NVFP4等亚字节格式中分组缩放因子的精细选择。H-Scale利用海森信息引导缩放因子精细化，以轻量级后处理方式显著提升量化模型的输出质量，而不改变已训练的权重。在NVIDIA Blackwell架构上，该方法可有效改善超细粒度NVFP4格式下LLM推理的精度。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2608.24469v1",
+      "source": "arxiv",
+      "title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+      "abstract": "Ternary transformers offer extreme memory and compute efficiency, but existing low-bit LoRA-based methods cannot directly fine-tune ternary weights. Current approaches either require dequantization, restoring low-bit base weights to higher precision to merge with adaptation weight, or update only quantization parameters, preventing a merged model that remains ternary. We propose ternary multiplicative adaptation, which represents discrete updates of ternary weights such as sign flips or zeroing through a low-rank Kronecker factorization into two small ternary matrices applied element-wise to ternary weights. This design is parameter-efficient and expressive, preserves the ternary domain, and supports direct merging without dequantization. Experiments on six models across language and vision, including ternarized LLaMA-3 1B and 3B and a ternary ViT-B/16, demonstrate that our method recovers much of the performance lost to quantization and outperforms strong low-bit and ternary baselines. Code is available at https://github.com/alexmanoo/ternary_adaptation.",
+      "authors": [
+        "Alexandru-Dragos Manolache",
+        "Yunqiang Li",
+        "Jan van Gemert"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV",
+        "cs.LG"
+      ],
+      "published": "2026-08-25T12:15:56+00:00",
+      "link": "https://arxiv.org/pdf/2608.24469v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "ternary weight adaptation for low-bit Transformers",
+      "llm_evidence_cn": "面向低比特Transformer的三值权重适配",
+      "llm_evidence": "面向低比特Transformer的三值权重适配",
+      "canonical_evidence": "面向低比特Transformer的三值权重适配",
+      "llm_tldr_en": "Proposes ternary multiplicative adaptation via low-rank Kronecker factorization to fine-tune ternary transformers, preserving the ternary domain without dequantization and enabling direct merging.",
+      "llm_tldr_cn": "针对现有低比特LoRA方法无法直接微调三值权重的问题，作者提出三值乘法适配（ternary multiplicative adaptation），通过两个小型三值矩阵的低秩Kronecker分解来表示符号翻转或归零等离散更新，并逐元素作用于三值权重。该方法保持三值域、支持无需反量化的直接合并，参数高效且表达能力强。在六个模型上的实验验证了其有效性，为极低比特大模型的高效微调与部署提供了新思路。",
+      "llm_tldr": "针对现有低比特LoRA方法无法直接微调三值权重的问题，作者提出三值乘法适配（ternary multiplicative adaptation），通过两个小型三值矩阵的低秩Kronecker分解来表示符号翻转或归零等离散更新，并逐元素作用于三值权重。该方法保持三值域、支持无需反量化的直接合并，参数高效且表达能力强。在六个模型上的实验验证了其有效性，为极低比特大模型的高效微调与部署提供了新思路。",
+      "llm_tags": [
+        "query:elblq:composite"
+      ],
+      "matched_query_tag": "query:elblq:composite",
+      "matched_query_text": "Papers central to LLM极低比特权重量化、向量/码本/格量化与高效推理, especially work that connects or combines: extreme low-bit quantization of large language model weights; 2-bit weight quantization for large language models; vector quantization methods for compressing large language model weights; additive quantization for language model weights; learned codebook quantization for large language model weights; lattice codebook quantization for low-bit neural network weights; extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy; vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression; incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss; efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference.",
+      "matched_requirement_id": "req-composite-elblq",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.28003v1",
+      "source": "arxiv",
+      "title": "A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint",
+      "abstract": "This paper proposes a layer bit allocation method for Gemma-3-1B, formulating the problem as performance maximization (latency decrease) given a degradation budget constraint (allowable level of generation quality loss). This approach is different from time- and resource-consuming uniform layer quantization methods that are used in the literature (like GPTQ or AWQ) or allocation methods without proven performance-accelerating effect (like MixLLM or TorchAO). The layer sensitivity profile resulting from our prior work SA-PTQ is applied using the activation pass-through mode inside TensorRT-LLM. For each layer precision is determined individually in blocks, according to a grouping introduced in the prior step (5+5, 10+10, all26), differentiating the contribution of FFN, Attention, and lm_head to the overall speedup. The clock speed was measured for 13 W8A8 variants on an RTX 5090. We find that for FFN and lm_head the time cost of quantization/dequantization is compensated for by the use of integer arithmetic, while for short context lengths, the opposite holds true for Attention: an additional step of quantization slows execution down. We propose a manual implementation of SmoothQuant for TensorRT-LLM which was necessary due to export failures, unavailable for lm_head. The best solution found under joint consideration of all three criteria with minimal degradation was FFN 5+5 with lm_head, providing an 11.0% reduction in latency with negligible quality loss (98.90% Top-1 agreement, +0.85% perplexity degradation). With acceptable quality loss for FFN all26 + lm_head, a speedup up to 19.1% was found possible. We suggest further optimizations: fused attention kernels in INT8, KV-cache quantization, using FP8 instead of INT8 and partial Attention quantization analogous to FFN.",
+      "authors": [
+        "Artem Safronov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-28T07:13:42+00:00",
+      "link": "https://arxiv.org/pdf/2608.28003v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Layer bit-width allocation for post-training LLM quantization under quality-degradation constraint",
+      "llm_evidence_cn": "质量退化约束下的大模型训练后量化层位宽分配",
+      "llm_evidence": "质量退化约束下的大模型训练后量化层位宽分配",
+      "canonical_evidence": "质量退化约束下的大模型训练后量化层位宽分配",
+      "llm_tldr_en": "Proposes a layer bit-width allocation method for LLM post-training quantization that maximizes latency reduction under a permitted quality degradation budget, using sensitivity profiles from SA-PTQ.",
+      "llm_tldr_cn": "针对现有均匀层量化方法耗时且分配方法缺乏性能加速证明的问题，提出一种面向大模型训练后量化的分层位宽分配方法。该方法在给定生成质量退化预算下以延迟降低最大化为目标，利用SA-PTQ层敏感性轮廓在TensorRT-LLM中逐层确定精度。与GPTQ、AWQ等均匀量化相比，在保证质量约束的同时能更有效地加速推理，为大模型量化部署提供了低成本的位宽优化思路。",
+      "llm_tldr": "针对现有均匀层量化方法耗时且分配方法缺乏性能加速证明的问题，提出一种面向大模型训练后量化的分层位宽分配方法。该方法在给定生成质量退化预算下以延迟降低最大化为目标，利用SA-PTQ层敏感性轮廓在TensorRT-LLM中逐层确定精度。与GPTQ、AWQ等均匀量化相比，在保证质量约束的同时能更有效地加速推理，为大模型量化部署提供了低成本的位宽优化思路。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

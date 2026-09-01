@@ -1,0 +1,54 @@
+{
+  "label": "2026-08-31",
+  "date": "2026-08-31",
+  "generated_at": "2026-09-01T00:44:15",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202608/31/2608.28113v1-h-scale-hessian-guided-scale-refinement-for-nvfp4-sub-byte-llm-inference",
+      "section": "deep",
+      "title_en": "H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference",
+      "authors": "Hao Yu, Zheng Li, Dayiheng Liu, Jianwei Zhang",
+      "date": "2026-08-28",
+      "pdf": "https://arxiv.org/pdf/2608.28113v1",
+      "score": "9.0",
+      "evidence": "面向亚字节NVFP4 LLM权重的海森引导缩放因子精细化后训练量化",
+      "tldr": "NVFP4微块量化虽能灵活表示权重分布，但每组的缩放因子选择高度敏感且未被充分探索。本文提出H-Scale，利用校准激活的二阶Hessian对角代理来优化每组缩放因子，直接减少层输出扰动。该方法仅需适度离线校准，推理时零开销，可无缝替换现有RTN式缩放选择。在主流LLM上，H-Scale普遍提升各类NVFP4基线，部分变体逼近BF16精度。",
+      "tags": "query:elblq",
+      "abstract_en": "The NVIDIA Blackwell architecture, with native support for the ultra-fine-grained NVFP4 format, opens new opportunities for accelerating large language model (LLM) inference. NVFP4's micro-block design, such as a group size of 16, offers strong representational flexibility for capturing local weight distributions and isolating outliers, but it also introduces a large and highly sensitive space of per-group scaling factors. Existing post-training quantization (PTQ) methods primarily focus on refining quantized weight values, leaving this scale-selection step underexplored. To address this gap, we propose \\textbf{H-Scale}, a lightweight post-processing method for NVFP4 per-group scale refinement. Instead of minimizing plain weight reconstruction error, H-Scale selects hardware-valid group scales using a diagonal second-order proxy derived from calibration activations, thereby targeting layer output perturbation more directly. It is designed as a drop-in replacement for RTN-style scale selection in diverse NVFP4 pipelines, requires only modest offline calibration, and introduces strictly zero overhead at inference time. Under a fixed evaluation protocol, experiments on mainstream LLMs show that H-Scale generally improves a broad range of NVFP4 baselines and brings several variants closer to the BF16 reference.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/31/2608.24469v1-low-rank-ternary-adaptation-for-fine-tuning-transformers",
+      "section": "quick",
+      "title_en": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+      "authors": "Alexandru-Dragos Manolache, Yunqiang Li, Jan van Gemert",
+      "date": "2026-08-25",
+      "pdf": "https://arxiv.org/pdf/2608.24469v1",
+      "score": "7.0",
+      "evidence": "面向低比特Transformer的三值权重适配",
+      "tldr": "三元Transformer虽有极端的存储与计算效率，但现有低比特LoRA方法无法直接微调三元权重，常需反量化或仅更新量化参数，导致无法保持三元合并模型。本文提出三元乘法适配，利用两个小型三元矩阵的Kronecker分解，以低秩形式对三元权重进行符号翻转或置零等离散更新，既高效又有表现力，且保持三元域并支持无反量化合并。在语言和视觉的六个模型上，包括三元化LLaMA-3 1B/3B与ViT-B/16，该方法显著恢复量化损失，优于强低比特与三元基线。",
+      "tags": "query:elblq",
+      "abstract_en": "Ternary transformers offer extreme memory and compute efficiency, but existing low-bit LoRA-based methods cannot directly fine-tune ternary weights. Current approaches either require dequantization, restoring low-bit base weights to higher precision to merge with adaptation weight, or update only quantization parameters, preventing a merged model that remains ternary. We propose ternary multiplicative adaptation, which represents discrete updates of ternary weights such as sign flips or zeroing through a low-rank Kronecker factorization into two small ternary matrices applied element-wise to ternary weights. This design is parameter-efficient and expressive, preserves the ternary domain, and supports direct merging without dequantization. Experiments on six models across language and vision, including ternarized LLaMA-3 1B and 3B and a ternary ViT-B/16, demonstrate that our method recovers much of the performance lost to quantization and outperforms strong low-bit and ternary baselines. Code is available at https://github.com/alexmanoo/ternary_adaptation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202608/31/2608.28003v1-a-method-for-layer-bit-width-allocation-in-llm-quantization-via-performance-maximization-under-a-quality-degradation-constraint",
+      "section": "quick",
+      "title_en": "A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint",
+      "authors": "Artem Safronov",
+      "date": "2026-08-28",
+      "pdf": "https://arxiv.org/pdf/2608.28003v1",
+      "score": "6.0",
+      "evidence": "质量退化约束下的大模型训练后量化层位宽分配",
+      "tldr": "针对均匀层量化耗时且加速有限，本文提出质量退化约束下性能最大化的层位宽分配方法。利用SA-PTQ敏感性，在TensorRT-LLM中激活直通模式分组逐块定精度，并区分FFN、注意力与lm_head的贡献。实测13种变体发现，FFN与lm_head量化可被整数运算补偿，Attention短上下文反变慢；最佳FFN 5+5+lm_head延迟降11%，质量损失可忽略，全部FFN量化可提速19.1%。该法为层量化提供高效加速，并指明融合注意力核等优化方向。",
+      "tags": "query:elblq",
+      "abstract_en": "This paper proposes a layer bit allocation method for Gemma-3-1B, formulating the problem as performance maximization (latency decrease) given a degradation budget constraint (allowable level of generation quality loss). This approach is different from time- and resource-consuming uniform layer quantization methods that are used in the literature (like GPTQ or AWQ) or allocation methods without proven performance-accelerating effect (like MixLLM or TorchAO). The layer sensitivity profile resulting from our prior work SA-PTQ is applied using the activation pass-through mode inside TensorRT-LLM. For each layer precision is determined individually in blocks, according to a grouping introduced in the prior step (5+5, 10+10, all26), differentiating the contribution of FFN, Attention, and lm_head to the overall speedup. The clock speed was measured for 13 W8A8 variants on an RTX 5090. We find that for FFN and lm_head the time cost of quantization/dequantization is compensated for by the use of integer arithmetic, while for short context lengths, the opposite holds true for Attention: an additional step of quantization slows execution down. We propose a manual implementation of SmoothQuant for TensorRT-LLM which was necessary due to export failures, unavailable for lm_head. The best solution found under joint consideration of all three criteria with minimal degradation was FFN 5+5 with lm_head, providing an 11.0% reduction in latency with negligible quality loss (98.90% Top-1 agreement, +0.85% perplexity degradation). With acceptable quality loss for FFN all26 + lm_head, a speedup up to 19.1% was found possible. We suggest further optimizations: fused attention kernels in INT8, KV-cache quantization, using FP8 instead of INT8 and partial Attention quantization analogous to FFN.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

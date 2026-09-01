@@ -1,0 +1,57 @@
+{
+  "date": "20260831",
+  "date_label": "",
+  "generated_at": "2026-09-01 00:44:12 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2608.28113v1",
+      "route": "202608/31/2608.28113v1-h-scale-hessian-guided-scale-refinement-for-nvfp4-sub-byte-llm-inference",
+      "title": "H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向亚字节NVFP4 LLM权重的海森引导缩放因子精细化后训练量化",
+      "first_seen_at": "2026-09-01 00:44:12 UTC",
+      "updated_at": "2026-09-01 00:44:12 UTC"
+    },
+    {
+      "paper_id": "2608.24469v1",
+      "route": "202608/31/2608.24469v1-low-rank-ternary-adaptation-for-fine-tuning-transformers",
+      "title": "Low-Rank Ternary Adaptation for Fine-Tuning Transformers",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向低比特Transformer的三值权重适配",
+      "first_seen_at": "2026-09-01 00:44:12 UTC",
+      "updated_at": "2026-09-01 00:44:12 UTC"
+    },
+    {
+      "paper_id": "2608.28003v1",
+      "route": "202608/31/2608.28003v1-a-method-for-layer-bit-width-allocation-in-llm-quantization-via-performance-maximization-under-a-quality-degradation-constraint",
+      "title": "A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "质量退化约束下的大模型训练后量化层位宽分配",
+      "first_seen_at": "2026-09-01 00:44:12 UTC",
+      "updated_at": "2026-09-01 00:44:12 UTC"
+    }
+  ]
+}

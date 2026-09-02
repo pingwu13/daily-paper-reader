@@ -1,0 +1,105 @@
+{
+  "date": "20260902",
+  "date_label": "",
+  "generated_at": "2026-09-02 23:02:44 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.00224v1",
+      "route": "202609/02/2609.00224v1-qtea-ternary-llms-with-sparse-residual-salient-weight-and-by-column-optimization",
+      "title": "QTEA: Ternary LLMs with Sparse Residual Salient Weight and By-Column Optimization",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "面向LLM权重的亚2比特三值后训练量化，结合稀疏残差显著权重与逐列优化保留精度",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    },
+    {
+      "paper_id": "2608.28809v1",
+      "route": "202609/02/2608.28809v1-capability-stratified-degradation-in-ternary-language-models",
+      "title": "Capability-Stratified Degradation in Ternary Language Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "三值语言模型约1.58比特权重并经QAT训练，直接面向极端低比特LLM权重量化",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    },
+    {
+      "paper_id": "2609.00049v1",
+      "route": "202609/02/2609.00049v1-real-q-e2e-llm-quantization-via-dynamic-gradient-descent",
+      "title": "REAL-Q: E2E LLM Quantization via Dynamic Gradient Descent",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "面向大语言模型的端到端对齐后训练量化，用动态梯度下降支持低比特权重压缩并保精度",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    },
+    {
+      "paper_id": "2609.01587v1",
+      "route": "202609/02/2609.01587v1-the-structure-of-quantization-damage-in-llms-why-the-next-bit-should-be-spent-globally",
+      "title": "The Structure of Quantization Damage in LLMs: Why the Next Bit Should Be Spent Globally",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "直接研究LLM后训练量化损伤定位与全局比特分配，以恢复量化精度",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    },
+    {
+      "paper_id": "2608.30908v1",
+      "route": "202609/02/2608.30908v1-fine-tuning-low-bit-models-with-gradient-in-quantized-code-space",
+      "title": "Fine-Tuning Low-Bit Models with Gradient in Quantized Code Space",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "在量化码空间上用码代理梯度与引导搜索优化低比特模型权重，类似对量化LLM的码本化精调",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    },
+    {
+      "paper_id": "2609.00450v1",
+      "route": "202609/02/2609.00450v1-hbq-hierarchical-scaling-block-quantization-with-hardware-efficiency-aware-design-for-accurate-llm-inference",
+      "title": "HBQ: Hierarchical Scaling Block Quantization with Hardware-Efficiency-Aware Design for Accurate LLM Inference",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "对LLM低精度块量化进行设计空间探索与硬件基准，权衡块大小与精度，服务高效端到端推理",
+      "first_seen_at": "2026-09-02 23:02:44 UTC",
+      "updated_at": "2026-09-02 23:02:44 UTC"
+    }
+  ]
+}

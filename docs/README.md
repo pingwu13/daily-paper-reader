@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-08-31</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-02</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 3 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 6 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>3</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>3</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-01 00:44:12 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-02 23:02:44 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日聚焦大模型量化与微调，精读1篇、速读2篇，共3篇论文。最值得关注的是《H-Scale》中的Hessian引导缩放优化，可提升NVFP4亚字节推理精度；低秩三元适应也为高效微调提供了轻量思路。建议普通读者优先关注量化与微调结合的实际部署方案，从H-Scale入手验证效果。</p>
+<p>今日聚焦低比特量化与三元语言模型，精读2篇、速读3篇。</p>
+<p>三元模型通过稀疏残差显著权重与按列优化展现关键进展，能力分层退化揭示性能损失本质；量化损伤结构提示全局分配比特比局部更优。</p>
+<p>建议普通读者优先关注三元量化与全局比特分配方向，可快速把握高效推理的核心趋势。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -71,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">1 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference">H-Scale: Hessian-Guided Scale Refinement for NVFP4 Sub-Byte LLM Inference</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="QTEA: Ternary LLMs with Sparse Residual Salient Weight and By-Column Optimization">QTEA: Ternary LLMs with Sparse Residual Salient Weight and By-Column Optimization</span></li><li><span class="dpr-home-dashboard-paper-title" title="Capability-Stratified Degradation in Ternary Language Models">Capability-Stratified Degradation in Ternary Language Models</span></li><li><span class="dpr-home-dashboard-paper-title" title="REAL-Q: E2E LLM Quantization via Dynamic Gradient Descent">REAL-Q: E2E LLM Quantization via Dynamic Gradient Descent</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>3</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -84,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">3 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Low-Rank Ternary Adaptation for Fine-Tuning Transformers">Low-Rank Ternary Adaptation for Fine-Tuning Transformers</span></li><li><span class="dpr-home-dashboard-paper-title" title="A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint">A Method for Layer Bit-Width Allocation in LLM Quantization via Performance Maximization Under a Quality-Degradation Constraint</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="The Structure of Quantization Damage in LLMs: Why the Next Bit Should Be Spent Globally">The Structure of Quantization Damage in LLMs: Why the Next Bit Should Be Spent Globally</span></li><li><span class="dpr-home-dashboard-paper-title" title="Fine-Tuning Low-Bit Models with Gradient in Quantized Code Space">Fine-Tuning Low-Bit Models with Gradient in Quantized Code Space</span></li><li><span class="dpr-home-dashboard-paper-title" title="HBQ: Hierarchical Scaling Block Quantization with Hardware-Efficiency-Aware Design for Accurate LLM Inference">HBQ: Hierarchical Scaling Block Quantization with Hardware-Efficiency-Aware Design for Accurate LLM Inference</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>3</strong></span></div>
 </section>
 </div>
 

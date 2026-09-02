@@ -1,0 +1,271 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-02T22:57:41.947835+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 3,
+    "deep_cap": 7,
+    "deep_selected": 3,
+    "quick_candidates": 3,
+    "quick_skim_target": 12,
+    "quick_selected": 3
+  },
+  "deep_dive": [
+    {
+      "id": "2609.00224v1",
+      "source": "arxiv",
+      "title": "QTEA: Ternary LLMs with Sparse Residual Salient Weight and By-Column Optimization",
+      "abstract": "Weight-only post-training quantization (PTQ) can alleviate the computational burden of serving large language models (LLMs) at scale. However, existing PTQ methods often fail to generalize across models and suffer severe accuracy loss below 2 bits. Many leverage unstructured sparsity to mitigate this loss, but at the cost of regularity and GPU-friendly execution. We present QTEA, a sub-2-bit PTQ framework that quantizes weights into ternary values and uses salient weights as residual error compensators. To maintain hardware efficiency, residuals are assigned to selected columns with semi-structured \\(1{:}4\\) sparsity within the salient columns. We further add column-wise rescale refinement to GPTQ-style column-by-column quantization, alternately updating per-column scales and ternary assignments to reduce reconstruction error. We also identify order-dependent error propagation in GPTQ and introduce error decay to attenuate late-stage error accumulation. On Qwen3-14B, QTEA compresses all weights to an effective 1.7 bits per weight while improving average accuracy over the strongest ternary PTQ baseline by 16.7\\%. It also achieves 1.40\\(\\times\\) and 2.61\\(\\times\\) lower perplexity on WikiText and C4 respectively. This trend holds on Llama3-8B, where QTEA obtains a 6.6\\% accuracy gain and 1.34\\(\\times\\)/1.95\\(\\times\\) lower perplexity on the same datasets. Finally, we develop a lookup-table based kernel that achieves 7.2\\(\\times\\) faster per-token generation over an FP16 baseline. Code is available at https://github.com/Intelligent-Microsystems-Lab/QTEA.",
+      "authors": [
+        "Yipin Guo",
+        "Arun M George",
+        "Jie Fu",
+        "Tareq Mahmoud",
+        "Sixue Xing",
+        "Siddharth Joshi"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-31T18:33:36+00:00",
+      "link": "https://arxiv.org/pdf/2609.00224v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Sub-2-bit ternary post-training quantization of LLM weights with sparse residual salient weights and by-column optimization",
+      "llm_evidence_cn": "面向LLM权重的亚2比特三值后训练量化，结合稀疏残差显著权重与逐列优化保留精度",
+      "llm_evidence": "面向LLM权重的亚2比特三值后训练量化，结合稀疏残差显著权重与逐列优化保留精度",
+      "canonical_evidence": "面向LLM权重的亚2比特三值后训练量化，结合稀疏残差显著权重与逐列优化保留精度",
+      "llm_tldr_en": "QTEA ternarizes LLM weights below 2 bits and uses 1:4 semi-structured sparse salient residuals as error compensation plus by-column refinement, preserving accuracy and GPU-friendly deployment.",
+      "llm_tldr_cn": "现有PTQ在低于2比特时精度明显下降，很多方法引入非结构化稀疏却损害GPU执行规则性。QTEA将LLM权重量化为三值，用显著列上的1:4半结构化稀疏残差作为误差补偿，从而兼顾精度与硬件效率；进一步加入逐列重缩放细化，改进GPTQ式逐列量化。实验表明QTEA在多种模型上优于其他亚2比特PTQ方案，为极低比特大模型部署提供了规则且GPU友好的后训练量化路线。",
+      "llm_tldr": "现有PTQ在低于2比特时精度明显下降，很多方法引入非结构化稀疏却损害GPU执行规则性。QTEA将LLM权重量化为三值，用显著列上的1:4半结构化稀疏残差作为误差补偿，从而兼顾精度与硬件效率；进一步加入逐列重缩放细化，改进GPTQ式逐列量化。实验表明QTEA在多种模型上优于其他亚2比特PTQ方案，为极低比特大模型部署提供了规则且GPU友好的后训练量化路线。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2608.28809v1",
+      "source": "arxiv",
+      "title": "Capability-Stratified Degradation in Ternary Language Models",
+      "abstract": "Extreme low-bit inference offers a route toward smaller models and constrained deployment. Ternary language models restrict weights to $\\{-1,0,+1\\}$, approaching the limit of $\\log_2 3 \\approx 1.585$ bits/weight. The practical question for a pretrained model is not simply whether weights can be quantised but which capabilities survive and whether it remains useful for adaptation. We explore this by converting Qwen3.5-0.8B (752M parameters) to ternary weights using 72.4M tokens of quantisation-aware training (QAT). The resulting model, Cloe, is evaluated across 29 benchmarks, representation diagnostics, and downstream fine-tuning. The evidence shows non-uniform degradation. A linear probe recovers 43.76% of MMLU answers from the full-precision teacher's representations but only 26.19% from Cloe (near chance), indicating specialist factual information is lost. However, Cloe retains measurable performance on ten tasks, averaging 77.1% of teacher performance. Crucially, fine-tuning raises Cloe to 89.8% on SST-2 (95.6% of the matched teacher) and reaches 79.4% teacher retention on XSum. We attribute degradation to a combination of quantisation-induced information loss and incomplete recovery due to the limited QAT budget. We also highlight an evaluation pitfall: standard answer-letter scoring failed (Cloe emitted \"A\" on 98.6% of MMLU questions), necessitating continuation scoring. Ultimately, ternary conversion is unsuitable as a drop-in general replacement yet remains valuable as a compact substrate for task-specific models.",
+      "authors": [
+        "Anirudh Malik",
+        "M Sparsh Mehra",
+        "Poojith Devan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-08-28T19:22:38+00:00",
+      "link": "https://arxiv.org/pdf/2608.28809v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "ternary language model with 1.585-bit weights via QAT, directly addressing extreme low-bit LLM weight quantization",
+      "llm_evidence_cn": "三值语言模型约1.58比特权重并经QAT训练，直接面向极端低比特LLM权重量化",
+      "llm_evidence": "三值语言模型约1.58比特权重并经QAT训练，直接面向极端低比特LLM权重量化",
+      "canonical_evidence": "三值语言模型约1.58比特权重并经QAT训练，直接面向极端低比特LLM权重量化",
+      "llm_tldr_en": "Converts a 752M-parameter LLM to ternary (1.58-bit) weights by QAT, then measures non-uniform capability degradation across 29 benchmarks, probes, and downstream fine-tuning.",
+      "llm_tldr_cn": "该工作关注极端低比特推理中三值语言模型的能力退化问题。作者将 Qwen3.5-0.8B 的权重约束为 {-1,0,+1}（约1.58比特），并用 72.4M tokens 进行量化感知训练得到模型 Cloe。在29个基准、表征诊断与下游微调上的评估表明，退化并非均匀，线性探针可从全精度教师表示中恢复部分 MMLU 能力。该研究为 1.58 比特 LLM 的实际部署与后续适应提供了经验依据。",
+      "llm_tldr": "该工作关注极端低比特推理中三值语言模型的能力退化问题。作者将 Qwen3.5-0.8B 的权重约束为 {-1,0,+1}（约1.58比特），并用 72.4M tokens 进行量化感知训练得到模型 Cloe。在29个基准、表征诊断与下游微调上的评估表明，退化并非均匀，线性探针可从全精度教师表示中恢复部分 MMLU 能力。该研究为 1.58 比特 LLM 的实际部署与后续适应提供了经验依据。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.00049v1",
+      "source": "arxiv",
+      "title": "REAL-Q: E2E LLM Quantization via Dynamic Gradient Descent",
+      "abstract": "Post-training quantization (PTQ) is essential for deploying large language models (LLMs) under strict resource constraints. State-of-the-art PTQ methods quantize each layer with a single closed-form second-order solver: to remain analytically tractable, they heavily approximate the global loss (dropping cross-channel coupling, pooling output rows into groups), and they then freeze the resulting Hessian across the entire layer, with no way to refresh it as the loss landscape shifts column by column--a phenomenon we call information misalignment. We propose REAL-Q (Real-time E2E-loss Aligned LLM Quantization), a novel PTQ paradigm that breaks this compromise: instead of diluting the objective for the sake of analytic tractability, REAL-Q targets an end-to-end-aligned surrogate of the global loss and refines it via fine-grained, dynamic Block-wise Gradient Descent applied after every column block (128 columns). By coupling this fine-grained correction with a sliding window mechanism for smooth cross-layer transitions, REAL-Q effectively mitigates error propagation across the network. On LLaMA-3.1 (8B and 70B) and Qwen3 (0.6B-32B) at W4A16, REAL-Q reduces end-to-end KL divergence by up to ~49% relative to state-of-the-art globally-guided methods.",
+      "authors": [
+        "Qian Zhang",
+        "Yaoming Li",
+        "Zhewen Tan",
+        "Yanshu Wang",
+        "Heng Lu",
+        "Kun Su",
+        "Zongwei Lv",
+        "Wenhan Yu",
+        "Yongge Ma",
+        "Yinjun Han",
+        "Ruikuang Liu",
+        "Tong Yang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-30T06:30:31+00:00",
+      "link": "https://arxiv.org/pdf/2609.00049v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "LLM post-training quantization with E2E loss alignment and dynamic gradient descent to preserve accuracy in low-bit weight compression",
+      "llm_evidence_cn": "面向大语言模型的端到端对齐后训练量化，用动态梯度下降支持低比特权重压缩并保精度",
+      "llm_evidence": "面向大语言模型的端到端对齐后训练量化，用动态梯度下降支持低比特权重压缩并保精度",
+      "canonical_evidence": "面向大语言模型的端到端对齐后训练量化，用动态梯度下降支持低比特权重压缩并保精度",
+      "llm_tldr_en": "REAL-Q is an E2E-loss aligned post-training quantization paradigm for LLMs that uses dynamic gradient descent to refresh Hessian information and minimize global loss, supporting accurate extreme low-bit weight quantization and efficient deployment.",
+      "llm_tldr_cn": "REAL-Q针对现有LLM后训练量化因近似全局损失并冻结Hessian而精度受限的问题，提出以动态梯度下降实时更新端到端对齐目标的量化框架。相比单次闭环二阶求解器，它能在逐列量化过程中持续校准损失景观，减少信息错位，从而降低低比特量化下的性能损失。实验显示REAL-Q相较现有PTQ方案能更好地保持大模型在低比特甚至极低比特权重量化后的困惑度与下游精度，为资源受限环境部署提供有效方法。",
+      "llm_tldr": "REAL-Q针对现有LLM后训练量化因近似全局损失并冻结Hessian而精度受限的问题，提出以动态梯度下降实时更新端到端对齐目标的量化框架。相比单次闭环二阶求解器，它能在逐列量化过程中持续校准损失景观，减少信息错位，从而降低低比特量化下的性能损失。实验显示REAL-Q相较现有PTQ方案能更好地保持大模型在低比特甚至极低比特权重量化后的困惑度与下游精度，为资源受限环境部署提供有效方法。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.01587v1",
+      "source": "arxiv",
+      "title": "The Structure of Quantization Damage in LLMs: Why the Next Bit Should Be Spent Globally",
+      "abstract": "Post-training quantization (PTQ) is widely used to reduce the cost of serving large language models (LLMs), but its accuracy cost is uneven and is often tuned per model. We study where quantization damage occurs and how to allocate a small additional precision budget. Using causal mixed-precision intervention as ground truth (raise each layer to 8-bit in turn and measure the accuracy it recovers) across 9 open-weight models in 4 architecture families, we test 3 intuitive hypotheses: that quantization damage lives in task circuits, where the model computes, or in weight statistics. None of them predicts which layers benefit from restored precision. Recovery is instead diffuse: for 8 of 9 models, recovering 75% of the gap takes roughly half the layers; the lone exception, Qwen3-8B, is sharply concentrated. At a matched precision budget, spending it globally on finer quantization granularity beats locally repairing the most recoverable layers for all 8 group-128-compatible models (all but OpenLLaMA, whose width rules out group-128), by 21-52 points, including the concentrated Qwen3-8B. We report 2 secondary findings: the residual is budget-limited (8-bit is near-lossless in our evaluation across RTN, GPTQ, and AWQ), and the location of peak recovery correlates with architecture within a family, though not across families. Within this budget setting, global granularity is a better default than selectively protecting critical layers. More broadly, cheap signals that correlate with quantization damage do not necessarily identify where restoring precision improves accuracy; this must be tested with causal intervention.",
+      "authors": [
+        "Jundong Hu",
+        "Shekar Ramachandran"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-09-01T17:53:41+00:00",
+      "link": "https://arxiv.org/pdf/2609.01587v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "directly studies where quantization damage occurs in LLM PTQ and how to allocate precision budget globally to preserve accuracy",
+      "llm_evidence_cn": "直接研究LLM后训练量化损伤定位与全局比特分配，以恢复量化精度",
+      "llm_evidence": "直接研究LLM后训练量化损伤定位与全局比特分配，以恢复量化精度",
+      "canonical_evidence": "直接研究LLM后训练量化损伤定位与全局比特分配，以恢复量化精度",
+      "llm_tldr_en": "Uses causal mixed-precision interventions across 9 open-weight LLMs to show intuitive hypotheses fail; quantization damage recovery is diffuse, so extra precision bits should be spent globally rather than per-layer.",
+      "llm_tldr_cn": "后训练量化在LLM上的精度损伤分布不直观，且常被逐层单独调优。论文以因果混合精度干预为基准，在9个开源模型4种架构上将各层依次提为8比特，检验损伤集中在任务回路、计算位置或权值统计等假设，发现它们都不能预测恢复收益。量化损伤的恢复呈弥散分布，多数模型要恢复75%的精度差距需要同时提高许多层的精度。因此下一个精度比特应当全局分配，这对极度低比特量化、混合精度部署与量化后校正具有重要意义。",
+      "llm_tldr": "后训练量化在LLM上的精度损伤分布不直观，且常被逐层单独调优。论文以因果混合精度干预为基准，在9个开源模型4种架构上将各层依次提为8比特，检验损伤集中在任务回路、计算位置或权值统计等假设，发现它们都不能预测恢复收益。量化损伤的恢复呈弥散分布，多数模型要恢复75%的精度差距需要同时提高许多层的精度。因此下一个精度比特应当全局分配，这对极度低比特量化、混合精度部署与量化后校正具有重要意义。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.30908v1",
+      "source": "arxiv",
+      "title": "Fine-Tuning Low-Bit Models with Gradient in Quantized Code Space",
+      "abstract": "Fine-tuning Low-bit models aims to adapt a quantized model while keeping the final deployed checkpoint in the same low-bit form. This setting is practically important as it reduces memory and inference cost for storage and deployment. Under this constraint, adaptation becomes an optimization problem over quantization codes and scales. Existing continuous low-bit training is efficient, but it can be distorted by straight through estimation error or by post-quantize gap; discrete search is deployment-faithful, but it is often too inefficient under a finite training budget. We propose code surrogate gradient as the first order signal in deployable code space to acceleate optimization, and performing guided search to preserve deployment faithfulness. Experiments across arithmetic reasoning, instruction following, and structured language understanding show that GradCodes consistently improves fine-tuning low-bit models across different quantization datatypes. Code is provided at https://github.com/ovo67/GradCodes.",
+      "authors": [
+        "Shiguang Wu",
+        "Zhouchen Lin",
+        "Quanming Yao"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-31T14:54:30+00:00",
+      "link": "https://arxiv.org/pdf/2608.30908v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Optimizes low-bit model weights over quantization code space with surrogate gradients and guided search, enabling codebook-like refinement of quantized LLMs",
+      "llm_evidence_cn": "在量化码空间上用码代理梯度与引导搜索优化低比特模型权重，类似对量化LLM的码本化精调",
+      "llm_evidence": "在量化码空间上用码代理梯度与引导搜索优化低比特模型权重，类似对量化LLM的码本化精调",
+      "canonical_evidence": "在量化码空间上用码代理梯度与引导搜索优化低比特模型权重，类似对量化LLM的码本化精调",
+      "llm_tldr_en": "Proposes code surrogate gradients and guided search to efficiently fine-tune low-bit models while keeping the final checkpoint in quantized code space, preserving deployment faithfulness.",
+      "llm_tldr_cn": "在低比特模型微调场景中，连续低比特训练虽高效但受直通估计误差和后量化差距影响，离散搜索又过于耗时。论文把微调建模为对量化码和尺度的优化，提出码代理梯度作为一阶信号加速搜索，配合引导搜索确保最终部署仍保持低比特形式。实验显示该方法能在有限训练预算下兼顾优化速度与部署保真度。它为低比特大模型的端侧自适应提供了一种码空间可微调的新思路，也间接支持极低比特权重压缩后的性能恢复。",
+      "llm_tldr": "在低比特模型微调场景中，连续低比特训练虽高效但受直通估计误差和后量化差距影响，离散搜索又过于耗时。论文把微调建模为对量化码和尺度的优化，提出码代理梯度作为一阶信号加速搜索，配合引导搜索确保最终部署仍保持低比特形式。实验显示该方法能在有限训练预算下兼顾优化速度与部署保真度。它为低比特大模型的端侧自适应提供了一种码空间可微调的新思路，也间接支持极低比特权重压缩后的性能恢复。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "learned codebook quantization for large language model weights",
+      "matched_requirement_id": "req-5",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.00450v1",
+      "source": "arxiv",
+      "title": "HBQ: Hierarchical Scaling Block Quantization with Hardware-Efficiency-Aware Design for Accurate LLM Inference",
+      "abstract": "Block Quantization (BQ) is a promising approach for efficient deployment of large language models (LLMs), enabling low-precision computation with controlled accuracy degradation. Compared to scalar weight-only quantization (WoQ), BQ quantizes both weight and activation, offering higher hardware efficiency and end-to-end inference on a unified datapath, but its design space, spanning bit-width, block size, scaling, and numeric formats, remains underexplored.   We provide hardware/benchmark results through design space exploration (DSE). We find that increasing block size improves hardware efficiency by amortizing dequantization and accumulation costs, but degrades accuracy. This trade-off limits conventional BQ methods.   Motivated by this insight, we propose Hierarchical Block Quantization (HBQ). Unlike prior methods [1], [2], which use small blocks and conventional Power-of-Two (PoT) or integer-based scaling, HBQ uses large blocks to maximize efficiency and introduces low-overhead significand (SIG) scaling for second-level quantization. By allocating quantization levels effectively and accounting for distinct activation and weight distributions, SIG scaling compensates for large-block errors more effectively than prior PoT and INT schemes. HBQ-A (accurate) achieves W4A16-level accuracy using only W4A5 while requiring less silicon area than NVFP4. HBQ-E (efficient) further reduces hardware cost by 17% while maintaining higher accuracy than all existing BQ methods.   We implemented a 28nm ASIC accelerator applying HBQ to weights, activations, and KV cache, and integrated a novel partial-sum BQ scheme to further reduce EMA energy.   Compared to state-of-the-art WoQ, HBQ delivers $2.3\\times$/$4.6\\times$ higher area/energy efficiency at the same accuracy level; $1.6$--$3.3\\times$ system energy reduction and $1.5$--$3.0\\times$ speedup over prior BQ methods while providing best accuracy.",
+      "authors": [
+        "Chun-Ting Chen",
+        "Dongmin Han",
+        "Hangyeol Mun",
+        "Jake Hyun",
+        "Arnab Raha",
+        "Amit Agarwal",
+        "Mark Anders",
+        "Mohamed Abdelfattah",
+        "Jae-sun Seo"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.AR"
+      ],
+      "published": "2026-08-31T22:39:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.00450v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Hardware-efficiency-aware block quantization for accurate LLM inference covering bit-width, block size, scaling, and numeric formats",
+      "llm_evidence_cn": "对LLM低精度块量化进行设计空间探索与硬件基准，权衡块大小与精度，服务高效端到端推理",
+      "llm_evidence": "对LLM低精度块量化进行设计空间探索与硬件基准，权衡块大小与精度，服务高效端到端推理",
+      "canonical_evidence": "对LLM低精度块量化进行设计空间探索与硬件基准，权衡块大小与精度，服务高效端到端推理",
+      "llm_tldr_en": "HBQ systematically explores the design space of block quantization for accurate LLM inference, revealing a hardware-efficiency/accuracy trade-off and proposing efficiency-aware scaling block quantization.",
+      "llm_tldr_cn": "在LLM低精度推理中，块量化相比标量权重量化能同时降低权重和激活精度并提供统一数据通路，但其位宽、块大小、缩放等设计空间尚未被充分探索。作者对相关设计维度进行硬件基准与设计空间探索，发现增大块大小虽然能摊薄反量化与累加成本从而提升硬件效率，却会带来精度下降。针对这一权衡，文章提出硬件效率感知的分层缩放块量化HBQ，为块量化在准确LLM端到端推理中的设计提供指南。该工作面向中低比特双重量化，而非2比特权重专用向量量化，但它对硬件耦合的量化器设计具有启发。",
+      "llm_tldr": "在LLM低精度推理中，块量化相比标量权重量化能同时降低权重和激活精度并提供统一数据通路，但其位宽、块大小、缩放等设计空间尚未被充分探索。作者对相关设计维度进行硬件基准与设计空间探索，发现增大块大小虽然能摊薄反量化与累加成本从而提升硬件效率，却会带来精度下降。针对这一权衡，文章提出硬件效率感知的分层缩放块量化HBQ，为块量化在准确LLM端到端推理中的设计提供指南。该工作面向中低比特双重量化，而非2比特权重专用向量量化，但它对硬件耦合的量化器设计具有启发。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

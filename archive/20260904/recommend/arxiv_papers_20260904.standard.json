@@ -1,0 +1,256 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-04T21:48:02.060452+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 2,
+    "deep_cap": 7,
+    "deep_selected": 2,
+    "quick_candidates": 4,
+    "quick_skim_target": 12,
+    "quick_selected": 4
+  },
+  "deep_dive": [
+    {
+      "id": "2609.01962v1",
+      "source": "arxiv",
+      "title": "Post-Training Ternarization of Qwen3-4B Capability, Effective Bit Budget, Storage Compression, and Deployment",
+      "abstract": "Ultra-low-bit language models can reduce storage and memory bandwidth, but a nominal \"1.58-bit\" label does not fully describe the stored representation, retained capability, or runtime behavior.   We study an end-to-end post-training conversion of Qwen, an instruction-tuned 4B-parameter model, using KOTMS rotation, E2M-ATQ ternarization, and GPTQ-style error compensation from TWLA. The experiment is weight-only: activations remain at 16-bit precision, so ILA-AMP is omitted. We evaluate effective bit accounting, task capability retention, perplexity, calibration sensitivity, checkpoint composition, and deployment behavior.   The final conversion uses 1.641 effective bits per weight for quantized linear weights, with 81.62% of model parameters targeted. Across ten scored capability comparisons, accuracy falls from 64.5% to 54.7%. Degradation is uneven: BoolQ retains 84.6% chance-corrected teacher performance, while ARC-Challenge retains 43.8%. Perplexity rises from 13.639 to 18.748 on WikiText-2, 24.700 to 31.992 on PTB, and 19.831 to 28.966 on C4.   A subsequent packing run preserves the ternary planes and scales, reducing reported model size from 8.29 GiB to 3.96 GiB with essentially unchanged perplexity. A separate third-party packing attempt was lossy and is excluded from the primary artifact claim. The packed artifact has not been benchmarked end-to-end for task accuracy or generation throughput. A preliminary Triton GEMV microbenchmark is 4.6x slower than FP16 cuBLAS on one tested shape. We therefore do not claim that compression alone yields faster inference.",
+      "authors": [
+        "Anirudh Malik",
+        "M Sparsh Mehra",
+        "Poojith Devan"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-09-02T00:42:54+00:00",
+      "link": "https://arxiv.org/pdf/2609.01962v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Post-training ternarization of Qwen3-4B to 1.641 effective bits per weight using rotation, E2M-ATQ additive ternary quantization, and GPTQ-style error compensation",
+      "llm_evidence_cn": "对Qwen3-4B做后训练三值化，结合KOTMS旋转、E2M-ATQ加性三值量化与GPTQ式误差补偿，权重约1.641有效比特",
+      "llm_evidence": "对Qwen3-4B做后训练三值化，结合KOTMS旋转、E2M-ATQ加性三值量化与GPTQ式误差补偿，权重约1.641有效比特",
+      "canonical_evidence": "对Qwen3-4B做后训练三值化，结合KOTMS旋转、E2M-ATQ加性三值量化与GPTQ式误差补偿，权重约1.641有效比特",
+      "llm_tldr_en": "Converts Qwen3-4B end-to-end to roughly 1.641 effective bits per weight with rotation and additive ternary quantization, and evaluates capability, perplexity, calibration, and deployment, highlighting effective bit accounting.",
+      "llm_tldr_cn": "名义上的1.58比特不能反映存储与能力。该工作基于KOTMS旋转、E2M-ATQ加性三值量化和GPTQ式误差补偿，对Qwen3-4B做端到端权重量化，线性层约1.641有效比特/权重。评估包括困惑度、任务保留、校准与部署行为。整体展示了极低比特LLM从量化到部署的完整流程，并强调有效比特核算。",
+      "llm_tldr": "名义上的1.58比特不能反映存储与能力。该工作基于KOTMS旋转、E2M-ATQ加性三值量化和GPTQ式误差补偿，对Qwen3-4B做端到端权重量化，线性层约1.641有效比特/权重。评估包括困惑度、任务保留、校准与部署行为。整体展示了极低比特LLM从量化到部署的完整流程，并强调有效比特核算。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.02652v1",
+      "source": "arxiv",
+      "title": "Unfolding the Leech Lattice: Fused Multi-Shell Decoding and VRAM Layouts for 2-Bit LLM Weights",
+      "abstract": "Leech-lattice vector quantization holds the strongest reported 2-bit quality under its own evaluation protocol. Its kernel decodes one shell; we found no implementation of the multi-shell decoder the rate requires. This paper supplies one and measures its serving cost for decode-phase GEMV at batch 1. First, a serving path for the full 301-class codebook: an offline expansion into GPU layouts and a fused dequantize-plus-matvec kernel reading them without warp divergence, verified against f64. Second, the in-VRAM rate is a design axis distinct from the on-disk rate. Four bit-exact layouts timed in one process show binary bit planes beating one-hot masks on size and speed at constant bandwidth (4.80 bits per weight, 2.15x FP16). Below 4.3 bits a second, irregular stream enters; at 3.6 the decode stops being shifts and masks. Third, deployed four-bit (AWQ) and two-bit (QTIP) GEMV kernels run in the same process. The trellis kernel reads 2.40x fewer bytes than our served layout and runs 2.27x faster at near-equal fractions of their byte bounds: the time gap tracks the traffic gap, the price of unfolding a codebook too large for a lookup table. Fourth, the validity envelope: the trellis kernel outruns our no-weights control, so our launch geometry sets that floor, and on a second memory hierarchy every lattice arm falls below FP16. With the output head held identical across arms, the kernel-and-format path gains 1.11x, 1.29x and 1.41x end to end at 4B, 8B and 14B; with an int8 output head the served 4B reaches 87.0 tok/s in 2.60 GB. The quality cost, 1.38x perplexity and 14.7 MMLU points at 4B, shrinks across the three sizes measured.",
+      "authors": [
+        "Pier-Jean Malandrino"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-02T14:26:06+00:00",
+      "link": "https://arxiv.org/pdf/2609.02652v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Leech lattice vector quantization for 2-bit LLM weights with fused multi-shell GPU kernels and VRAM layouts",
+      "llm_evidence_cn": "面向2比特LLM权重的Leech格矢量量化，融合多壳解码内核与显存布局",
+      "llm_evidence": "面向2比特LLM权重的Leech格矢量量化，融合多壳解码内核与显存布局",
+      "canonical_evidence": "面向2比特LLM权重的Leech格矢量量化，融合多壳解码内核与显存布局",
+      "llm_tldr_en": "Leech-lattice vector quantization holds top 2-bit LLM quality, yet lacks the required multi-shell decoder. This work supplies fused dequantize-plus-GEMV serving over the full 301-class codebook, with bit-exact VRAM layouts showing binary bit planes achieve 4.80 bits per weight at constant bandwidth.",
+      "llm_tldr_cn": "面向2比特大模型权重量化，现有Leech格码本只支持单壳解码，缺少速率所需的多壳解码服务路径。该文提出完整301类码本的部署方案，离线展开成GPU布局并用融合反量化矩阵乘内核读取，避免warp分叉。多个精确位级显存布局对比显示二进制位平面比独热掩码更小更快，在恒定带宽下达到每权重4.80比特，约为FP16的2.15倍。",
+      "llm_tldr": "面向2比特大模型权重量化，现有Leech格码本只支持单壳解码，缺少速率所需的多壳解码服务路径。该文提出完整301类码本的部署方案，离线展开成GPU布局并用融合反量化矩阵乘内核读取，避免warp分叉。多个精确位级显存布局对比显示二进制位平面比独热掩码更小更快，在恒定带宽下达到每权重4.80比特，约为FP16的2.15倍。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "2-bit weight quantization for large language models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.02107v1",
+      "source": "arxiv",
+      "title": "A Unified Rate-Distortion Perspective on Vector, Product, and Scalar Quantization",
+      "abstract": "Discrete visual tokenization, predominantly driven by vector, scalar, and product quantization, lacks a unified conceptual framework for understanding quantization tradeoffs. In this paper, we propose a unified rate--distortion perspective on modern discrete visual tokenization. By viewing quantization as lossy compression, we characterize the nominal fixed-length coding rate through token count and codebook size, and quantization error as the distortion. Within this framework, we resolve three central questions. First, we theoretically and empirically show that minimizing distortion, rather than maximizing codebook utilization, is the primary intrinsic objective for reconstruction fidelity, with a direct connection to the STE-induced gradient discrepancy. Second, we establish two critical fairness conditions for intrinsic quantization comparison: controlling latent feature statistics and enforcing identical coding rates. Third, under these conditions, we recover the VQ--PQ--SQ distortion hierarchy in modern visual tokenization and show empirically that modern VQ methods achieve the lowest distortion. This work provides a foundational rate--distortion reframing of modern discrete visual tokenization, resolves ambiguities in quantizer evaluation, and provides a controlled framework for isolating intrinsic quantization effectiveness under fixed-rate constraints.",
+      "authors": [
+        "Xianghong Fang",
+        "Wenlong Mou",
+        "Yuan Yuan",
+        "Dehan Kong",
+        "Tim G. J. Rudner"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CV"
+      ],
+      "published": "2026-09-02T04:50:51+00:00",
+      "link": "https://arxiv.org/pdf/2609.02107v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "unified rate-distortion theory for vector, product and scalar quantization, informative for LLM weight vector quantization design",
+      "llm_evidence_cn": "统一向量/乘积/标量量化的率失真理论，可指导LLM权重量化中的码本设计与误差折中",
+      "llm_evidence": "统一向量/乘积/标量量化的率失真理论，可指导LLM权重量化中的码本设计与误差折中",
+      "canonical_evidence": "统一向量/乘积/标量量化的率失真理论，可指导LLM权重量化中的码本设计与误差折中",
+      "llm_tldr_en": "Unified rate-distortion view of vector, product, and scalar quantization shows minimizing distortion, not codebook utilization, drives reconstruction fidelity, and clarifies STE gradient connection; useful for codebook-based compression.",
+      "llm_tldr_cn": "视觉标记化长期依赖向量、标量或乘积量化，但缺乏统一框架。本文提出统一率失真视角，将码本大小与token数视为编码速率，将量化误差视为失真，并证明重建保真的核心是降低失真而非提升码本利用率，还建立了与STE梯度的联系。该框架对设计低比特权重的码本压缩策略有直接启示。",
+      "llm_tldr": "视觉标记化长期依赖向量、标量或乘积量化，但缺乏统一框架。本文提出统一率失真视角，将码本大小与token数视为编码速率，将量化误差视为失真，并证明重建保真的核心是降低失真而非提升码本利用率，还建立了与STE梯度的联系。该框架对设计低比特权重的码本压缩策略有直接启示。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "vector quantization methods for compressing large language model weights",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.30076v2",
+      "source": "arxiv",
+      "title": "Budget-Aware Compression Pipeline for Single-GPU LLM Inference: Methods, Trade-offs, and Coupling Effects",
+      "abstract": "Single-GPU deployment of 70B-parameter language models on an NVIDIA GPU is constrained by device memory, long-context throughput, and engineering integration cost. We cast single-GPU inference as a budget-aware design problem over these three axes and study how pruning, quantization, and KV-cache compression interact under realistic execution. Controlled ablations show that layer-wise pruning makes weight quantization more robust. KV-cache sparsification complements INT8 KV quantization by reducing memory without hurting decoding speed, while static vector quantizers often conflict with dynamic caching. Guided by these coupling results and explicit budget tracking, we assembled a practical pipeline and compressed a 70B model to about 33 GB, sustained about 57 tokens/s on 10k token prompts on a single A40, and kept absolute accuracy within 5% on common and reasoning benchmarks. We contribute design rules and a reproducible evaluation protocol that jointly report quality, memory, and end-to-end speed, and we provide a foundation for automated pipeline search under realistic single-GPU constraints.",
+      "authors": [
+        "Hongyu Yu",
+        "Yifei Shen"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-08-30T22:54:40+00:00",
+      "link": "https://arxiv.org/pdf/2608.30076v2",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "single-GPU deployment pipeline studying quantization and vector quantizers for LLM inference",
+      "llm_evidence_cn": "面向单GPU大模型推理的压缩流水线，研究量化与向量量化器在部署中的耦合效应",
+      "llm_evidence": "面向单GPU大模型推理的压缩流水线，研究量化与向量量化器在部署中的耦合效应",
+      "canonical_evidence": "面向单GPU大模型推理的压缩流水线，研究量化与向量量化器在部署中的耦合效应",
+      "llm_tldr_en": "Presents a budget-aware compression pipeline for single-GPU 70B LLM inference, analyzing interactions of pruning, quantization, and KV-cache compression. Finds layer-wise pruning strengthens weight quantization while static vector quantizers conflict with dynamic caching; useful for deploying quantized LLMs but does not propose extreme low-bit codebooks.",
+      "llm_tldr_cn": "单GPU部署70B参数大模型受显存、长上下文吞吐及集成成本制约。本文将单GPU推理建模为预算感知设计问题，研究剪枝、量化与KV缓存压缩在真实执行下的相互作用。控制消融显示逐层剪枝使权重量化更可靠，KV缓存稀疏化与INT8量化互补，而静态向量量化器常与动态缓存冲突。该研究为部署低比特量化模型提供系统级耦合风险与流水线经验，而非提出新的极低比特码本方法。",
+      "llm_tldr": "单GPU部署70B参数大模型受显存、长上下文吞吐及集成成本制约。本文将单GPU推理建模为预算感知设计问题，研究剪枝、量化与KV缓存压缩在真实执行下的相互作用。控制消融显示逐层剪枝使权重量化更可靠，KV缓存稀疏化与INT8量化互补，而静态向量量化器常与动态缓存冲突。该研究为部署低比特量化模型提供系统级耦合风险与流水线经验，而非提出新的极低比特码本方法。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.02451v1",
+      "source": "arxiv",
+      "title": "Scalable Kronecker-Fisher Approximation: Efficient Hessian Analysis for Billion-Parameter Language Models Compression",
+      "abstract": "In this paper, we propose a scalable Kronecker-based approximation that captures cross-layer interactions without storing the entire Fisher matrix, enabling practical Hessian analysis for billion-parameter networks where full computation is infeasible. Our approach reveals consistent vulnerability patterns: value projection layers exhibit the highest sensitivity and strongest cross-layer correlations across multiple model families, while other components exhibit architecture-specific behaviors. Through extensive experiments on quantization, sparsification, inter-layer corruption, and post-corruption fine-tuning, we demonstrate that our approximation strongly correlates with both performance degradation and recovery. Our framework provides a practical, theoretically grounded tool for identifying fragile components in large models, opening new avenues for guided compression and optimization strategies, such as mixed-precision allocation, layer-wise sparsity, and adaptive low-rank decomposition across layers and even individual weight groups.",
+      "authors": [
+        "Viacheslav Yusupov",
+        "Daria Cherniuk",
+        "Evgeny Frolov"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI",
+        "cs.CL"
+      ],
+      "published": "2026-09-02T11:17:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.02451v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "scalable Kronecker-Fisher Hessian analysis for billion-parameter LLM quantization, enabling sensitivity-guided low-bit post-training quantization",
+      "llm_evidence_cn": "面向十亿参数LLM量化的可扩展Kronecker-Fisher Hessian分析，支持敏感度指导的低比特后训练量化",
+      "llm_evidence": "面向十亿参数LLM量化的可扩展Kronecker-Fisher Hessian分析，支持敏感度指导的低比特后训练量化",
+      "canonical_evidence": "面向十亿参数LLM量化的可扩展Kronecker-Fisher Hessian分析，支持敏感度指导的低比特后训练量化",
+      "llm_tldr_en": "Scalable Kronecker-Fisher approximation captures cross-layer interactions without storing full Fisher matrix; finds vulnerable value projection layers and correlates with quantization performance drops, guiding LLM compression.",
+      "llm_tldr_cn": "直接在十亿参数模型上估计Fisher矩阵不可行，本文用Kronecker近似捕获跨层交互，无需存储完整矩阵。基于该分析发现值投影层是敏感度最高且跨层相关的层，近似评分与量化/稀疏化后的性能下降显著相关。工作为低位LLM压缩中的层敏感度分析和量化策略设计提供了可扩展工具。",
+      "llm_tldr": "直接在十亿参数模型上估计Fisher矩阵不可行，本文用Kronecker近似捕获跨层交互，无需存储完整矩阵。基于该分析发现值投影层是敏感度最高且跨层相关的层，近似评分与量化/稀疏化后的性能下降显著相关。工作为低位LLM压缩中的层敏感度分析和量化策略设计提供了可扩展工具。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.30384v1",
+      "source": "arxiv",
+      "title": "RSLM: Training-Free Vector Quantization for Approximate Nearest Neighbor Search",
+      "abstract": "By introducing RSLM (Rotated Scaled Lloyd-Max), a family of training-free vector quantization codecs compressing embeddings to 1--4 bits per dimension, we reduce memory cost and memory bandwidth of a typical large-scale Approximate Nearest Neighbor (ANN) search system, while reducing its complexity and keeping or improving recall across multiple benchmark datasets. State-of-the-art systems filter candidates using coarse partitions, approximately score them to narrow the set, and then rescore the best with higher precision representations (often >=8 bits per dimension). Our relativized codecs can bring this down to 2--4 bits per dimension.   We use the properties of the ANN system to encode residual vectors instead of full vectors, both for the approximate scoring phase and the rescoring phase. Since Maximum Inner Product Search (MIPS) is very sensitive to vector norms, we correct the $L_2$ norms of quantized vectors. Our major innovation is that we correct the $L_2$ norm of the final reconstructed vector rather than just the residual. Our rescaling replaces more complicated schemes, such as Anisotropic loss. The residualization scheme gives us a more favorable quality vs size trade-off than generic quantization methods.   Our high-performance implementation leverages a block-wise cascaded Fast Walsh-Hadamard Transform (FWHT) with linear-like complexity, AVX SIMD-optimized codebooks, and a steganographic encoding of scaling factors for perfect cache-line alignment.",
+      "authors": [
+        "Rastislav Lenhardt",
+        "Teodora Dobos",
+        "Thomas Vecchiato",
+        "Jiri Isa",
+        "Igor Ginzburg"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.IR"
+      ],
+      "published": "2026-08-31T07:40:57+00:00",
+      "link": "https://arxiv.org/pdf/2608.30384v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Training-free rotated scaled Lloyd-Max vector quantizers compress vectors to 1-4 bits per dimension; possible methodological bridge for low-bit LLM weight codebooks.",
+      "llm_evidence_cn": "免训练旋转缩放Lloyd-Max向量量化器将向量压至每维1-4比特，可为LLM权重低比特码本提供方法借鉴。",
+      "llm_evidence": "免训练旋转缩放Lloyd-Max向量量化器将向量压至每维1-4比特，可为LLM权重低比特码本提供方法借鉴。",
+      "canonical_evidence": "免训练旋转缩放Lloyd-Max向量量化器将向量压至每维1-4比特，可为LLM权重低比特码本提供方法借鉴。",
+      "llm_tldr_en": "RSLM builds training-free rotated scaled Lloyd-Max vector quantization codecs compressing residual vectors to 1-4 bits per dimension for ANN search, reducing memory and bandwidth while preserving recall; the low-bit VQ machinery is a transferable bridge for LLM weight compression.",
+      "llm_tldr_cn": "近似最近邻搜索中，粗排与精排通常需要高比特表示，内存和带宽开销大。RSLM提出旋转缩放Lloyd-Max的免训练向量量化编码器，结合残差编码将向量压至每维1-4比特，在多个基准上保持或提升召回率并降低内存带宽。该方法面向嵌入向量而非LLM权重，但其低比特码本与残差量化机制可为大模型极低比特向量量化提供方法借鉴。",
+      "llm_tldr": "近似最近邻搜索中，粗排与精排通常需要高比特表示，内存和带宽开销大。RSLM提出旋转缩放Lloyd-Max的免训练向量量化编码器，结合残差编码将向量压至每维1-4比特，在多个基准上保持或提升召回率并降低内存带宽。该方法面向嵌入向量而非LLM权重，但其低比特码本与残差量化机制可为大模型极低比特向量量化提供方法借鉴。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "vector quantization methods for compressing large language model weights",
+      "matched_requirement_id": "req-3",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,105 @@
+{
+  "date": "20260904",
+  "date_label": "",
+  "generated_at": "2026-09-04 21:53:23 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.01962v1",
+      "route": "202609/04/2609.01962v1-post-training-ternarization-of-qwen3-4b-capability-effective-bit-budget-storage-compression-and-deployment",
+      "title": "Post-Training Ternarization of Qwen3-4B Capability, Effective Bit Budget, Storage Compression, and Deployment",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "对Qwen3-4B做后训练三值化，结合KOTMS旋转、E2M-ATQ加性三值量化与GPTQ式误差补偿，权重约1.641有效比特",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    },
+    {
+      "paper_id": "2609.02652v1",
+      "route": "202609/04/2609.02652v1-unfolding-the-leech-lattice-fused-multi-shell-decoding-and-vram-layouts-for-2-bit-llm-weights",
+      "title": "Unfolding the Leech Lattice: Fused Multi-Shell Decoding and VRAM Layouts for 2-Bit LLM Weights",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "面向2比特LLM权重的Leech格矢量量化，融合多壳解码内核与显存布局",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    },
+    {
+      "paper_id": "2609.02107v1",
+      "route": "202609/04/2609.02107v1-a-unified-rate-distortion-perspective-on-vector-product-and-scalar-quantization",
+      "title": "A Unified Rate-Distortion Perspective on Vector, Product, and Scalar Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "统一向量/乘积/标量量化的率失真理论，可指导LLM权重量化中的码本设计与误差折中",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    },
+    {
+      "paper_id": "2609.02451v1",
+      "route": "202609/04/2609.02451v1-scalable-kronecker-fisher-approximation-efficient-hessian-analysis-for-billion-parameter-language-models-compression",
+      "title": "Scalable Kronecker-Fisher Approximation: Efficient Hessian Analysis for Billion-Parameter Language Models Compression",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "面向十亿参数LLM量化的可扩展Kronecker-Fisher Hessian分析，支持敏感度指导的低比特后训练量化",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    },
+    {
+      "paper_id": "2608.30076v2",
+      "route": "202609/04/2608.30076v2-budget-aware-compression-pipeline-for-single-gpu-llm-inference-methods-trade-offs-and-coupling-effects",
+      "title": "Budget-Aware Compression Pipeline for Single-GPU LLM Inference: Methods, Trade-offs, and Coupling Effects",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向单GPU大模型推理的压缩流水线，研究量化与向量量化器在部署中的耦合效应",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    },
+    {
+      "paper_id": "2608.30384v1",
+      "route": "202609/04/2608.30384v1-rslm-training-free-vector-quantization-for-approximate-nearest-neighbor-search",
+      "title": "RSLM: Training-Free Vector Quantization for Approximate Nearest Neighbor Search",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "免训练旋转缩放Lloyd-Max向量量化器将向量压至每维1-4比特，可为LLM权重低比特码本提供方法借鉴。",
+      "first_seen_at": "2026-09-04 21:53:23 UTC",
+      "updated_at": "2026-09-04 21:53:23 UTC"
+    }
+  ]
+}

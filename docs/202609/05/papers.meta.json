@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-05",
+  "date": "2026-09-05",
+  "generated_at": "2026-09-05T22:23:07",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/05/2609.00066v1-ocgquant-outlier-companion-grouping-for-nvfp4-quantization",
+      "section": "quick",
+      "title_en": "OCGQuant: Outlier-Companion Grouping for NVFP4 Quantization",
+      "authors": "Yishan Yao, Binjun Li, Hanling Yi, Pengyu Li, Xiaoqing Liu, Zihan Yang, Xiaotian Yu, Zhiwen Yu",
+      "date": "2026-08-30",
+      "pdf": "https://arxiv.org/pdf/2609.00066v1",
+      "score": "6.0",
+      "evidence": "面向NVFP4低比特后训练量化，通过离群伴生通道分组降低块尺度带来的连带误差",
+      "tldr": "面向NVFP4的低比特推理中，激活离群值常在量化块内主导缩放因子，使同块其余激活的量化误差增大。OCGQuant将这种可削减误差定义为连带量化误差，并通过离群-陪伴分组，自适应地将离群通道与低幅值通道配对以优化块构成。在Llama3和Qwen3实验上，其困惑度均最低、下游准确率平均最高，预填加速仍与RTN相当且峰值内存持平。该方法无需额外计算，为NVFP4后训练量化提供了精准且高效的解决方案。",
+      "tags": "query:elblq",
+      "abstract_en": "NVFP4 is an efficient microscaling format for low-bit inference, but activation outliers can still degrade quantization accuracy within NVFP4 blocks. Within each quantization block, large activations can dominate the block scale, increasing the quantization error of the remaining values sharing the same scale. Existing post-training quantization (PTQ) methods mitigate outlier errors through strategies such as mixed precision, rotation, or residual compensation, but these approaches are either not specifically tailored to NVFP4 or introduce additional computation. In this work, we revisit NVFP4 from a channel-grouping perspective and define the reducible error incurred by remaining block values under the scale set by the block maximum as Collateral Quantization Error. Based on this insight, we propose OCGQuant, a post-training quantization method centered on Outlier-Companion Grouping (OCG), which adaptively pairs outlier channels with low-magnitude companion channels to improve NVFP4 activation block composition. Experiments on Llama3 and Qwen3 show that OCGQuant achieves the lowest WikiText-2 perplexity and highest average downstream accuracy among evaluated PTQ methods, while maintaining prefill speedup close to RTN and matching its peak decoding memory. Code is available at https://github.com/Eshamont/OCGQuant.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,25 @@
+{
+  "date": "20260905",
+  "date_label": "",
+  "generated_at": "2026-09-05 22:23:06 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.00066v1",
+      "route": "202609/05/2609.00066v1-ocgquant-outlier-companion-grouping-for-nvfp4-quantization",
+      "title": "OCGQuant: Outlier-Companion Grouping for NVFP4 Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向NVFP4低比特后训练量化，通过离群伴生通道分组降低块尺度带来的连带误差",
+      "first_seen_at": "2026-09-05 22:23:06 UTC",
+      "updated_at": "2026-09-05 22:23:06 UTC"
+    }
+  ]
+}

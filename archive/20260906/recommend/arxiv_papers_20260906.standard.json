@@ -1,0 +1,140 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-06T22:17:02.474634+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2608.30564v1",
+      "source": "arxiv",
+      "title": "Q-Strata: Hierarchical Bit Allocation for Mixed-Precision Quantization of Mixture-of-Experts LLMs",
+      "abstract": "Mixed-precision quantization (MPQ) assigns a different bitwidth to each linear layer of a large language model (LLM) to minimize the quantization-induced quality loss under a fixed budget, but Mixture-of-Experts (MoE) models contain these layers in every expert of every MoE block, so the allocation space grows far larger than in a dense model. Existing methods either allocate within each block under a uniform per-block budget, or allocate across blocks through an additive proxy, and neither directly optimizes a model-level objective over the choices that couple the blocks. We propose Q-Strata, a bi-level allocator that ranks within-block assignments with a cheap proxy and allocates across blocks with a model-level objective evaluated on the assembled quantized model. Its inner stage caches a Pareto frontier of candidates per block over finely spaced budgets, leaving the outer stage to set one budget per block instead of a bitwidth for every linear layer. With the search reduced to one budget per block, the outer stage optimizes this model-level objective directly, capturing the inter-block coupling that additive proxies miss. On Mixtral-8x7B-Instruct, Qwen1.5-MoE-A2.7B, and DeepSeek-V2-Lite, Q-Strata consistently achieves lower WikiText2 perplexity than uniform-bitwidth GPTQ and the state-of-the-art MoE MPQ methods MxMoE and GEMQ in the low-bit regime. The code is available at https://github.com/snu-mllab/Q-Strata/tree/main.",
+      "authors": [
+        "Deokjae Lee",
+        "Sihun Chu",
+        "Hyun Oh Song"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-08-31T10:39:01+00:00",
+      "link": "https://arxiv.org/pdf/2608.30564v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "Mixed-precision quantization of MoE LLM weights under fixed budget; post-training quantization aiming to preserve model quality",
+      "llm_evidence_cn": "面向MoE大模型的混合精度权重量化，固定预算下降低质量损失",
+      "llm_evidence": "面向MoE大模型的混合精度权重量化，固定预算下降低质量损失",
+      "canonical_evidence": "面向MoE大模型的混合精度权重量化，固定预算下降低质量损失",
+      "llm_tldr_en": "For MoE LLMs, mixed-precision quantization must allocate bitwidths across a huge assignment space. Q-Strata is a bi-level allocator that cheaply ranks within-block assignments and then optimizes a model-level objective across blocks, outperforming per-block uniform budgets and additive proxies.",
+      "llm_tldr_cn": "混合精度量化通过给大语言模型不同线性层分配不同位宽来压低量化带来的质量损失，但在混合专家模型中每个专家都含这些层，分配空间远大于稠密模型。Q-Strata提出双层分配器：先用廉价代理对块内候选分配排序，再用模型级目标跨块优化位宽预算。实验表明该方法比单块均匀预算或可加代理更直接地优化模型级目标，从而降低MoE大模型量化后的质量下降。这为大规模MoE低比特压缩提供了高效的位分配方案。",
+      "llm_tldr": "混合精度量化通过给大语言模型不同线性层分配不同位宽来压低量化带来的质量损失，但在混合专家模型中每个专家都含这些层，分配空间远大于稠密模型。Q-Strata提出双层分配器：先用廉价代理对块内候选分配排序，再用模型级目标跨块优化位宽预算。实验表明该方法比单块均匀预算或可加代理更直接地优化模型级目标，从而降低MoE大模型量化后的质量下降。这为大规模MoE低比特压缩提供了高效的位分配方案。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.03363v1",
+      "source": "arxiv",
+      "title": "PACodec: A Low-bitrate Neural Speech Codec with Parallel Additive Vector Quantization",
+      "abstract": "This paper proposes PACodec, a novel low-bitrate neural speech codec based on parallel additive vector quantization (PAVQ). Unlike the mainstream residual vector quantization (RVQ) used in most neural speech codecs, where vector quantizers (VQs) are sequentially dependent, the PAVQ strategy adopted in PACodec aggregates parallel quantization results to optimize bitrate usage. Specifically, the PAVQ adopts a \"global-local-global\" (GLG) design: the global encoded features are quantized in parallel by multiple independent VQs, each attending to a local component of the representation, and their outputs are aggregated through addition to yield the final global quantization result for decoding. Experimental results show that PACodec, as each VQ focuses only on local information, supports smaller codebooks and reduces bitrate by 30% compared with baselines at the same decoding quality, with only minor model complexity. Further analysis shows that, owing to the GLG framework of PAVQ, the proposed PACodec is disentanglement-friendly, and each independent VQ captures different aspects of speech, e.g., content, timbre, and acoustic details, suggesting potential for application to downstream tasks such as voice conversion.",
+      "authors": [
+        "Fei Liu",
+        "Yang Ai",
+        "Xiao-Hang Jiang",
+        "Zhen-Hua Ling"
+      ],
+      "primary_category": "cs.SD",
+      "categories": [
+        "cs.SD"
+      ],
+      "published": "2026-09-03T04:40:28+00:00",
+      "link": "https://arxiv.org/pdf/2609.03363v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Parallel additive vector quantization method with multiple codebooks aggregated by addition; transferable to additive quantization for low-bit LLM weights",
+      "llm_evidence_cn": "并行加性矢量量化方法，多个码本加法聚合；可迁移至低比特大模型权重的加性量化",
+      "llm_evidence": "并行加性矢量量化方法，多个码本加法聚合；可迁移至低比特大模型权重的加性量化",
+      "canonical_evidence": "并行加性矢量量化方法，多个码本加法聚合；可迁移至低比特大模型权重的加性量化",
+      "llm_tldr_en": "PACodec introduces parallel additive vector quantization (PAVQ) with a global-local-global design where multiple independent codebooks are aggregated by addition; it removes sequential dependence of RVQ and improves low-bitrate speech coding, offering a transferable additive codebook approach for low-bit LLM weight compression.",
+      "llm_tldr_cn": "为解决传统残差矢量量化中量化器顺序依赖、码率利用不佳的问题，提出基于并行加性矢量量化的神经语音编解码器PACodec。其采用全局-局部-全局结构，将编码特征并行送入多个独立码本，再把各量化结果相加得到最终量化表示。实验表明该低码率编解码方案具有更好的码率利用和编码性能；这种并行加性码本机制可被迁移到低比特大模型权重的加性量化压缩中。",
+      "llm_tldr": "为解决传统残差矢量量化中量化器顺序依赖、码率利用不佳的问题，提出基于并行加性矢量量化的神经语音编解码器PACodec。其采用全局-局部-全局结构，将编码特征并行送入多个独立码本，再把各量化结果相加得到最终量化表示。实验表明该低码率编解码方案具有更好的码率利用和编码性能；这种并行加性码本机制可被迁移到低比特大模型权重的加性量化压缩中。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "additive quantization for language model weights",
+      "matched_requirement_id": "req-4",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.03641v1",
+      "source": "arxiv",
+      "title": "Tree-Structured Vector Quantization For Efficient And Progressive Image Compression",
+      "abstract": "Vector-quantization based image compression has achieved strong rate--distortion performance, yet most of them still produce a separate compressed representation for each target bitrate. Such variable-rate behavior allows one model to operate at multiple rates, but it does not necessarily provide a progressive bitstream whose prefixes are themselves decodable and can be refined by appending additional bits. We propose \\textbf{Tree-VQ}, a progressive tree-structured vector quantization framework for learned image compression. Tree-VQ organizes discrete codewords as a hierarchical binary tree and represents each latent token by a routed root-to-leaf path. Crucially, every prefix of this path corresponds to a valid quantized representation, so shallow internal nodes serve as coarse reconstruction codes and deeper nodes provide successive refinements. This allows a compressed image to be decoded from an early prefix and progressively improved as more branch symbols are received, rather than being re-encoded for different target rates. To make this structure practical for compression, we introduce a prefix-compatible tree entropy model that codes progressive continuation decisions and routed branch refinements using only causally available decoded contexts. We further use rate-aware refinement scheduling to decide which spatial blocks should receive additional tree bits under a given prefix budget, and hierarchical prefix supervision to ensure that internal nodes are directly decodable at low rates. Experiments show that Tree-VQ achieves a superior performance--efficiency trade-off, delivering the best perceptual compression results with much fewer parameters and lower latency than competing methods.",
+      "authors": [
+        "Xinkun Wang",
+        "Tianyi Xu",
+        "Qingyu Luo",
+        "Mingming Ma",
+        "Changzhe Jiao",
+        "Fu Li",
+        "Yi Niu"
+      ],
+      "primary_category": "cs.CV",
+      "categories": [
+        "cs.CV"
+      ],
+      "published": "2026-09-03T10:41:36+00:00",
+      "link": "https://arxiv.org/pdf/2609.03641v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "Tree-structured vector quantization with hierarchical implicit codebook for progressive compression; transferable VQ method for low-bit codebook quantization",
+      "llm_evidence_cn": "提出树状结构向量量化，将码本组织为层级树并用路径编码，是结构化/隐式码本的潜在可迁移方法",
+      "llm_evidence": "提出树状结构向量量化，将码本组织为层级树并用路径编码，是结构化/隐式码本的潜在可迁移方法",
+      "canonical_evidence": "提出树状结构向量量化，将码本组织为层级树并用路径编码，是结构化/隐式码本的潜在可迁移方法",
+      "llm_tldr_en": "Tree-VQ organizes codewords as a hierarchical binary tree and lets each latent use a root-to-leaf path, so every prefix is a valid quantized representation to achieve progressive image compression.",
+      "llm_tldr_cn": "可变码率图像压缩模型通常为每个码率单独生成表示，缺乏可逐步细化的渐进比特流。本文提出Tree-VQ，把码本构造成二叉树，每个潜变量由根到叶的路由路径表示，任意路径前缀都是合法量化结果。实验显示该方法在保持率失真性能的同时提供渐进解码能力。其对码本的结构化组织可启发LLM权重压缩中避免大显式码本的设计。",
+      "llm_tldr": "可变码率图像压缩模型通常为每个码率单独生成表示，缺乏可逐步细化的渐进比特流。本文提出Tree-VQ，把码本构造成二叉树，每个潜变量由根到叶的路由路径表示，任意路径前缀都是合法量化结果。实验显示该方法在保持率失真性能的同时提供渐进解码能力。其对码本的结构化组织可启发LLM权重压缩中避免大显式码本的设计。",
+      "llm_tags": [
+        "query:isc"
+      ],
+      "matched_query_tag": "query:isc",
+      "matched_query_text": "structured vector quantization methods that avoid storing a large explicit codebook through lattice, trellis, algebraic, or implicit codebook representations",
+      "matched_requirement_id": "req-17",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,54 @@
+{
+  "label": "2026-09-07",
+  "date": "2026-09-07",
+  "generated_at": "2026-09-07T22:21:37",
+  "count": 3,
+  "papers": [
+    {
+      "paper_id": "202609/07/2609.04724v1-flexposit-tunable-fractional-precision-for-llm-inference-accelerators",
+      "section": "quick",
+      "title_en": "FlexPosit: Tunable Fractional Precision for LLM Inference Accelerators",
+      "authors": "Yimin Gao, Liangtao Dai, Jun Yin, Xinfei Guo, Mircea Stan",
+      "date": "2026-09-04",
+      "pdf": "https://arxiv.org/pdf/2609.04724v1",
+      "score": "7.0",
+      "evidence": "基于Posit的可调分数精度量化与硬件协同设计，用于高效LLM推理加速",
+      "tldr": "LLM量化需在细粒度组级与粗粒度通道级间权衡，现有加速器仅支持离散位宽，分数精度空间未探索。FlexPosit将分布感知、敏感度引导的Posit量化与可调精度位串行脉动阵列协同设计，在规则数据流下实现分数位宽。以亚5位权重逼近FP16精度，吞吐量较BitMoD高1.8倍、能耗低1.2倍，较OliVe高1.5倍、能耗低2.0倍，拓展了LLM推理加速的Pareto前沿。",
+      "tags": "query:elblq",
+      "abstract_en": "Large language models (LLMs) offer remarkable capabilities but impose prohibitive compute and energy costs. Quantization governs the trade-offs between accuracy and hardware efficiency across granularity and bit-width. Finer granularity (e.g., group-wise) provides high accuracy but incurs scaling and control overhead, while coarser granularity (e.g., channel-wise) has lower overhead but loses accuracy at low precision. Meanwhile, mixed-precision quantization exposes rich accuracy-efficiency trade-offs algorithmically, but existing LLM accelerators remain limited to discrete precision modes, leaving the fractional design space between them unexplored.   FlexPosit bridges these gaps through co-design of Posit-based quantization and a precision-tunable bit-serial architecture. Algorithmically, FlexPosit employs distribution-aware quantization with hardware-aligned, sensitivity-guided mixed-precision allocation, leveraging the Posit format's tapered precision to achieve group-wise-like accuracy with channel-wise-like regularity. Architecturally, FlexPosit is a unified bit-serial systolic array with lightweight per-column decoders, unified Processing Elements (PEs), and a global precision controller, enabling tunable fractional precision while preserving fully regular systolic dataflow. Across diverse LLMs, FlexPosit achieves near-FP16 accuracy with sub-5-bit fractional weights. It achieves up to 1.8x higher throughput and 1.2x lower energy than BitMoD (group-wise quantization), and 1.5x higher throughput and 2.0x lower energy than OliVe (channel-wise quantization), establishing a new Pareto frontier for precision-tunable LLM acceleration.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/07/2608.29667v1-a-target-centric-survey-of-quantization-aware-training",
+      "section": "quick",
+      "title_en": "A Target-Centric Survey of Quantization-Aware Training",
+      "authors": "Jiamin Song, Mengjie Zhao, Zijing Wang, Yongkang Liu, Qian Li, Shi Feng, Feiliang Ren, Daling Wang, Hinrich Schütze",
+      "date": "2026-08-30",
+      "pdf": "https://arxiv.org/pdf/2608.29667v1",
+      "score": "6.0",
+      "evidence": "面向低比特大模型的量化感知训练系统性综述",
+      "tldr": "大型语言模型的内存和计算开销高企，促使量化感知训练（QAT）在训练中引入量化模拟以降低部署成本。该文以目标为中心构建QAT分类法，系统回顾主流方法，并分析不同网络部位在误差特性、数值格式和迁移能力上的差异。进一步总结QAT评估范式，指出优化和部署中的开放挑战，如不稳定性和格式选择。这项综述为低比特量化训练研究提供了清晰的结构化参考和未来方向。",
+      "tags": "query:elblq",
+      "abstract_en": "The rapid development of LLMs incurs prohibitive memory footprints and intensive computational demands. Quantization-Aware Training (QAT) techniques have emerged as a promising solution to address these challenges by explicitly simulating quantization effects during model training, yielding low-bit models that achieve accuracy comparable to their full-precision counterparts. In this work, we provide a target-centric survey of QAT, aimed at clarifying both its theoretical foundations and its evolving implementation landscape. We systematically review existing QAT methods through a target-centric taxonomy and synthesize cross-target differences in error characteristics, numerical formats, and strategy transferability. We further summarize QAT evaluation paradigms and discuss challenges in optimization and deployment, outlining potential directions for future research.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/07/2609.04098v1-why-gated-deltanet-survives-4-bit-quantization-nvfp4-w4a4-for-the-recurrent-half-of-a-hybrid-27b-llm",
+      "section": "quick",
+      "title_en": "Why Gated DeltaNet Survives 4-Bit Quantization: NVFP4 W4A4 for the Recurrent Half of a Hybrid 27B LLM",
+      "authors": "Sergii Kozyrev, Davyd Maiboroda",
+      "date": "2026-09-03",
+      "pdf": "https://arxiv.org/pdf/2609.04098v1",
+      "score": "6.0",
+      "evidence": "对混合27B LLM全部线性层做NVFP4 4比特W4A4量化，困惑度与下游基准仍匹配BF16",
+      "tldr": "混合LLM将softmax注意力与Gated DeltaNet等线性注意力结合，但社区常将后者保留高精度，担心循环误差累积。我们提出Minima，用NVFP4对Qwen3.8-27B全部496个线性层做W4A4量化，GDN也不例外。在困惑度、数学推理及64K检索等评测中与BF16持平，同时体积最小、预填充提速14-19%。机制分析表明门控投影对量化不敏感、delta-rule递归可抑制噪声，故混合模型中的循环部分是“容易量化”的一半，并给出实用量化配方。",
+      "tags": "query:elblq",
+      "abstract_en": "Hybrid LLMs pair softmax attention with linear-attention layers such as Gated DeltaNet (GDN), whose recurrent state summarizes the context in fixed size. Early community 4-bit quantizations of Qwen3.8-27B (48 GDN layers, 16 attention layers) left the GDN block in 8- or 16-bit precision -- especially its decay and write-strength gates -- on the intuition that errors in a recurrence accumulate over long contexts. We test that intuition by building Minima: NVFP4 W4A4 on all 496 linear layers, GDN included. Across perplexity at 4K/32K, MMLU-Pro, GSM8K, AIME'25, GPQA-Diamond, LiveCodeBench, and RULER retrieval to 64K, Minima matches BF16 within seed noise (5-task average -0.52) while being the smallest (17.5 GiB) and fastest-prefill (+14-19%) recipe we compare, and its 32K perplexity gap shrinks with position. A four-part mechanism study explains why: (i) NVFP4's 16-element block scaling localizes the residual stream's extreme outliers, equalizing activation error across layer roles; (ii) the supposedly fragile gate projections are the least sensitive -- softplus/exponential and sigmoid parameterizations compress ~11% GEMM error to ~2% output error; (iii) the delta-rule recurrence holds injected noise at a flat plateau over 32K tokens and forgets a state impulse within hundreds of steps, because each write overwrites the state along the current key direction; (iv) the per-token quantization cost washes out with context instead of compounding. We also repair a global-scale mismatch that arises when per-module-calibrated NVFP4 checkpoints are served by kernels that fuse those modules into one GEMM, and show calibrated FP8 KV-cache scales are performance-free. The result: a practical recipe -- quantize everything, ship KV scales -- and a mechanistic account of why the recurrent half of a hybrid LLM is the easy half to quantize. Checkpoint: https://huggingface.co/minima-ai/mnma_qwen3.8_27b_nvfp4",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

@@ -1,0 +1,141 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-07T22:19:12.617078+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 3,
+    "quick_skim_target": 12,
+    "quick_selected": 3
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.04724v1",
+      "source": "arxiv",
+      "title": "FlexPosit: Tunable Fractional Precision for LLM Inference Accelerators",
+      "abstract": "Large language models (LLMs) offer remarkable capabilities but impose prohibitive compute and energy costs. Quantization governs the trade-offs between accuracy and hardware efficiency across granularity and bit-width. Finer granularity (e.g., group-wise) provides high accuracy but incurs scaling and control overhead, while coarser granularity (e.g., channel-wise) has lower overhead but loses accuracy at low precision. Meanwhile, mixed-precision quantization exposes rich accuracy-efficiency trade-offs algorithmically, but existing LLM accelerators remain limited to discrete precision modes, leaving the fractional design space between them unexplored.   FlexPosit bridges these gaps through co-design of Posit-based quantization and a precision-tunable bit-serial architecture. Algorithmically, FlexPosit employs distribution-aware quantization with hardware-aligned, sensitivity-guided mixed-precision allocation, leveraging the Posit format's tapered precision to achieve group-wise-like accuracy with channel-wise-like regularity. Architecturally, FlexPosit is a unified bit-serial systolic array with lightweight per-column decoders, unified Processing Elements (PEs), and a global precision controller, enabling tunable fractional precision while preserving fully regular systolic dataflow. Across diverse LLMs, FlexPosit achieves near-FP16 accuracy with sub-5-bit fractional weights. It achieves up to 1.8x higher throughput and 1.2x lower energy than BitMoD (group-wise quantization), and 1.5x higher throughput and 2.0x lower energy than OliVe (channel-wise quantization), establishing a new Pareto frontier for precision-tunable LLM acceleration.",
+      "authors": [
+        "Yimin Gao",
+        "Liangtao Dai",
+        "Jun Yin",
+        "Xinfei Guo",
+        "Mircea Stan"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-09-04T04:48:35+00:00",
+      "link": "https://arxiv.org/pdf/2609.04724v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Posit-based quantization and precision-tunable hardware co-design for LLM inference accelerators",
+      "llm_evidence_cn": "基于Posit的可调分数精度量化与硬件协同设计，用于高效LLM推理加速",
+      "llm_evidence": "基于Posit的可调分数精度量化与硬件协同设计，用于高效LLM推理加速",
+      "canonical_evidence": "基于Posit的可调分数精度量化与硬件协同设计，用于高效LLM推理加速",
+      "llm_tldr_en": "FlexPosit co-designs Posit-based quantization with precision-tunable accelerator hardware, covering fractional precision points between discrete mixed-precision modes to improve LLM inference accuracy-efficiency trade-offs.",
+      "llm_tldr_cn": "LLM推理加速器受限于离散精度模式，难以利用分数精度的效率收益。FlexPosit将Posit量化与可调精度硬件协同设计，打破按位宽和粒度固定的量化边界，以统一的量化数据通路覆盖更细粒度的精度区间。该方法可在给定精度和硬件约束下灵活选择分数精度，使混合精度方案在LLM推断中获得更优的准确率-能耗折中。",
+      "llm_tldr": "LLM推理加速器受限于离散精度模式，难以利用分数精度的效率收益。FlexPosit将Posit量化与可调精度硬件协同设计，打破按位宽和粒度固定的量化边界，以统一的量化数据通路覆盖更细粒度的精度区间。该方法可在给定精度和硬件约束下灵活选择分数精度，使混合精度方案在LLM推断中获得更优的准确率-能耗折中。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2608.29667v1",
+      "source": "arxiv",
+      "title": "A Target-Centric Survey of Quantization-Aware Training",
+      "abstract": "The rapid development of LLMs incurs prohibitive memory footprints and intensive computational demands. Quantization-Aware Training (QAT) techniques have emerged as a promising solution to address these challenges by explicitly simulating quantization effects during model training, yielding low-bit models that achieve accuracy comparable to their full-precision counterparts. In this work, we provide a target-centric survey of QAT, aimed at clarifying both its theoretical foundations and its evolving implementation landscape. We systematically review existing QAT methods through a target-centric taxonomy and synthesize cross-target differences in error characteristics, numerical formats, and strategy transferability. We further summarize QAT evaluation paradigms and discuss challenges in optimization and deployment, outlining potential directions for future research.",
+      "authors": [
+        "Jiamin Song",
+        "Mengjie Zhao",
+        "Zijing Wang",
+        "Yongkang Liu",
+        "Qian Li",
+        "Shi Feng",
+        "Feiliang Ren",
+        "Daling Wang",
+        "Hinrich Schütze"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-08-30T09:04:47+00:00",
+      "link": "https://arxiv.org/pdf/2608.29667v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "survey of low-bit quantization-aware training including LLMs",
+      "llm_evidence_cn": "面向低比特大模型的量化感知训练系统性综述",
+      "llm_evidence": "面向低比特大模型的量化感知训练系统性综述",
+      "canonical_evidence": "面向低比特大模型的量化感知训练系统性综述",
+      "llm_tldr_en": "Target-centric survey of QAT for low-bit LLMs: it structures methods by target, synthesizes error characteristics, numerical formats, and transferability, and summarizes evaluation paradigms to guide QAT choices.",
+      "llm_tldr_cn": "大语言模型推理对内存和算力要求极高，量化感知训练通过在训练中显式模拟量化效应获得低比特模型。该综述以目标为中心构建分类体系，系统梳理QAT方法在数值格式、误差特征和策略迁移性上的差异，并总结评测范式。这为研究者根据具体量化目标选择合适的QAT方案提供了结构化参照，也间接支撑了低比特大模型的压缩与部署实践。",
+      "llm_tldr": "大语言模型推理对内存和算力要求极高，量化感知训练通过在训练中显式模拟量化效应获得低比特模型。该综述以目标为中心构建分类体系，系统梳理QAT方法在数值格式、误差特征和策略迁移性上的差异，并总结评测范式。这为研究者根据具体量化目标选择合适的QAT方案提供了结构化参照，也间接支撑了低比特大模型的压缩与部署实践。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low-bit quantization of large language model weights",
+      "matched_requirement_id": "req-1",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.04098v1",
+      "source": "arxiv",
+      "title": "Why Gated DeltaNet Survives 4-Bit Quantization: NVFP4 W4A4 for the Recurrent Half of a Hybrid 27B LLM",
+      "abstract": "Hybrid LLMs pair softmax attention with linear-attention layers such as Gated DeltaNet (GDN), whose recurrent state summarizes the context in fixed size. Early community 4-bit quantizations of Qwen3.8-27B (48 GDN layers, 16 attention layers) left the GDN block in 8- or 16-bit precision -- especially its decay and write-strength gates -- on the intuition that errors in a recurrence accumulate over long contexts. We test that intuition by building Minima: NVFP4 W4A4 on all 496 linear layers, GDN included. Across perplexity at 4K/32K, MMLU-Pro, GSM8K, AIME'25, GPQA-Diamond, LiveCodeBench, and RULER retrieval to 64K, Minima matches BF16 within seed noise (5-task average -0.52) while being the smallest (17.5 GiB) and fastest-prefill (+14-19%) recipe we compare, and its 32K perplexity gap shrinks with position. A four-part mechanism study explains why: (i) NVFP4's 16-element block scaling localizes the residual stream's extreme outliers, equalizing activation error across layer roles; (ii) the supposedly fragile gate projections are the least sensitive -- softplus/exponential and sigmoid parameterizations compress ~11% GEMM error to ~2% output error; (iii) the delta-rule recurrence holds injected noise at a flat plateau over 32K tokens and forgets a state impulse within hundreds of steps, because each write overwrites the state along the current key direction; (iv) the per-token quantization cost washes out with context instead of compounding. We also repair a global-scale mismatch that arises when per-module-calibrated NVFP4 checkpoints are served by kernels that fuse those modules into one GEMM, and show calibrated FP8 KV-cache scales are performance-free. The result: a practical recipe -- quantize everything, ship KV scales -- and a mechanistic account of why the recurrent half of a hybrid LLM is the easy half to quantize. Checkpoint: https://huggingface.co/minima-ai/mnma_qwen3.8_27b_nvfp4",
+      "authors": [
+        "Sergii Kozyrev",
+        "Davyd Maiboroda"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI"
+      ],
+      "published": "2026-09-03T17:04:26+00:00",
+      "link": "https://arxiv.org/pdf/2609.04098v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "NVFP4 W4A4 4-bit quantization on all linear layers of a hybrid 27B LLM matches BF16 across perplexity and downstream benchmarks",
+      "llm_evidence_cn": "对混合27B LLM全部线性层做NVFP4 4比特W4A4量化，困惑度与下游基准仍匹配BF16",
+      "llm_evidence": "对混合27B LLM全部线性层做NVFP4 4比特W4A4量化，困惑度与下游基准仍匹配BF16",
+      "canonical_evidence": "对混合27B LLM全部线性层做NVFP4 4比特W4A4量化，困惑度与下游基准仍匹配BF16",
+      "llm_tldr_en": "Contrary to intuition that gated recurrent layers need higher precision, Minima quantizes all 496 linear layers of a hybrid 27B LLM to NVFP4 W4A4, matching BF16 on perplexity and downstream tasks while delivering the smallest and fastest model.",
+      "llm_tldr_cn": "循环状态常被认为对量化误差敏感，已有4比特量化往往把混合LLM中门控DeltaNet循环层保留为8或16比特精度。作者构建Minima，将包含门控的496个线性层统一量化为NVFP4 W4A4并系统评估。在4K/32K困惑度、MMLU-Pro、GSM8K、AIME、GPQA等任务上，模型与BF16在种子噪声内持平，同时体积最小、速度最快。这为低比特权激活量化在循环混合LLM上的部署提供了重要证据。",
+      "llm_tldr": "循环状态常被认为对量化误差敏感，已有4比特量化往往把混合LLM中门控DeltaNet循环层保留为8或16比特精度。作者构建Minima，将包含门控的496个线性层统一量化为NVFP4 W4A4并系统评估。在4K/32K困惑度、MMLU-Pro、GSM8K、AIME、GPQA等任务上，模型与BF16在种子噪声内持平，同时体积最小、速度最快。这为低比特权激活量化在循环混合LLM上的部署提供了重要证据。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

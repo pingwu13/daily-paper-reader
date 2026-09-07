@@ -1,0 +1,57 @@
+{
+  "date": "20260907",
+  "date_label": "",
+  "generated_at": "2026-09-07 22:21:35 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.04724v1",
+      "route": "202609/07/2609.04724v1-flexposit-tunable-fractional-precision-for-llm-inference-accelerators",
+      "title": "FlexPosit: Tunable Fractional Precision for LLM Inference Accelerators",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "基于Posit的可调分数精度量化与硬件协同设计，用于高效LLM推理加速",
+      "first_seen_at": "2026-09-07 22:21:35 UTC",
+      "updated_at": "2026-09-07 22:21:35 UTC"
+    },
+    {
+      "paper_id": "2608.29667v1",
+      "route": "202609/07/2608.29667v1-a-target-centric-survey-of-quantization-aware-training",
+      "title": "A Target-Centric Survey of Quantization-Aware Training",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "面向低比特大模型的量化感知训练系统性综述",
+      "first_seen_at": "2026-09-07 22:21:35 UTC",
+      "updated_at": "2026-09-07 22:21:35 UTC"
+    },
+    {
+      "paper_id": "2609.04098v1",
+      "route": "202609/07/2609.04098v1-why-gated-deltanet-survives-4-bit-quantization-nvfp4-w4a4-for-the-recurrent-half-of-a-hybrid-27b-llm",
+      "title": "Why Gated DeltaNet Survives 4-Bit Quantization: NVFP4 W4A4 for the Recurrent Half of a Hybrid 27B LLM",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "对混合27B LLM全部线性层做NVFP4 4比特W4A4量化，困惑度与下游基准仍匹配BF16",
+      "first_seen_at": "2026-09-07 22:21:35 UTC",
+      "updated_at": "2026-09-07 22:21:35 UTC"
+    }
+  ]
+}

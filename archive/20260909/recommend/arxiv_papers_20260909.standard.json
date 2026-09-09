@@ -1,0 +1,142 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-09T21:47:55.868194+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 2,
+    "quick_skim_target": 12,
+    "quick_selected": 2
+  },
+  "deep_dive": [
+    {
+      "id": "2609.06161v1",
+      "source": "arxiv",
+      "title": "All for 1-Bit: Towards Genuine 1-Bit Post-Training Quantization for LLMs",
+      "abstract": "Large language models (LLMs) have achieved remarkable progress, yet their massive storage and memory-bandwidth demands still hinder efficient deployment. Weight binarization is a promising solution, but existing binarization-based post-training quantization (PTQ) methods usually far exceed the nominal 1-bit storage target due to hidden overhead. To address this gap, we propose All for 1-Bit (AF1), a genuine 1-bit PTQ framework for LLMs. AF1 comprises two complementary components: (1) Null-space-Aware Binary Factorization (NABF) for improving binary reconstruction through Hessian-aware surrogate reparameterization, null-space-aware binary factorization, and scale-only global reconstruction; and (2) Hierarchical Shapley Allocation (HiSA) for assigning structural capacity using hierarchical Shapley sensitivity. Together, they preserve model accuracy under a strict 1.0-BPW budget in the PTQ setting. Experiments on LLaMA, Qwen, and Gemma families show that AF1 consistently outperforms existing binarization-based PTQ methods in perplexity and zero-shot accuracy. Compared with BF16, AF1 achieves an average 2.5 times inference speedup and over 90% memory reduction across evaluated models, providing a practical path toward deployable genuine 1-bit compression for LLMs. The code for reproducibility is available at https://github.com/Kishon-zzx/AF1.",
+      "authors": [
+        "Zhixiong Zhao",
+        "Zukang Xu",
+        "Guangyu Sun",
+        "Lifeng Liu",
+        "Dawei Yang"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-09-05T16:03:41+00:00",
+      "link": "https://arxiv.org/pdf/2609.06161v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 10.0,
+      "llm_evidence_en": "Directly proposes a genuine 1-bit post-training quantization framework for LLMs using Hessian-aware factorization",
+      "llm_evidence_cn": "直接提出真正1比特LLM训练后量化框架，采用Hessian感知分解等策略",
+      "llm_evidence": "直接提出真正1比特LLM训练后量化框架，采用Hessian感知分解等策略",
+      "canonical_evidence": "直接提出真正1比特LLM训练后量化框架，采用Hessian感知分解等策略",
+      "llm_tldr_en": "Existing 1-bit binarization PTQ for LLMs hides extra storage overhead. AF1 uses Hessian-aware Null-space Binary Factorization and Hierarchical Shapley Allocation to achieve genuine 1-bit storage while preserving performance.",
+      "llm_tldr_cn": "大语言模型二值化后训练量化常因额外隐藏存储而超出标称1比特，难以兑现极低比特部署收益。本文提出All for 1-Bit(AF1)框架，通过Hessian感知的零空间感知二值分解(NABF)重构权重，并配合层次化Shapley分配(HiSA)协调各分量精度。该方法在真正1比特存储约束下降低了重建误差并保留模型能力。它为LLM极低比特后训练量化提供了更务实的实现路径。",
+      "llm_tldr": "大语言模型二值化后训练量化常因额外隐藏存储而超出标称1比特，难以兑现极低比特部署收益。本文提出All for 1-Bit(AF1)框架，通过Hessian感知的零空间感知二值分解(NABF)重构权重，并配合层次化Shapley分配(HiSA)协调各分量精度。该方法在真正1比特存储约束下降低了重建误差并保留模型能力。它为LLM极低比特后训练量化提供了更务实的实现路径。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.07664v1",
+      "source": "arxiv",
+      "title": "Accuracy is Not Enough: A Divergence-Based Approach to Evaluate Fidelity Loss in Quantized LLMs",
+      "abstract": "Deployment of Large Language Models (LLMs) on memory-constrained edge devices relies heavily on aggressive post-training quantization. However, evaluating these models is largely based on zero-shot task accuracy, which depends solely on argmax predictions and is insensitive to changes in the underlying predictive distribution. Consequently, accuracy can exhibit unstable, non-monotonic behavior under progressive quantization, masking substantial fidelity loss relative to the BFloat16 (BF16) uncompressed base model and providing misleading deployment signals. We introduce a distribution-sensitive evaluation framework quantifying information loss in quantized LLMs as the divergence between full-vocabulary predictive distributions at the token decision boundary. We compute statistical distances, including Jensen-Shannon Divergence and Total Variation Distance, between outputs of full-precision and quantized models, enabling a fine-grained analysis of distributional shift. Using this framework, we quantify probability mass displacement and distributional drift relative to the BF16 reference, capturing predictive distribution changes not reflected in top-1 accuracy. We conduct a 120-run experimental matrix across five foundation architectures and four reasoning benchmarks under progressive quantization regimes, from uncompressed BF16 to Q2_K, providing a systematic fidelity analysis. Our results show divergence metrics generally increase under stronger quantization, complementing task accuracy with a fidelity signal. Across tested llama.cpp schemes, mixed-precision Q4_K generally yields lower divergence than uniform Q4_0 at similar memory footprints. These findings motivate distribution-aware evaluation as a practical diagnostic complement to task accuracy; they do not directly establish correctness, calibration, safety, or user-perceived quality.",
+      "authors": [
+        "Shahzeb Qamar",
+        "Lorenz Sparrenberg",
+        "Christian Bauckhage",
+        "Baha Rababah",
+        "Carson Leung",
+        "Murat Kantarcioglu",
+        "Cuneyt Gurcan Akcora",
+        "Rafet Sifa"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-09-07T15:49:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.07664v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "Divergence-based evaluation framework for aggressive post-training LLM quantization; directly assesses fidelity loss of low-bit quantized weights relative to BF16",
+      "llm_evidence_cn": "针对激进后训练量化的散度评估框架，直接衡量极低比特量化权重相对BF16基线的保真度损失",
+      "llm_evidence": "针对激进后训练量化的散度评估框架，直接衡量极低比特量化权重相对BF16基线的保真度损失",
+      "canonical_evidence": "针对激进后训练量化的散度评估框架，直接衡量极低比特量化权重相对BF16基线的保真度损失",
+      "llm_tldr_en": "Proposes a distribution-sensitive divergence-based framework to evaluate fidelity loss in aggressively post-training quantized LLMs, showing accuracy alone is not enough for low-bit deployment decisions.",
+      "llm_tldr_cn": "大语言模型在边缘设备部署常依赖激进的后训练量化，但零样本准确率只基于argmax预测，难以反映底层概率分布变化，导致量化评估不稳定且掩盖保真度损失。该文提出以量化模型与BF16基线在全词表预测分布上的散度来衡量信息损失的评估框架，替代单纯准确率指标。实验表明该框架能捕捉渐进量化过程中的保真度下降，为极低比特量化模型的可靠部署提供更可信的指导信号。",
+      "llm_tldr": "大语言模型在边缘设备部署常依赖激进的后训练量化，但零样本准确率只基于argmax预测，难以反映底层概率分布变化，导致量化评估不稳定且掩盖保真度损失。该文提出以量化模型与BF16基线在全词表预测分布上的散度来衡量信息损失的评估框架，替代单纯准确率指标。实验表明该框架能捕捉渐进量化过程中的保真度下降，为极低比特量化模型的可靠部署提供更可信的指导信号。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.08759v1",
+      "source": "arxiv",
+      "title": "A Note on Scaling in Randomly Rotated Quantization and Its Connection to the CDEF +1 Pythagorean Relation",
+      "abstract": "Quantization schemes based on randomized rotations have recently received renewed attention, including the roles of MMSE and unbiased reconstruction scalings. In this note, we point out the connection to classical results in statistical signal processing and communication theory. Specifically, the two reconstruction scales used in the EDEN line of work admit a natural interpretation as finite-dimensional, realization-dependent counterparts of the Wiener and unbiased coefficients in the classical CDEF formulation. At finite blocklength, the CDEF +1 relation holds pointwise for each rotation realization as an exact geometric (Pythagorean) identity, but does not hold after averaging the distortions over the rotation. The classical SNR relation $\\sf{SNR}_{\\rm MMSE}=\\sf{SNR}_{\\rm MMSE,U}+1$ is recovered as $d\\to\\infty$: once the overall scale is handled separately, the empirical coordinate statistics of a randomly rotated vector approach their i.i.d. Gaussian counterparts, and the rotation-dependent quantities concentrate. Importantly, EDEN goes beyond this classical correspondence: for every finite $d$, its Haar-rotation formulation guarantees exact conditional unbiasedness, a stronger property than the second-order notion of unbiasedness in CDEF. We further comment on two distinct roles random rotations play in quantization: one is approximate Gaussianization of the coordinates; the other is decorrelation of reconstruction errors across quantization branches.",
+      "authors": [
+        "Uri Erez"
+      ],
+      "primary_category": "cs.IT",
+      "categories": [
+        "cs.IT",
+        "cs.LG"
+      ],
+      "published": "2026-09-08T13:55:15+00:00",
+      "link": "https://arxiv.org/pdf/2609.08759v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "examines random-rotation quantization reconstruction scales, relevant to incoherence-rotation low-bit quantization theory",
+      "llm_evidence_cn": "研究随机旋转量化中的重建缩放，关联低比特量化的非相干/旋转处理理论基础",
+      "llm_evidence": "研究随机旋转量化中的重建缩放，关联低比特量化的非相干/旋转处理理论基础",
+      "canonical_evidence": "研究随机旋转量化中的重建缩放，关联低比特量化的非相干/旋转处理理论基础",
+      "llm_tldr_en": "This note connects two reconstruction scales in EDEN randomized-rotation quantization to classical Wiener and unbiased CDEF coefficients, proving the CDEF +1 relation holds pointwise per rotation but not after averaging over rotations, clarifying scaling in low-bit rotated quantization.",
+      "llm_tldr_cn": "基于随机旋转的量化方案近年重新受到关注，但MMSE与无偏重建缩放之间的关系及其经典理论依据尚待厘清。本注记指出，EDEN系列方法采用的两种重建尺度分别对应经典CDEF表述中Wiener系数和无偏系数的有限维、依赖具体旋转实现的版本。在有限块长下，CDEF +1关系对每个旋转实现逐点成立，构成精确的几何毕达哥拉斯恒等式；然而对旋转随机平均后该等式不再成立。该结论有助于理解随机旋转低比特量化中的最优缩放设计，对非相干旋转类LLM权重量化方法具有理论支撑意义。",
+      "llm_tldr": "基于随机旋转的量化方案近年重新受到关注，但MMSE与无偏重建缩放之间的关系及其经典理论依据尚待厘清。本注记指出，EDEN系列方法采用的两种重建尺度分别对应经典CDEF表述中Wiener系数和无偏系数的有限维、依赖具体旋转实现的版本。在有限块长下，CDEF +1关系对每个旋转实现逐点成立，构成精确的几何毕达哥拉斯恒等式；然而对旋转随机平均后该等式不再成立。该结论有助于理解随机旋转低比特量化中的最优缩放设计，对非相干旋转类LLM权重量化方法具有理论支撑意义。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "incoherence processing and Hadamard rotation to enable low bit LLM quantization without accuracy loss",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

@@ -1,0 +1,57 @@
+{
+  "date": "20260909",
+  "date_label": "",
+  "generated_at": "2026-09-09 21:51:45 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.06161v1",
+      "route": "202609/09/2609.06161v1-all-for-1-bit-towards-genuine-1-bit-post-training-quantization-for-llms",
+      "title": "All for 1-Bit: Towards Genuine 1-Bit Post-Training Quantization for LLMs",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 10.0,
+      "evidence": "直接提出真正1比特LLM训练后量化框架，采用Hessian感知分解等策略",
+      "first_seen_at": "2026-09-09 21:51:45 UTC",
+      "updated_at": "2026-09-09 21:51:45 UTC"
+    },
+    {
+      "paper_id": "2609.07664v1",
+      "route": "202609/09/2609.07664v1-accuracy-is-not-enough-a-divergence-based-approach-to-evaluate-fidelity-loss-in-quantized-llms",
+      "title": "Accuracy is Not Enough: A Divergence-Based Approach to Evaluate Fidelity Loss in Quantized LLMs",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "针对激进后训练量化的散度评估框架，直接衡量极低比特量化权重相对BF16基线的保真度损失",
+      "first_seen_at": "2026-09-09 21:51:45 UTC",
+      "updated_at": "2026-09-09 21:51:45 UTC"
+    },
+    {
+      "paper_id": "2609.08759v1",
+      "route": "202609/09/2609.08759v1-a-note-on-scaling-in-randomly-rotated-quantization-and-its-connection-to-the-cdef-1-pythagorean-relation",
+      "title": "A Note on Scaling in Randomly Rotated Quantization and Its Connection to the CDEF +1 Pythagorean Relation",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "研究随机旋转量化中的重建缩放，关联低比特量化的非相干/旋转处理理论基础",
+      "first_seen_at": "2026-09-09 21:51:45 UTC",
+      "updated_at": "2026-09-09 21:51:45 UTC"
+    }
+  ]
+}

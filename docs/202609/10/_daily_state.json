@@ -1,0 +1,73 @@
+{
+  "date": "20260910",
+  "date_label": "",
+  "generated_at": "2026-09-10 22:02:42 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.09240v1",
+      "route": "202609/10/2609.09240v1-scaling-post-training-ternarisation-to-qwen3-8b-capability-retention-reproduction-lossless-packing-and-packed-execution",
+      "title": "Scaling Post-Training Ternarisation to Qwen3-8B Capability Retention, Reproduction, Lossless Packing, and Packed Execution",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "1.58比特训练后三值化与格感知打包执行",
+      "first_seen_at": "2026-09-10 22:02:42 UTC",
+      "updated_at": "2026-09-10 22:02:42 UTC"
+    },
+    {
+      "paper_id": "2609.09867v1",
+      "route": "202609/10/2609.09867v1-contextual-utility-of-quantization-moves-in-extreme-low-bit-llms",
+      "title": "Contextual Utility of Quantization Moves in Extreme Low-Bit LLMs",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "极低比特LLM中的训练后量化与量化移动",
+      "first_seen_at": "2026-09-10 22:02:42 UTC",
+      "updated_at": "2026-09-10 22:02:42 UTC"
+    },
+    {
+      "paper_id": "2609.02846v1",
+      "route": "202609/10/2609.02846v1-ue5m3-fp4-block-scaling-for-stable-language-model-pretraining",
+      "title": "UE5M3 FP4 Block Scaling for Stable Language Model Pretraining",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "FP4低比特LLM训练，块缩放与Hadamard变换",
+      "first_seen_at": "2026-09-10 22:02:42 UTC",
+      "updated_at": "2026-09-10 22:02:42 UTC"
+    },
+    {
+      "paper_id": "2609.08135v1",
+      "route": "202609/10/2609.08135v1-kbbq-a-predictive-noise-law-and-the-limits-of-spectrum-flattening-in-fp4-quantization",
+      "title": "KBBQ: A Predictive Noise Law and the Limits of Spectrum Flattening in FP4 Quantization",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "量化噪声理论与保持函数的线性变换、频谱平坦化",
+      "first_seen_at": "2026-09-10 22:02:42 UTC",
+      "updated_at": "2026-09-10 22:02:42 UTC"
+    }
+  ]
+}

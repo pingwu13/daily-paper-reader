@@ -1,0 +1,69 @@
+{
+  "label": "2026-09-10",
+  "date": "2026-09-10",
+  "generated_at": "2026-09-10T22:02:43",
+  "count": 4,
+  "papers": [
+    {
+      "paper_id": "202609/10/2609.09240v1-scaling-post-training-ternarisation-to-qwen3-8b-capability-retention-reproduction-lossless-packing-and-packed-execution",
+      "section": "deep",
+      "title_en": "Scaling Post-Training Ternarisation to Qwen3-8B Capability Retention, Reproduction, Lossless Packing, and Packed Execution",
+      "authors": "Anirudh Malik, M Sparsh Mehra, Poojith Devan",
+      "date": "2026-09-08",
+      "pdf": "https://arxiv.org/pdf/2609.09240v1",
+      "score": "9.0",
+      "evidence": "1.58比特训练后三值化与格感知打包执行",
+      "tldr": "超低比特模型可降存储与访存，但“1.58-bit”标签不说明实际部署表示和执行成本。本文把 Qwen3-4B 的 KOTMS 旋转、E2M-ATQ 自适应三值化与 GPTQ 式误差补偿后训练流程扩展到 Qwen3-8B，并做外部复现门禁、匹配的 4B/8B 能力对比、跨语料困惑度、有效比特核算、无损打包和直接打包执行。8B 三语料困惑度比为 1.361x，八项零样本平均 64.6% 对 FP16 72.4%，机会校正保留 78.5%，比 4B 高 8.9 点；打包 8.24 GiB 保持精度，直接执行 15.52 tokens/s。该工作验证放大模型可提升抗离散化鲁棒性，并解决序列化与可行执行。",
+      "tags": "query:elblq",
+      "abstract_en": "Ultra-low-bit language models promise reductions in storage and memory traffic, but a nominal \"1.58-bit\" label does not specify the deployed representation or its execution cost. We study a scale-up of an aggressive post-training conversion pipeline from Qwen3-4B to Qwen3-8B.   The conversion uses KOTMS rotation, E2M-ATQ adaptive ternarisation, and GPTQ-style error compensation in a weight-only A16 configuration. We do not claim these algorithms as new. Our contribution is the end-to-end scale-up characterisation: an external reproduction gate, matched 4B/8B capability analysis, cross-corpus perplexity, effective-bit accounting, lossless lattice-aware packing, and direct packed execution.   The 8B model reaches a three-corpus perplexity ratio of 1.361x, with WikiText-2, C4, and PTB ratios of 1.318x, 1.393x, and 1.371x. On eight zero-shot tasks at n = 500, mean accuracy is 64.6% versus 72.4% for FP16, corresponding to 78.5% chance-corrected retention and a 7.8-point absolute cost. The matched 4B run retains 69.6%, yielding an 8.9-point 8B advantage.   The packed checkpoint is 8.24 GiB and preserves the recorded perplexity to measurement precision. Direct packed execution reaches 15.52 tokens/s in 7.35 GiB, while a preliminary packed GEMV remains slower than FP16 cuBLAS. The result is a validated scale-up baseline: model size improves robustness to aggressive post-training discretisation, actual serialisation is solved for the measured artefact, and direct execution is feasible, while broader seeds, calibration distributions, and kernel optimisation remain open.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/10/2609.09867v1-contextual-utility-of-quantization-moves-in-extreme-low-bit-llms",
+      "section": "deep",
+      "title_en": "Contextual Utility of Quantization Moves in Extreme Low-Bit LLMs",
+      "authors": "Wenxuan Xiao, Xu Cao",
+      "date": "2026-09-09",
+      "pdf": "https://arxiv.org/pdf/2609.09867v1",
+      "score": "9.0",
+      "evidence": "极低比特LLM中的训练后量化与量化移动",
+      "tldr": "极端低比特LLM量化中，量化移动的效用依赖执行状态，传统重构代理或当前状态梯度会误判。本文提出在移动中点评估梯度以捕获曲率，并将合法量化状态建模为二次伪布尔函数分析移动交互。实验在Llama-3.2两比特冻结移动上显示，中点评估更准预测精确端点损失方向，端点束搜索找到稀疏改动优于一次性大更新，干预后重新定价出现符号反转。这表明可靠量化构造须沿移动自身路径评估有限改动，并从演化中的量化状态组合移动。",
+      "tags": "query:elblq",
+      "abstract_en": "Post-training quantizers select finite code changes using reconstruction proxies or local loss approximations, but the utility of a quantization move depends on the state through which it is executed. We identify two sources of this contextual dependence. First, the displacement of the move matters: evaluating the gradient at the move midpoint captures curvature accumulated along the move that a current-state linearization omits. Across frozen two-bit moves from Llama-3.2 models, midpoint evaluation predicts the direction of exact endpoint loss changes substantially more accurately than current-state gradients. Second, moves interact: exhaustive lattices of legal quantized states are well approximated by quadratic pseudo-Boolean functions, yet their small pairwise components can determine Pareto fronts and cause different evaluation functionals to prefer opposite directions. These effects explain failures of reconstruction-optimal code re-selection and additive composition. Reading each move at its own midpoint repairs the local selection step and improves downstream accuracy and held-out perplexity, while larger supports require evaluating exact endpoints from the state actually reached. Exact-endpoint beam search finds sparse changes that dominate much larger one-shot updates, and repricing the same moves after intervening changes produces widespread sign reversals. These results show that quantization utility is contextual at the granularity of a few moves: reliable construction must evaluate finite changes along their own paths and compose them from the evolving quantized state.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/10/2609.02846v1-ue5m3-fp4-block-scaling-for-stable-language-model-pretraining",
+      "section": "quick",
+      "title_en": "UE5M3 FP4 Block Scaling for Stable Language Model Pretraining",
+      "authors": "Robert Hu, Carlo Luschi, Paul Balanca",
+      "date": "2026-09-02",
+      "pdf": "https://arxiv.org/pdf/2609.02846v1",
+      "score": "6.0",
+      "evidence": "FP4低比特LLM训练，块缩放与Hadamard变换",
+      "tldr": "稳定FP4预训练受限于E2M1有效载荷动态范围窄，NVIDIA Transformer Engine nv方案需依赖当前张量缩放、RHT和BF16末层，带来额外开销。本文提出用无符号E5M3块缩放搭配E2M1，并采用周期性张量缩放、反向梯度选择性随机舍入、省略RHT，并在所有可用的内部线性层使用FP4。在Nemotron-H 8B上预训练约1900亿token，块大小16方案最终窗口训练损失和量化推理验证NLL均低于TE nv，三项下游聚合指标也更高。原生nv执行消融联合移除RHT与BF16末块豁免后，模型主体token吞吐提升21.2%，证明更简软件模拟UE5M3 FP4预训练可行并推动原生支持。",
+      "tags": "query:elblq",
+      "abstract_en": "Stable 4-bit floating-point (FP4) pretraining is difficult because the E2M1 payload represents only a narrow range of magnitudes. NVIDIA's Transformer Engine \\nv{} recipe addresses this with current-tensor scaling, a randomized Hadamard transform (RHT), and bfloat16 (BF16) final layers, adding work outside the FP4 matrix multiplications. We instead pair E2M1 payloads with unsigned E5M3 (\\ue{}) block scales. Their wider range permits periodic tensor scaling, while our recipe applies selective stochastic rounding to backward gradients, omits RHT, and uses FP4 in all eligible internal linears.   We pretrain a Nemotron-H 8B model for nearly 190 billion tokens. Compared with Transformer Engine \\nv{}, the proposed block-16 recipe finishes with lower final-window training loss and, under their respective quantized-inference policies, lower validation loss measured as held-out negative log-likelihood. Its quantized-inference downstream point estimates are also higher on all three reported aggregates. A native \\nv{} execution ablation that jointly removes RHT and the BF16 final-block exemption increases measured model-body token throughput by 21.2\\%. These results demonstrate end-to-end software-emulated \\uefp{} pretraining with a simpler recipe and motivate native support for \\ue{} block scaling.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/10/2609.08135v1-kbbq-a-predictive-noise-law-and-the-limits-of-spectrum-flattening-in-fp4-quantization",
+      "section": "quick",
+      "title_en": "KBBQ: A Predictive Noise Law and the Limits of Spectrum Flattening in FP4 Quantization",
+      "authors": "Lexington Whalen, Yuki Ito, Ryo Sakamoto",
+      "date": "2026-09-08",
+      "pdf": "https://arxiv.org/pdf/2609.08135v1",
+      "score": "6.0",
+      "evidence": "量化噪声理论与保持函数的线性变换、频谱平坦化",
+      "tldr": "针对 FP4 矩阵乘法量化噪声缺乏统一二阶理论、整数噪声理论难以解释浮点舍入数据依赖的问题，本文以每元素方差刻画量化格式，推导出闭式信噪比定律，并得到函数保持线性变换无法超越的谱平坦化上限 κ*。基于该理论提出 KBBQ，用参数化方式控制变换逼近上限的程度。在 W4A4、四个基座模型和两种 FP4 格式上，KBBQ 无需额外部署计算即超越此前最优方法，为低精度量化提供了理论边界与实用方案。",
+      "tags": "query:elblq",
+      "abstract_en": "We develop a second-order theory of quantization noise in matrix multiplication in which the quantization format is characterized by the variance it assigns to each element. The constant variance profile of integer quantization recovers existing integer-noise theory, while the multiplicative profile of floating-point rounding reduces the data dependence to a scalar, the participation factor $κ$, yielding a closed-form signal-to-noise-ratio law. The resulting functional also admits a closed-form upper bound $κ^{*}$ that no function-preserving linear transform can exceed and that is attained by a recent state-of-the-art method. Building on this analysis, we introduce KBBQ (\\textbf{K}appa-\\textbf{B}raked \\textbf{B}lockwise \\textbf{Q}uantization), which parameterizes the extent to which a transform approaches this ceiling. At W4A4, across four base models and two FP4 formats, KBBQ outperforms the prior state of the art without additional deployment-time computation.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

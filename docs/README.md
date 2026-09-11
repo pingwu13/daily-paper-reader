@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-10</span>
+      <span class="dpr-home-dashboard-kicker">2026-09-11</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 4 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>1</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>1</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-09-10 22:02:42 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-09-11 22:01:39 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,9 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>今日精读两篇 9 分量化论文：Qwen3-8B 三值化后训练的能力保持与无损打包，以及极低比特 LLM 中量化移动的上下文效用。最值得关注三值化落地到 Qwen3-8B 的完整链路，以及极低比特下量化策略要随上下文调整。普通读者可优先读这两篇，再按需速览 FP4 块缩放与 KBBQ 两篇 6 分工作。</p>
+<p>今天精读1篇、速读1篇，共2篇论文，都聚焦大语言模型的量化压缩，精读的《Structured Transforms for Low-Overhead Quantization of Language Models》拿到9.0分，速读的《Why Does Post-Training Quantization Work?》为7.0分。</p>
+<p>最值得看的是前者提出的结构化变换思路——在降低量化开销的同时保持模型效果，而后者则从原理层面解释训练后量化为何有效，两者一个讲&quot;怎么做省&quot;，一个讲&quot;为什么行&quot;。</p>
+<p>普通读者若关注模型部署成本，可先读9.0分那篇了解低开销量化的具体手段，再借7.0分那篇补上原理认知，形成从方法到机理的完整理解。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -71,12 +73,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Scaling Post-Training Ternarisation to Qwen3-8B Capability Retention, Reproduction, Lossless Packing, and Packed Execution">Scaling Post-Training Ternarisation to Qwen3-8B Capability Retention, Reproduction, Lossless Packing, and Packed Execution</span></li><li><span class="dpr-home-dashboard-paper-title" title="Contextual Utility of Quantization Moves in Extreme Low-Bit LLMs">Contextual Utility of Quantization Moves in Extreme Low-Bit LLMs</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Structured Transforms for Low-Overhead Quantization of Language Models">Structured Transforms for Low-Overhead Quantization of Language Models</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -84,12 +86,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">2 篇</strong>
+    <strong class="dpr-home-dashboard-count">1 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="UE5M3 FP4 Block Scaling for Stable Language Model Pretraining">UE5M3 FP4 Block Scaling for Stable Language Model Pretraining</span></li><li><span class="dpr-home-dashboard-paper-title" title="KBBQ: A Predictive Noise Law and the Limits of Spectrum Flattening in FP4 Quantization">KBBQ: A Predictive Noise Law and the Limits of Spectrum Flattening in FP4 Quantization</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Why Does Post-Training Quantization Work?">Why Does Post-Training Quantization Work?</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>2</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">elblq <strong>1</strong></span></div>
 </section>
 </div>
 

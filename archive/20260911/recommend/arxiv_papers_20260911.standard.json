@@ -1,0 +1,98 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-11T21:57:29.272601+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [
+    {
+      "id": "2609.11687v1",
+      "source": "arxiv",
+      "title": "Structured Transforms for Low-Overhead Quantization of Language Models",
+      "abstract": "We revisit Kashin-decomposition-based weight quantization for large language models and propose an improved algorithm with stronger convergence properties and structured, efficient orthogonal transforms. The method retains the core factorization of each weight into two components -- one with bounded infinity norm and the other with bounded infinity norm after an orthogonal transformation -- but replaces the dense random orthogonal matrix with a sign-randomized Discrete Cosine Transform (DCT), reducing the per-iteration cost from $\\mathcal{O}(N^2)$ to $\\mathcal{O}(N \\log N)$. The proposed greedy algorithm with alternating updates guarantees the four-peak distribution required for stable 2-bit clustering of each factor and admits closed-form initialization of cluster centers, removing the multi-restart k-means bottleneck of prior work. Composed with OPTQ-style sequential error compensation and QuIP-style incoherence preprocessing, the resulting JAX pipeline is competitive with OPTQ, QuIP, QuIP-RG and a fine-tuning- and vector-quantization-free variant of QuIP# at 4-bit per channel on OPT, Llama-2 and Pythia, with favorable wall-clock scaling. The bounded-$\\ell_\\infty$ factorization is also notably robust: on stress configurations where QuIP variants diverge to four-digit perplexity (Pythia-6.9B) or abort with NaNs in LDL back-substitution (Mistral-7B), Kashin-DCT remains numerically stable and stays close to FP16 baseline. At inference time, each weight decomposes into two 2-bit factor codes per channel that are structurally suited to native-2-bit hardware.",
+      "authors": [
+        "Daria Cherniuk",
+        "Alexander Rudikov",
+        "Boris Kashin",
+        "Ivan Oseledets"
+      ],
+      "primary_category": "cs.CL",
+      "categories": [
+        "cs.CL"
+      ],
+      "published": "2026-09-10T15:15:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.11687v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "structured orthogonal transforms enable low-overhead 2-bit weight quantization of language models",
+      "llm_evidence_cn": "结构化正交变换实现语言模型低开销2比特权重量化",
+      "llm_evidence": "结构化正交变换实现语言模型低开销2比特权重量化",
+      "canonical_evidence": "结构化正交变换实现语言模型低开销2比特权重量化",
+      "llm_tldr_en": "This paper improves Kashin-decomposition-based weight quantization for LLMs by replacing the dense random orthogonal matrix with a sign-randomized DCT, cutting per-iteration cost from O(N^2) to O(N log N) while guaranteeing stable 2-bit clustering.",
+      "llm_tldr_cn": "针对现有Kashin分解权重量化依赖稠密随机正交矩阵、迭代开销高达O(N^2)的问题，本文提出一种改进算法，用符号随机化离散余弦变换替代稠密矩阵，将单次迭代成本降至O(N log N)。配合交替更新的贪心算法，该方法保证各因子呈现稳定2比特聚类所需的四峰分布，并给出闭式初始化。结果表明其收敛性更强、开销更低，为语言模型低比特权重量化提供了高效实现路径。",
+      "llm_tldr": "针对现有Kashin分解权重量化依赖稠密随机正交矩阵、迭代开销高达O(N^2)的问题，本文提出一种改进算法，用符号随机化离散余弦变换替代稠密矩阵，将单次迭代成本降至O(N log N)。配合交替更新的贪心算法，该方法保证各因子呈现稳定2比特聚类所需的四峰分布，并给出闭式初始化。结果表明其收敛性更强、开销更低，为语言模型低比特权重量化提供了高效实现路径。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "2-bit weight quantization for large language models",
+      "matched_requirement_id": "req-2",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.11716v1",
+      "source": "arxiv",
+      "title": "Why Does Post-Training Quantization Work?",
+      "abstract": "Post-training quantization compresses large language models (LLMs) by storing their weights at reduced precision, and each quantized weight introduces an error into the hidden states. Naively, these errors should accumulate with depth and corrupt next-token prediction; randomly initialized models accumulate these discrepancies rapidly, whereas quantized pretrained models accumulate much less hidden-state error and largely maintain downstream task performance, even though they were never trained with quantization noise. This raises the question we address: why does post-training quantization work? Comparing full-precision and quantized forward passes, we identify two mechanisms that characterize pretrained quantization robustness. First, the error a layer newly introduces tends to oppose the error it inherits from the layer's input. The two cancel partially such that the discrepancy between full-precision and quantized passes grows slowly. This counteracting residual interaction develops during pretraining. Our quantitative analysis identifies it as a major factor slowing hidden-error growth. Second, LM-head geometry preferentially preserves the scores and probabilities of high-ranked tokens, which typically represent the model's most confident predictions. Together, these mechanisms explain why quantization error that passes through numerous layers can still produce only small output changes, and we verify the findings across models and quantization settings.",
+      "authors": [
+        "Yuxiang Chen",
+        "Michael Beyer",
+        "Jun Zhu",
+        "Jianfei Chen"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.CL"
+      ],
+      "published": "2026-09-10T15:32:32+00:00",
+      "link": "https://arxiv.org/pdf/2609.11716v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "analyzes why post-training quantization of LLM weights preserves downstream performance",
+      "llm_evidence_cn": "分析LLM权重训练后量化为何能保持下游性能",
+      "llm_evidence": "分析LLM权重训练后量化为何能保持下游性能",
+      "canonical_evidence": "分析LLM权重训练后量化为何能保持下游性能",
+      "llm_tldr_en": "Asks why post-training quantization works: quantized weights inject hidden-state errors that should accumulate with depth. Comparing full-precision and quantized passes, it identifies two mechanisms that give pretrained models quantization robustness and preserve downstream accuracy.",
+      "llm_tldr_cn": "论文追问训练后量化为何有效：量化权重会给隐状态引入误差，按深度累积本应破坏下一词预测。作者对比全精度与量化前向过程，识别出预训练模型中抑制误差累积的两类机制。结果表明量化预训练模型的隐状态误差远小于随机初始化模型，并基本维持下游任务性能。该工作为极低比特训练后量化的鲁棒性提供了机理解释。",
+      "llm_tldr": "论文追问训练后量化为何有效：量化权重会给隐状态引入误差，按深度累积本应破坏下一词预测。作者对比全精度与量化前向过程，识别出预训练模型中抑制误差累积的两类机制。结果表明量化预训练模型的隐状态误差远小于随机初始化模型，并基本维持下游任务性能。该工作为极低比特训练后量化的鲁棒性提供了机理解释。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

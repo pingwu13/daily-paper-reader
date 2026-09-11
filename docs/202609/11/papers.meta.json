@@ -1,0 +1,39 @@
+{
+  "label": "2026-09-11",
+  "date": "2026-09-11",
+  "generated_at": "2026-09-11T22:01:41",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202609/11/2609.11687v1-structured-transforms-for-low-overhead-quantization-of-language-models",
+      "section": "deep",
+      "title_en": "Structured Transforms for Low-Overhead Quantization of Language Models",
+      "authors": "Daria Cherniuk, Alexander Rudikov, Boris Kashin, Ivan Oseledets",
+      "date": "2026-09-10",
+      "pdf": "https://arxiv.org/pdf/2609.11687v1",
+      "score": "9.0",
+      "evidence": "结构化正交变换实现语言模型低开销2比特权重量化",
+      "tldr": "LLM低比特量化中，Kashin分解依赖稠密随机正交矩阵，迭代开销高且聚类需多次重启。本文提出结构化Kashin-DCT算法：以符号随机化DCT替换稠密正交变换，把每轮成本从O(N²)降至O(N log N)，并以交替贪心与闭式初始化保证稳定2-bit聚类。在OPT、Llama-2、Pythia上4-bit每通道精度媲美OPTQ、QuIP等，并在Pythia-6.9B、Mistral-7B下数值稳定、接近FP16。",
+      "tags": "query:elblq",
+      "abstract_en": "We revisit Kashin-decomposition-based weight quantization for large language models and propose an improved algorithm with stronger convergence properties and structured, efficient orthogonal transforms. The method retains the core factorization of each weight into two components -- one with bounded infinity norm and the other with bounded infinity norm after an orthogonal transformation -- but replaces the dense random orthogonal matrix with a sign-randomized Discrete Cosine Transform (DCT), reducing the per-iteration cost from $\\mathcal{O}(N^2)$ to $\\mathcal{O}(N \\log N)$. The proposed greedy algorithm with alternating updates guarantees the four-peak distribution required for stable 2-bit clustering of each factor and admits closed-form initialization of cluster centers, removing the multi-restart k-means bottleneck of prior work. Composed with OPTQ-style sequential error compensation and QuIP-style incoherence preprocessing, the resulting JAX pipeline is competitive with OPTQ, QuIP, QuIP-RG and a fine-tuning- and vector-quantization-free variant of QuIP# at 4-bit per channel on OPT, Llama-2 and Pythia, with favorable wall-clock scaling. The bounded-$\\ell_\\infty$ factorization is also notably robust: on stress configurations where QuIP variants diverge to four-digit perplexity (Pythia-6.9B) or abort with NaNs in LDL back-substitution (Mistral-7B), Kashin-DCT remains numerically stable and stays close to FP16 baseline. At inference time, each weight decomposes into two 2-bit factor codes per channel that are structurally suited to native-2-bit hardware.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/11/2609.11716v1-why-does-post-training-quantization-work",
+      "section": "quick",
+      "title_en": "Why Does Post-Training Quantization Work?",
+      "authors": "Yuxiang Chen, Michael Beyer, Jun Zhu, Jianfei Chen",
+      "date": "2026-09-10",
+      "pdf": "https://arxiv.org/pdf/2609.11716v1",
+      "score": "7.0",
+      "evidence": "分析LLM权重训练后量化为何能保持下游性能",
+      "tldr": "后训练量化（PTQ）以低精度权重压缩大语言模型，但每个权重的舍入误差会注入隐藏状态，按常理应随深度累积并破坏下一词预测。本文对比全精度与量化前向传播，发现预训练模型存在两种鲁棒机制：层新引入误差倾向于抵消从输入继承的误差，且 LM-head 几何结构优先保留高排名 token 的分数与概率。定量分析显示，这种反向残余交互显著减缓隐藏误差增长，二者共同解释误差穿过多层后输出变化仍小。该工作跨模型与量化设置验证，为理解 PTQ 有效性提供机制性解释。",
+      "tags": "query:elblq",
+      "abstract_en": "Post-training quantization compresses large language models (LLMs) by storing their weights at reduced precision, and each quantized weight introduces an error into the hidden states. Naively, these errors should accumulate with depth and corrupt next-token prediction; randomly initialized models accumulate these discrepancies rapidly, whereas quantized pretrained models accumulate much less hidden-state error and largely maintain downstream task performance, even though they were never trained with quantization noise. This raises the question we address: why does post-training quantization work? Comparing full-precision and quantized forward passes, we identify two mechanisms that characterize pretrained quantization robustness. First, the error a layer newly introduces tends to oppose the error it inherits from the layer's input. The two cancel partially such that the discrepancy between full-precision and quantized passes grows slowly. This counteracting residual interaction develops during pretraining. Our quantitative analysis identifies it as a major factor slowing hidden-error growth. Second, LM-head geometry preferentially preserves the scores and probabilities of high-ranked tokens, which typically represent the model's most confident predictions. Together, these mechanisms explain why quantization error that passes through numerous layers can still produce only small output changes, and we verify the findings across models and quantization settings.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

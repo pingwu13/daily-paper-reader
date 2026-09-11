@@ -1,0 +1,41 @@
+{
+  "date": "20260911",
+  "date_label": "",
+  "generated_at": "2026-09-11 22:01:39 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.11687v1",
+      "route": "202609/11/2609.11687v1-structured-transforms-for-low-overhead-quantization-of-language-models",
+      "title": "Structured Transforms for Low-Overhead Quantization of Language Models",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "结构化正交变换实现语言模型低开销2比特权重量化",
+      "first_seen_at": "2026-09-11 22:01:39 UTC",
+      "updated_at": "2026-09-11 22:01:39 UTC"
+    },
+    {
+      "paper_id": "2609.11716v1",
+      "route": "202609/11/2609.11716v1-why-does-post-training-quantization-work",
+      "title": "Why Does Post-Training Quantization Work?",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "分析LLM权重训练后量化为何能保持下游性能",
+      "first_seen_at": "2026-09-11 22:01:39 UTC",
+      "updated_at": "2026-09-11 22:01:39 UTC"
+    }
+  ]
+}

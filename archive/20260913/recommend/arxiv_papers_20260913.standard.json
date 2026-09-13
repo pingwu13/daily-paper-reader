@@ -1,0 +1,56 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-13T21:07:36.239070+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.09208v1",
+      "source": "arxiv",
+      "title": "Shift-Accumulate Attention: Multiplier-Free Query--Key Products for Transformer Decoding",
+      "abstract": "Power-of-two (PoT) quantisation turns a multiplication into a bit shift, so far only for the post-softmax attention--value product. The earlier and larger product, S=QK^T, has not been reformulated the same way. We quantise the key cache to a signed power-of-two fixed-point code, so that every scalar multiplication in QK^T becomes a sign flip, a bit shift and an integer accumulation. A fixed-point head-room F>= e_max turns every shift index r=F-e into a non-negative left shift, making the accumulation exact in integer arithmetic. We add a sub-power mantissa extension that halves the score error for one extra shift-add, a shift-exact online softmax whose running maximum lives in an integer log2 domain so that every rescaling is itself an exact shift, and a log-quantised AV product.   Fused CUDA kernels in a 1.1B Llama decoder on an RTX 4090: at B=8, T=32k the 4-bit kernel is 4.60x faster than FP16 scaled dot-product attention with a 2.5x smaller KV cache, and batched decoding crosses over at B=64 to 1.22x FP16 throughput at 11.02 against 13.77 GB peak memory. A matched INT8 multiply--accumulate kernel on the same tiling reaches 5.29x: on a GPU with a hardware 4-way INT8 dot product, shift-accumulate is not faster than the MAC it replaces. An iso-storage control--an 8-bit shift code of exactly one byte per key, run through the identical kernel--prices the arithmetic substitution alone at 2.02x at comparable accuracy. The advantage of the PoT representation is therefore its density and the removal of the multiplier, not raw GPU throughput. A sweep over exponent width, mantissa levels, granularity and rounding gives the design lesson: nearest-PoT relative error is scale-free, so extra exponent bits buy nothing (eps_S=0.1302 at 3, 4 and 5 bits) and accuracy must come from mantissa terms.",
+      "authors": [
+        "Khubaib Ahmed",
+        "Amna Noor",
+        "Ahsan Ul haq"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-09-05T21:14:28+00:00",
+      "link": "https://arxiv.org/pdf/2609.09208v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "power-of-two quantisation enabling multiplier-free low-bit attention decoding",
+      "llm_evidence_cn": "幂次量化实现免乘法的低比特注意力解码",
+      "llm_evidence": "幂次量化实现免乘法的低比特注意力解码",
+      "canonical_evidence": "幂次量化实现免乘法的低比特注意力解码",
+      "llm_tldr_en": "Quantizes the key cache to signed power-of-two fixed-point codes so QK^T scalar products become sign flips, bit shifts and integer accumulation, with a sub-power mantissa extension halving score error.",
+      "llm_tldr_cn": "大模型解码中 QK^T 是规模最大的乘法运算，但此前的幂次量化只把 softmax 之后的注意力-值乘积转化为位移操作。本文把键缓存量化为带符号的幂次定点码，使 QK^T 的每次标量乘法变为符号翻转、位移与整数累加，并通过定点余量使移位索引非负，从而在整数算术下精确累加；额外的亚幂尾数扩展以一次移位加法将分数误差减半，配合整数 log2 域的在线 softmax。该方案为 Transformer 解码提供了免乘法、便于硬件高效实现的低比特注意力推理路径。",
+      "llm_tldr": "大模型解码中 QK^T 是规模最大的乘法运算，但此前的幂次量化只把 softmax 之后的注意力-值乘积转化为位移操作。本文把键缓存量化为带符号的幂次定点码，使 QK^T 的每次标量乘法变为符号翻转、位移与整数累加，并通过定点余量使移位索引非负，从而在整数算术下精确累加；额外的亚幂尾数扩展以一次移位加法将分数误差减半，配合整数 log2 域的在线 softmax。该方案为 Transformer 解码提供了免乘法、便于硬件高效实现的低比特注意力推理路径。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    }
+  ]
+}

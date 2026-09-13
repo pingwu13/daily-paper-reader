@@ -1,0 +1,25 @@
+{
+  "date": "20260913",
+  "date_label": "",
+  "generated_at": "2026-09-13 21:08:19 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.09208v1",
+      "route": "202609/13/2609.09208v1-shift-accumulate-attention-multiplier-free-query--key-products-for-transformer-decoding",
+      "title": "Shift-Accumulate Attention: Multiplier-Free Query--Key Products for Transformer Decoding",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "幂次量化实现免乘法的低比特注意力解码",
+      "first_seen_at": "2026-09-13 21:08:19 UTC",
+      "updated_at": "2026-09-13 21:08:19 UTC"
+    }
+  ]
+}

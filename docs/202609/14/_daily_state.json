@@ -1,0 +1,25 @@
+{
+  "date": "20260914",
+  "date_label": "",
+  "generated_at": "2026-09-14 22:35:27 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.12208v1",
+      "route": "202609/14/2609.12208v1-vortex-bridging-extreme-compression-and-efficient-llm-inference",
+      "title": "Vortex: Bridging Extreme Compression and Efficient LLM Inference",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "向量量化压缩与高效LLM推理硬件",
+      "first_seen_at": "2026-09-14 22:35:27 UTC",
+      "updated_at": "2026-09-14 22:35:27 UTC"
+    }
+  ]
+}

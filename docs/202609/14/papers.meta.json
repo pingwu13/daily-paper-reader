@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-14",
+  "date": "2026-09-14",
+  "generated_at": "2026-09-14T22:35:28",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/14/2609.12208v1-vortex-bridging-extreme-compression-and-efficient-llm-inference",
+      "section": "deep",
+      "title_en": "Vortex: Bridging Extreme Compression and Efficient LLM Inference",
+      "authors": "Haoxuan Shan, Cong Guo, Bowen Duan, Chiyue Wei, Feng Cheng, Yuzhe Fu, Yintao He, Hai \"Helen\" Li, Yiran Chen",
+      "date": "2026-09-10",
+      "pdf": "https://arxiv.org/pdf/2609.12208v1",
+      "score": "9.0",
+      "evidence": "向量量化压缩与高效LLM推理硬件",
+      "tldr": "大语言模型推理受限于内存开销，向量量化与输入相关稀疏虽能极限压缩模型，但在传统脉动阵列加速器上反量化开销高、稀疏模式不规则，压缩难以转化为实际效率。为此提出 Vortex 架构，以极小的硬件开销兼容脉动阵列，采用双流执行策略同时支持预填充与解码负载，并结合码本级上下文稀疏算法与系统化设计空间探索。在端到端负载上取得 8.03 至 23.7 倍加速与 5.68 至 12.5 倍能耗降低。",
+      "tags": "query:elblq",
+      "abstract_en": "Extreme compression techniques, including vector quantization (VQ) and input-dependent sparsity, can significantly reduce the memory footprint of large language models (LLMs). However, a key challenge remains in translating such compression into practical efficiency. On conventional systolic-array-based accelerators, VQ incurs high dequantization overhead, while the irregular patterns of input-dependent sparsity are difficult to exploit. In this study, we address these challenges with Vortex, an architecture compatible with systolic-array-based accelerators with minimal hardware overhead, bridging the gap between extreme compression and efficient inference. Vortex adopts a bi-flow execution strategy that efficiently supports vector-quantized models across both prefill and decoding workloads, and we further optimize it through systematic design space exploration. On the algorithm side, we propose codebook-wise contextual sparsity to align with VQ execution. Across end-to-end workloads, Vortex achieves $8.03\\times$--$23.7\\times$ speedup and $5.68\\times$--$12.5\\times$ energy reduction over state-of-the-art accelerators.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

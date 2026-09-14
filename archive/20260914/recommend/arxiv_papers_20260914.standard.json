@@ -1,0 +1,61 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-14T22:33:31.835517+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2609.12208v1",
+      "source": "arxiv",
+      "title": "Vortex: Bridging Extreme Compression and Efficient LLM Inference",
+      "abstract": "Extreme compression techniques, including vector quantization (VQ) and input-dependent sparsity, can significantly reduce the memory footprint of large language models (LLMs). However, a key challenge remains in translating such compression into practical efficiency. On conventional systolic-array-based accelerators, VQ incurs high dequantization overhead, while the irregular patterns of input-dependent sparsity are difficult to exploit. In this study, we address these challenges with Vortex, an architecture compatible with systolic-array-based accelerators with minimal hardware overhead, bridging the gap between extreme compression and efficient inference. Vortex adopts a bi-flow execution strategy that efficiently supports vector-quantized models across both prefill and decoding workloads, and we further optimize it through systematic design space exploration. On the algorithm side, we propose codebook-wise contextual sparsity to align with VQ execution. Across end-to-end workloads, Vortex achieves $8.03\\times$--$23.7\\times$ speedup and $5.68\\times$--$12.5\\times$ energy reduction over state-of-the-art accelerators.",
+      "authors": [
+        "Haoxuan Shan",
+        "Cong Guo",
+        "Bowen Duan",
+        "Chiyue Wei",
+        "Feng Cheng",
+        "Yuzhe Fu",
+        "Yintao He",
+        "Hai \"Helen\" Li",
+        "Yiran Chen"
+      ],
+      "primary_category": "cs.AR",
+      "categories": [
+        "cs.AR"
+      ],
+      "published": "2026-09-10T21:04:15+00:00",
+      "link": "https://arxiv.org/pdf/2609.12208v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "vector quantization compression with efficient LLM inference hardware",
+      "llm_evidence_cn": "向量量化压缩与高效LLM推理硬件",
+      "llm_evidence": "向量量化压缩与高效LLM推理硬件",
+      "canonical_evidence": "向量量化压缩与高效LLM推理硬件",
+      "llm_tldr_en": "Extreme compression via vector quantization and input-dependent sparsity shrinks LLM memory, yet systolic-array accelerators face high dequantization overhead and irregular sparsity. Vortex, a bi-flow execution architecture with minimal hardware cost, efficiently supports vector-quantized models, bridging extreme compression and practical inference.",
+      "llm_tldr_cn": "向量量化与输入相关稀疏等极端压缩技术能大幅降低大语言模型的内存占用，但传统脉动阵列加速器面临反量化开销高、稀疏模式难以利用的问题。本文提出Vortex架构，通过双流执行策略以极小的硬件开销高效支持向量量化模型的推理。实验表明该方法能有效降低反量化开销，在压缩模型上实现实用加速。该工作弥合了极端压缩与高效推理之间的鸿沟，为极低比特LLM的硬件部署提供了可行方案。",
+      "llm_tldr": "向量量化与输入相关稀疏等极端压缩技术能大幅降低大语言模型的内存占用，但传统脉动阵列加速器面临反量化开销高、稀疏模式难以利用的问题。本文提出Vortex架构，通过双流执行策略以极小的硬件开销高效支持向量量化模型的推理。实验表明该方法能有效降低反量化开销，在压缩模型上实现实用加速。该工作弥合了极端压缩与高效推理之间的鸿沟，为极低比特LLM的硬件部署提供了可行方案。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "efficient GPU kernel and hardware deployment for extreme low bit quantized large language model inference",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

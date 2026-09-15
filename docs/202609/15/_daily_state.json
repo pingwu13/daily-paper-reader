@@ -1,0 +1,25 @@
+{
+  "date": "20260915",
+  "date_label": "",
+  "generated_at": "2026-09-15 22:03:44 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.14706v1",
+      "route": "202609/15/2609.14706v1-waterkron-and-flipflop-hessian-information-theoretically-grounded-quantization-with-kronecker-factored-hessians",
+      "title": "WaterKron and FlipFlop Hessian: Information-Theoretically Grounded Quantization with Kronecker-factored Hessians",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "基于率失真与熵编码的低比特权重量化",
+      "first_seen_at": "2026-09-15 22:03:44 UTC",
+      "updated_at": "2026-09-15 22:03:44 UTC"
+    }
+  ]
+}

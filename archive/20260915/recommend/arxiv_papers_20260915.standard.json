@@ -1,0 +1,56 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-15T22:02:49.636579+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 0,
+    "deep_cap": 7,
+    "deep_selected": 0,
+    "quick_candidates": 1,
+    "quick_skim_target": 12,
+    "quick_selected": 1
+  },
+  "deep_dive": [],
+  "quick_skim": [
+    {
+      "id": "2609.14706v1",
+      "source": "arxiv",
+      "title": "WaterKron and FlipFlop Hessian: Information-Theoretically Grounded Quantization with Kronecker-factored Hessians",
+      "abstract": "How should a Kronecker-factored Hessian approximation be chosen for post-training quantization? We address this question through WaterKron, which combines two-sided GPTQ with row- and column-dependent waterfilling scales and entropy coding. We derive its high-rate distortion with respect to the full Hessian using an explicit Kronecker-Hessian mismatch factor $Φ$. This factor quantifies the asymptotic distortion penalty due to the Kronecker Hessian approximation and provides a criterion for selecting the factors optimally. Minimizing $Φ$ leads to a Gaussian covariance-fitting problem with classical ``flip-flop'' updates. We thus give a rate-distortion justification for using the resulting FlipFlop Hessian in quantization. We evaluate it empirically, finding that the FlipFlop Hessian consistently improves KL divergence and perplexity over input-only, marginal, and Frobenius-based Hessian choices.",
+      "authors": [
+        "Johann Birnick",
+        "Rayan Saab"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "cs.AI"
+      ],
+      "published": "2026-09-13T18:03:21+00:00",
+      "link": "https://arxiv.org/pdf/2609.14706v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "post-training quantization with rate-distortion and entropy coding for low-bit weights",
+      "llm_evidence_cn": "基于率失真与熵编码的低比特权重量化",
+      "llm_evidence": "基于率失真与熵编码的低比特权重量化",
+      "canonical_evidence": "基于率失真与熵编码的低比特权重量化",
+      "llm_tldr_en": "WaterKron chooses Kronecker-factored Hessian approximations for post-training quantization, combining two-sided GPTQ with waterfilling scales and entropy coding, justified by rate-distortion analysis.",
+      "llm_tldr_cn": "该文针对后训练量化中Kronecker分解Hessian近似应如何选择的问题，提出WaterKron方法。它将双面GPTQ与行列相关的注水尺度及熵编码结合，并推导了相对完整Hessian的高码率失真，引入Kronecker-Hessian失配因子Φ以指导分解选择。实验表明该准则可得到更优的量化失真，为低比特PTQ提供了信息论依据。",
+      "llm_tldr": "该文针对后训练量化中Kronecker分解Hessian近似应如何选择的问题，提出WaterKron方法。它将双面GPTQ与行列相关的注水尺度及熵编码结合，并推导了相对完整Hessian的高码率失真，引入Kronecker-Hessian失配因子Φ以指导分解选择。实验表明该准则可得到更优的量化失真，为低比特PTQ提供了信息论依据。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "extreme low bit post training quantization methods for LLM weights preserving perplexity and downstream accuracy",
+      "matched_requirement_id": "req-7",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

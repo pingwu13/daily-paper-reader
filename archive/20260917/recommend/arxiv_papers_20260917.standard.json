@@ -1,0 +1,56 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-09-17T22:28:44.185079+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 1,
+    "deep_cap": 7,
+    "deep_selected": 1,
+    "quick_candidates": 0,
+    "quick_skim_target": 12,
+    "quick_selected": 0
+  },
+  "deep_dive": [
+    {
+      "id": "2609.16338v1",
+      "source": "arxiv",
+      "title": "Breaking the 1.58-bit Barrier for Ternary LLMs",
+      "abstract": "Ternary Large Language Models (LLM) store every weight as one of three symbols $\\{-1,0,+1\\}$, so the cost of a ternary model is conventionally referenced to the information-theoretic $\\log_2 3 \\approx 1.585$ bits per weight. The prevailing deployment format packs five ternary weights into one byte (five-trit packing), and due to the power-of-two group sizes used in practice this rounds up to $1.625$ bits per weight. This effective storage bit-width treats the three symbols $\\{-1,0,+1\\}$ as equiprobable. We measure the actual symbol distribution of 29 ternary LLM models and find that zeros account for up to $51.5\\%$ of all weights. Motivated by this finding, we introduce BITCOS, a simple distribution-adaptive layout comprised of a dense presence bitmap plus a compacted sign vector, and costs $2 - z$ bits per weight element given a zero density $z$ in the model's weights. BITCOS stores weights more compactly than the five-trit packing in 26 of the 29 tested models, and reaches $1.485$ bits per weight on the sparsest of them. BITCOS is amenable to efficient unpacking on modern processors and GPUs, and we present optimized unpacking sequences for AVX-512, AVX2 and Intel Xe2 GPUs. Measured against production state-of-the-art ternary matrix-vector multiplication kernels, at the zero densities real-world ternary models exhibit, the realized gain with our proposed layout is up to $1.28\\times$. Finally, we illustrate end-to-end LLM inference results on 5 different platforms (client and server CPUs, integrated and discrete Xe2 GPUs) where decode throughput improves by up to $1.18\\times$ on CPUs and $1.27\\times$ on GPUs.",
+      "authors": [
+        "Evangelos Georganas",
+        "Alexander Heinecke",
+        "Pradeep Dubey"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-09-14T20:54:24+00:00",
+      "link": "https://arxiv.org/pdf/2609.16338v1",
+      "tags": [
+        "keyword:elblq",
+        "keyword:isc",
+        "query:elblq",
+        "query:isc"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "Ternary LLM at 1.58-bit, distribution-adaptive bit packing to beat the 1.58-bit barrier",
+      "llm_evidence_cn": "三元LLM的1.58比特存储，分布自适应打包突破1.58比特壁垒",
+      "llm_evidence": "三元LLM的1.58比特存储，分布自适应打包突破1.58比特壁垒",
+      "canonical_evidence": "三元LLM的1.58比特存储，分布自适应打包突破1.58比特壁垒",
+      "llm_tldr_en": "Ternary LLMs are conventionally measured at about 1.585 bits per weight, but five-trit packing rounds this up to 1.625 bits while assuming equiprobable symbols. Measuring 29 ternary LLMs reveals zeros dominate up to 51.5% of weights, motivating BITCOS, a distribution-adaptive layout of a presence bitmap plus compacted signs that lowers effective storage width.",
+      "llm_tldr_cn": "三元LLM通常按每权重约1.585比特衡量成本，但实际五三进制打包因2的幂分组上取整到1.625比特，且隐含三符号等概率假设。作者测量29个三元LLM的符号分布，发现零权重占比最高可达51.5%，据此提出BITCOS分布自适应布局，用稠密存在位图加紧凑符号向量编码非均匀分布。该方案打破了1.58比特的常规壁垒，为三元LLM提供更紧凑、更贴近真实分布的低比特部署格式。",
+      "llm_tldr": "三元LLM通常按每权重约1.585比特衡量成本，但实际五三进制打包因2的幂分组上取整到1.625比特，且隐含三符号等概率假设。作者测量29个三元LLM的符号分布，发现零权重占比最高可达51.5%，据此提出BITCOS分布自适应布局，用稠密存在位图加紧凑符号向量编码非均匀分布。该方案打破了1.58比特的常规壁垒，为三元LLM提供更紧凑、更贴近真实分布的低比特部署格式。",
+      "llm_tags": [
+        "query:elblq"
+      ],
+      "matched_query_tag": "query:elblq",
+      "matched_query_text": "vector or additive quantization techniques for 1 bit 1.58 bit and 2 bit LLM weight compression",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": []
+}

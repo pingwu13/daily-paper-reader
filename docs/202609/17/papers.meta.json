@@ -1,0 +1,24 @@
+{
+  "label": "2026-09-17",
+  "date": "2026-09-17",
+  "generated_at": "2026-09-17T22:30:15",
+  "count": 1,
+  "papers": [
+    {
+      "paper_id": "202609/17/2609.16338v1-breaking-the-158-bit-barrier-for-ternary-llms",
+      "section": "deep",
+      "title_en": "Breaking the 1.58-bit Barrier for Ternary LLMs",
+      "authors": "Evangelos Georganas, Alexander Heinecke, Pradeep Dubey",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.16338v1",
+      "score": "9.0",
+      "evidence": "三元LLM的1.58比特存储，分布自适应打包突破1.58比特壁垒",
+      "tldr": "三值 LLM 将权重存为 {-1,0,+1}，信息论下限约 1.585 bit，但常用五 trit 打包因 2 的幂分组实际为 1.625 bit，并默认三符号等概率。作者实测 29 个三值模型，发现零权重占比最高达 51.5%，说明可利用稀疏性压缩。据此提出 BITCOS：将权重拆成稠密 presence 位图与压缩符号向量，按零密度自适应存储，成本为 2-z bit/权重。在 26/29 个模型中比五 trit 更紧凑，最稀疏模型仅 1.485 bit/权重；配合 AVX-512、AVX2 与 Xe2 GPU 优化解包，三值矩阵向量核收益最高 1.28×，端到端解码吞吐 CPU 最高 1.18×、GPU 最高 1.27×。这突破了 1.58-bit 存储障碍，为三值 LLM 部署提供更优格式。",
+      "tags": "query:elblq",
+      "abstract_en": "Ternary Large Language Models (LLM) store every weight as one of three symbols $\\{-1,0,+1\\}$, so the cost of a ternary model is conventionally referenced to the information-theoretic $\\log_2 3 \\approx 1.585$ bits per weight. The prevailing deployment format packs five ternary weights into one byte (five-trit packing), and due to the power-of-two group sizes used in practice this rounds up to $1.625$ bits per weight. This effective storage bit-width treats the three symbols $\\{-1,0,+1\\}$ as equiprobable. We measure the actual symbol distribution of 29 ternary LLM models and find that zeros account for up to $51.5\\%$ of all weights. Motivated by this finding, we introduce BITCOS, a simple distribution-adaptive layout comprised of a dense presence bitmap plus a compacted sign vector, and costs $2 - z$ bits per weight element given a zero density $z$ in the model's weights. BITCOS stores weights more compactly than the five-trit packing in 26 of the 29 tested models, and reaches $1.485$ bits per weight on the sparsest of them. BITCOS is amenable to efficient unpacking on modern processors and GPUs, and we present optimized unpacking sequences for AVX-512, AVX2 and Intel Xe2 GPUs. Measured against production state-of-the-art ternary matrix-vector multiplication kernels, at the zero densities real-world ternary models exhibit, the realized gain with our proposed layout is up to $1.28\\times$. Finally, we illustrate end-to-end LLM inference results on 5 different platforms (client and server CPUs, integrated and discrete Xe2 GPUs) where decode throughput improves by up to $1.18\\times$ on CPUs and $1.27\\times$ on GPUs.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

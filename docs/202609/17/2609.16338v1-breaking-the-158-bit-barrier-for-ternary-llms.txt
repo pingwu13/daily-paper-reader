@@ -1,0 +1,668 @@
+Title: Breaking the 1.58-bit Barrier for Ternary LLMs
+
+URL Source: https://arxiv.org/pdf/2609.16338v1
+
+Published Time: Wed, 16 Sep 2026 00:18:06 GMT
+
+Number of Pages: 12
+
+Markdown Content:
+# Breaking the 1.58-bit Barrier for Ternary LLMs 
+
+Evangelos Georganas, Alexander Heinecke, Pradeep Dubey 
+
+Intel Corporation 
+
+Abstract —Ternary Large Language Models (LLM) store every weight as one of three symbols {− 1, 0, +1 }, so the cost of a ternary model is conventionally referenced to the information-theoretic log 2 3 ≈ 1.585 bits per weight. The prevailing deploy-ment format packs five ternary weights into one byte ( five-trit packing ), and due to the power-of-two group sizes used in practice this rounds up to 1.625 bits per weight. This effective storage bit-width treats the three symbols {− 1, 0, +1 } as equiprobable. We measure the actual symbol distribution of 29 ternary LLM models and find that zeros account for up to 51 .5% of all weights. Motivated by this finding, we introduce BITCOS, a simple distribution-adaptive layout comprised of a dense presence bitmap plus a compacted sign vector, and costs 2 − z bits per weight element given a zero density z in the model’s weights. BITCOS stores weights more compactly than the five-trit packing in 26 of the 29 tested models, and reaches 1.485 bits per weight on the sparsest of them. BITCOS is amenable to efficient unpacking on modern processors and GPUs, and we present optimized unpacking sequences for AVX-512, AVX2 and Intel Xe2 GPUs. Measured against production state-of-the-art ternary matrix-vector multiplication kernels, at the zero densities real-world ternary models exhibit, the realized gain with our proposed layout is up to 1.28 ×. Finally, we illustrate end-to-end LLM inference results on 5 different platforms (client and server CPUs, integrated and discrete Xe2 GPUs) where decode throughput improves by up to 1.18 × on CPUs and 1.27 × on GPUs. 
+
+I. I NTRODUCTION 
+
+Ternary weight quantization restricts every weight to 
+
+{− 1, 0, +1 } scaled by a group-wise factor [1], [2]. Three equiprobable symbols carry log 2 3 ≈ 1.585 bits of informa-tion, and this theoretical bound is the reference for ternary storage. Nevertheless, in practice the actual storage cost is determined by how those symbols are packed. Five trits (ternary digits) fit in a byte ( 35 = 243 ≤ 256 ), which approaches the bound at 8/5 = 1 .6 bits per weight. However, deployed implementations quantize in blocks of power-of-two weights like 128, and 128 is not a multiple of 5: a block needs 
+
+⌈128 /5⌉ = 26 payload bytes, so the rate stored in practice is 26 × 8/128 = 1 .625 bits per weight. Still, this effective storage bit-width treats the three symbols {− 1, 0, +1 } as equiprobable. We measure the actual symbol distribution of 29 state-of-the-art (SOTA) ternary LLM models and find that zeros account for up to 51 .5% of all weights; Table I lists the measured zero density of every model. More specifically we benchmarked seven ternary model families: i) BitNet [1], [2], the 2B-parameter model trained from scratch on 4T tokens that established the 1.58 -bit reference point; ii) Bonsai [3], four dense checkpoints from 1.7B to 27 B; iii) CAT-Q [4], five post-training quantizations of Qwen3 from 1.7B to 235 B, including two mixture-of-experts models; iv) ParetoQ [5], 0.30 0.35 0.40 0.45 0.50    
+
+> zero density z
+> 1.50 1.55 1.60 1.65 1.70
+> bits per weight (symbols only)
+> z= 0.375
+> fixed-rate packing cheaper BITCOS cheaper
+> Packing format
+> BITCOS: (2 z) bits
+> 5 trits/byte: 1.625 bits
+> Model family
+> BitNet b1.58 Bonsai CAT-Q ParetoQ TriLM Maple BitCPM-CANN
+
+Fig. 1. Effective bit-widths for various families of ternary LLM models, comparing the five-trit packing and the proposed BITCOS layout. The sloped line represents the BITCOS bit-width 2 − z, while the plateau indicates the fixed five-trit bit-width of 1.625 bits per weight. Each marker corresponds to a model from Table I, placed at its measured zero density. Models with zero density z above 0.375 benefit from the BITCOS layout (green plot area), as such 26 out of the 29 models achieve lower effective bit-width with BITCOS. 
+
+five small checkpoints ( 125 M– 1.5B) from a study of low-bit quantization-aware training; v) TriLM [6], the nine-model Spectra suite ( 99 M– 3.9B) pretrained in ternary; vi) Maple [7], a 20 B-A1B ternary mixture-of-experts reasoning model; and vii) BitCPM-CANN [8], four ternary checkpoints ( 0.5B– 8B) trained from scratch. Motivated by the finding that the zero density of many ternary models is significantly higher than the density of either of the other two codes {− 1, +1 }, we introduce BITCOS ( BIT map and CO mpacted Signs): a simple distribution-adaptive layout for ternary tensors. Given a zero density z, BITCOS spends one presence bit on every weight entry and one sign bit only on the non-zero weights, thus the layout effectively achieves 2 − z bits per weight. Such a layout improves the effective bit-width compared to the deployed five-trit packing once z > 0.375 and is strictly more efficient than the widely-adopted 2-bit packing for all zero densities. Figure 1 places every model of Table I at its measured zero density, on whichever of the two rates it meets first: the sloped 2 − z line when the BITCOS sparse layout is more efficient, or the 1.625 plateau when the five-trit fixed-rate packing has lower bit-width. Models with zero density z above 
+
+0.375 benefit from the BITCOS layout (green plot area), as such 26 out of the 29 models achieve lower effective bit-width with BITCOS compared to the five-trit packing layout. However, the effective bit-width is only one aspect of the overall inference. The actual performance of ternary models during inference also depends on how efficiently the packed arXiv:2609.16338v1 [cs.AI] 14 Sep 2026 TABLE I EFFECTIVE BIT -WIDTHS FOR SOTA TERNARY LLM MODELS . “% 0” IS THE MEASURED ZERO DENSITY z. “S YMBOLS ” COLUMN COUNTS THE TERNARY CODES ALONE AND “+SCALE ” ADDS THE MEASURED 16-BIT SCALE OVERHEAD . T HE SYMBOLS -ONLY RATE IS 2 − z FOR BITCOS AND FOR EVERY MODEL 2.000 AND 1.625 BITS PER WEIGHT FOR 2-BIT AND 
+
+5-TRIT PACKING RESPECTIVELY . “ RED .” IS THE SIZE REDUCTION OF 
+
+BITCOS OVER THE CORRESPONDING FORMAT WITH SCALES INCLUDED .A VALUE > 1 MEANS BITCOS STORES THE MODEL MORE COMPACTLY .
+
+BITCOS 2-bit packing 5-trit per byte Ternary model % 0 Symbols +scale +scale red. +scale red. 
+
+• BitNet b1.58 2B4T 42.19 1.578 — 2.000 1.27 × 1.625 1.03 ×
+
+■
+
+Bonsai 1.7B 39.89 1.601 1.726 2.125 1.23 × 1.750 1.01 ×
+
+Bonsai 4B 37.71 1.623 1.748 2.125 1.22 × 1.750 1.00 ×
+
+Bonsai 8B 38.25 1.618 1.743 2.125 1.22 × 1.750 1.00 ×
+
+Bonsai 27B 29.66 1.703 1.828 2.125 1.16 × 1.750 0.96 ×
+
+▲
+
+CAT-Q Qwen3-1.7B 51.48 1.485 1.610 2.125 1.32 × 1.750 1.09 ×
+
+CAT-Q Qwen3-8B 46.70 1.533 1.658 2.125 1.28 × 1.750 1.06 ×
+
+CAT-Q Qwen3-30B-A3B 32.88 1.671 1.796 2.125 1.18 × 1.750 0.97 ×
+
+CAT-Q Qwen3-32B 47.11 1.529 1.654 2.125 1.28 × 1.750 1.06 ×
+
+CAT-Q Qwen3-235B-A22B 34.07 1.659 1.784 2.125 1.19 × 1.750 0.98 ×
+
+♦
+
+ParetoQ 125M 41.07 1.589 1.613 2.023 1.25 × 1.648 1.02 ×
+
+ParetoQ 350M 41.58 1.584 1.598 2.014 1.26 × 1.639 1.03 ×
+
+ParetoQ 600M 43.27 1.567 1.579 2.012 1.27 × 1.637 1.04 ×
+
+ParetoQ 1B 44.18 1.558 1.569 2.010 1.28 × 1.635 1.04 ×
+
+ParetoQ 1.5B 47.10 1.529 1.537 2.008 1.31 × 1.633 1.06 ×
+
+▼
+
+TriLM 99M 40.97 1.590 1.618 2.027 1.25 × 1.652 1.02 ×
+
+TriLM 190M 40.67 1.593 1.611 2.018 1.25 × 1.643 1.02 ×
+
+TriLM 390M 40.79 1.592 1.606 2.014 1.25 × 1.639 1.02 ×
+
+TriLM 560M 40.73 1.593 1.604 2.011 1.25 × 1.636 1.02 ×
+
+TriLM 830M 40.54 1.595 1.604 2.009 1.25 × 1.634 1.02 ×
+
+TriLM 1.1B 40.39 1.596 1.605 2.009 1.25 × 1.634 1.02 ×
+
+TriLM 1.5B 40.21 1.598 1.606 2.008 1.25 × 1.633 1.02 ×
+
+TriLM 2.4B 39.70 1.603 1.610 2.007 1.25 × 1.632 1.01 ×
+
+TriLM 3.9B 38.70 1.613 1.618 2.005 1.24 × 1.630 1.01 ×
+
+⋆ Maple 20B-A1B 40.67 1.593 1.609 2.016 1.25 × 1.641 1.02 ×
+
+◀
+
+BitCPM-CANN 0.5B 37.67 1.623 1.636 2.012 1.23 × 1.637 1.00 ×
+
+BitCPM-CANN 1B 38.39 1.616 1.623 2.006 1.24 × 1.631 1.01 ×
+
+BitCPM-CANN 3B 38.06 1.619 1.624 2.005 1.23 × 1.630 1.00 ×
+
+BitCPM-CANN 8B 39.30 1.607 1.610 2.003 1.24 × 1.628 1.01 ×
+
+weights can be unpacked and utilized in matrix-vector multi-plication kernels. The decode phase of LLM inference with a small batch-size is bandwidth-bound, so the time per token tracks the bit-width of the weight datatype [9], which is precisely the regime that on-device and agentic deployments exercise [10]. BITCOS not only reduces the storage cost but also is amenable to efficient unpacking and computation on modern CPUs and Intel GPUs. Measured end to end over 7 ternary LLM checkpoints and five platforms, decode throughput improves by up to 1.18 × on a 64 -core server CPU, 
+
+1.15 × on a 24 -core client CPU, 1.27 × on a discrete Xe2 GPU and 1.22 × on an integrated Xe2 GPU. The performance gain however is not universal: on an 8-core, bandwidth-rich client platform with enough bandwidth per core to leave the unpack sequence exposed, the smaller payload does not translate into performance benefits. Therefore, we develop a simple two-term roofline model to assess the limitations of the BITCOS-based kernels. This paper makes the following contributions: 1) A novel ternary sparse layout (which we name BITCOS) comprising of a presence bitmap plus a compacted sign vector, that costs 2−z bits per weight for a zero density z
+
+and is amenable to efficient unpacking on modern CPUs and GPUs. + 0 + 0r0                                           
+
+> 0+++00r1
+> 00++00r2
+> 0+0++r3
+> 0000+0r4
+> 0000++00r5
+> 000++r6
+> 00++000r7
+> k0k1k2k3k4k5k6k7
+
+(a) ternary W                                                               
+
+> 1110101101111010001110010110111100110010000011000110101100111000
+> k0k1k2k3k4k5k6k7
+
+(b) presence bitmap                                   
+
+> 1101100001100110010101100110001110
+> column k2: mask 11011111 2, popcount = 7; a scatter puts its 7 bracketed bits back
+
+(c) compacted sign vector, ( k, r) order 
+
+Fig. 2. The BITCOS layout on an 8 ×8 tensor. Each column of BITCOS is one mask whose bit r records whether row r is non-zero, so a decoder reads presence for a whole block in a single load. The compacted sign vector carries one bit per non-zero only, in the same (k, r ) order, so the j-th sign bit belongs to the j-th set bit of the bitmap. Zeros consume a bitmap bit and nothing else, which is why the effective rate is 2 − z. In this example, 30 out of the 64 weights are zero ( z = 0 .469 ), so the tensor costs 64 presence plus 34 sign bits, or 1.531 bits per weight (which is below log 2 3). 
+
+2) Optimized instruction sequences to unpack the proposed BITCOS layout and perform matrix multiplication op-erations efficiently on modern x86 CPUs (client CPUs with performance and efficiency cores, and server CPUs with high core counts) and Intel Xe2 GPUs (both integrated and discrete GPUs). 3) A roofline model to assess the efficacy and the limita-tions of our CPU microkernels. 4) Performance evaluation of the proposed layout with microbenchmarks and end-to-end LLM inference over seven ternary LLM checkpoints on modern server/client CPUs and integrated/discrete GPUs, illustrating decode throughput improvements by up to 1.18 × on CPUs and 
+
+1.27 × on GPUs. II. T HE BITCOS L AYOUT : BIT MAP + CO MPACTED SIGNS 
+
+A. Layout definition and storage cost 
+
+We propose the BITCOS layout that leverages the inherent 
+
+unstructured sparsity of ternary weights and stores a ternary tensor as two pieces: 1) a presence bitmap of one bit per weight, set where the weight is non-zero; and 2) a sign vector of one bit per non-zero weight, in tensor order. Figure 2 shows both pieces on a small 8 ×8 tensor. The bitmap has the full tensor length; the sign vector is compacted to the population count of the bitmap. Assuming a zero density of 
+
+z, the cost per weight is therefore: 
+
+B(z) = 1 + (1 − z) = 2 − z bits (1) The cost per weight falls linearly in z, so the BITCOS format yields substantial benefits over 2-bit or five-trit packing at zero-heavy distributions. Table I compares the per-weight cost of different formats over the 29 measured checkpoints. Column “% 0” is the measured zero density z, column “Symbols” counts the ternary codes alone and the “ +scale” columns add the measured 16-bit scale overhead of the corre-sponding model. The “red.” columns report the size reduction of BITCOS over the 2-bit and the five-trit per byte packing respectively; a value greater than 1 means BITCOS stores the model more compactly than that format. We conclude that BITCOS improves the effective bit-width compared to the deployed five-trit packing once z > 0.375 (26 out of 29 ternary LLM models) and is strictly more efficient than the widely-adopted 2-bit packing for all zero densities. 
+
+B. BITCOS unpack sequence with x86 AVX-512 instructions 
+
+The BITCOS layout reconstructs 16-bit weights in ashort mask-driven sequence assuming the target ISA supports masks. In Figure 3 we illustrate such an exemplary sequence with AVX-512 instructions. Two vectors are prepared once per group of 128 reduction elements and then reused for every one of its iterations: zmm3 holding the 32 fp16 group scales, one per row, and zmm4 holding a copy with the sign bit set, obtained by a single vporq against a broadcast 0x8000 .Because the sign of an IEEE half lives in the most significant bit and the group scales are non-negative by construction, that OR is an exact negation, so zmm3 and zmm4 hold +s and −s
+
+respectively for each of the 32 rows. The per-iteration work is then: 1) Load the presence mask. Read 32 bitmap bits into a general register and then into k1 .2) Place the signs. Take the next 32 bits of the sign stream and scatter them via pdep into the bit positions that k1 
+
+marks as present. The sign vector is stored compacted, so its j-th bit belongs to the j-th non-zero of the group’s bitmap. pdep is exactly the scatter that undoes the compaction (see Figure 4). 3) Select. A zero-masked move of zmm3 under k1 puts 
+
++s at every present lane and exact +0 elsewhere; a merge-masked move of zmm4 under the deposited mask overwrites the negative ones. Figure 4 illustrates what that deposit does: pdep takes the low bits of its source in order and drops them at the positions the mask selects, leaving every unselected position zero. In the AVX-512 assembly, r13 walks the bitmap, r9 is the base of the sign stream, r8 the running bit position within it, r14 walks the activations, and zmm2 is one accumulator for the fused multiply-add (FMA) operation. In total we get 17 instructions, of which the weight unpacking portion corre-sponds to 3 instructions: one pdep and 2 masked moves. The remaining 14 are not unpacking: one loads the bitmap word, 5 compute the data-dependent address of the sign window, one 
+
+shrx performs the unaligned 64-bit read and its alignment in a single operation, 2 are software prefetches, 2 advance the bit position by the population count, 2 move masks, and the last is the fused multiply-add (FMA), which absorbs the activation broadcast as an embedded operand.                                                                                                          
+
+> once per group of 128:
+> vmovdqu64 (%r10,%rax,2),%zmm3 ;32 scales vporq %zmm0,%zmm3,%zmm4 ;negated copy
+> per 32 weights:
+> mov -0x404(%r13,%rax,8),%r15d ;bitmap[k] mov %r8d,%ecx ;copy bitpos mov %r8,%rbx shr $0x3,%rbx ;byte offset and %rdx,%rbx ;to 32-bit word and $0x1f,%cl ;shift count shrx %rcx,(%r9,%rbx,1),%rdi ;sign window prefetcht0 -0x4(%r13,%rax,8) ;bitmap popcnt %r15d,%ecx prefetcht0 0x200(%r9,%rbx,1) ;signs add %r8,%rcx ;bitpos += popcnt pdep %r15d,%edi,%edi ;to lane order kmovd %r15d,%k1 ;presence mask vmovdqu16 %zmm3,%zmm5 {%k1 }{ z};+s,else +0
+> kmovd %edi,%k1 ;sign mask vmovdqu16 %zmm4,%zmm5 {%k1 };−sif negative vfmadd231ph -0x2(%r14,%rax,4) {1to32 },%zmm5,%zmm2
+> Fig. 3. AVX-512 instruction sequence to unpack the BITCOS layout for one 32-row block.
+> dst := pdep u32(a, mask)
+> dst := 0; k:= 0FOR m:= 0TO 31 IF mask[m] == 1THEN dst[m] := a[k]; k:= k+1FI ENDFOR
+> example, bit 0 leftmost, 8 lanes shown:
+> mask 1 0 1 1 0 0 1 0 presence: 4 non-zeros
+> a1 0 1 1 ––––signs, compacted
+> dst 1 0 0 1 0 0 1 0 signs, lane order
+> Fig. 4. pdep parallel bit deposit. In this example, only the low four bits of a
+> are consumed, one per set bit of the mask. The sign stream stores one bit per non-zero weight, so undoing that compaction means scattering those bits onto the set positions of the presence mask, which is the instruction’s definition.
+
+C. BITCOS unpack sequence with x86 AVX2 instructions 
+
+The sequence of Section II-B depends on two AVX-512 facilities: mask registers, which make a 32-bit presence pattern directly usable as a predicate, and FP16 compute instruc-tions. The client CPUs we target support neither, thus we implemented a second kernel targeting the AVX2 ISA with AVX-VNNI-INT8 compute capabilities, which reconstructs the ternary weights {− 1, 0, +1 } as int8 and contracts against 
+
+int8 activations (see Figure 5). For each of the 32 rows, let pi ∈ { 0, 1} indicate that the weight is present, and let ni ∈ { 0, 1} indicate that the present weight is negative. The bitmap supplies the pi bits. After 
+
+pdep returns the compact signs to their row positions, its result supplies the ni bits. Since AVX2 has no mask registers, we materialize each presence and sign vector as byte masks 
+
+Pi = −pi and Ni = −ni: a true lane is 0xFF (−1 as a signed byte), and a false lane is zero. The desired ternary byte is then 
+
+wi = pi − 2ni. (2) In the example of Figure 2, the column k2 holds the ternary values (+1 , +1 , +1 , +1 , −1, 0, −1, +1) for rows i = 0 . . . 7,once per quad of reduction elements:                                                                      
+
+> vbroadcastss (%r9,%r10,4),%ymm8 ;activation quad
+> per 32 weights:
+> mov (%rsi,%rcx,4),%ebx ;bitmap word popcnt %ebx,%edx add %r14,%rdx ;bitpos += popcnt shr $0x3,%r14 and %rbp,%r14 ;to 32-bit word and $0x1f,%r15b ;shift count shrx %r15,(%rdi,%r14,1),%r14 ;sign window pdep %ebx,%r14d,%r14d ;to lane order vmovd %ebx,%xmm9 vpbroadcastd %xmm9,%ymm9 vpshufb %ymm11,%ymm9,%ymm9 ;spread bitmap bytes vpand %ymm12,%ymm9,%ymm9 ;isolate row bits vpcmpeqb %ymm12,%ymm9,%ymm9 ;Pi=−pi
+> vmovd %r14d,%xmm10 vpbroadcastd %xmm10,%ymm10 vpshufb %ymm11,%ymm10,%ymm10 vpand %ymm12,%ymm10,%ymm10 vpcmpeqb %ymm12,%ymm10,%ymm10 ;Ni=−ni
+> vpand %ymm13,%ymm10,%ymm10 ;Ti=−2ni
+> vpsubb %ymm9,%ymm10,%ymm9 ;wi=Ti−Pi
+> vpdpbssd %ymm8,%ymm9,%ymm7
+
+Fig. 5. AVX2 instruction sequence to unpack the BITCOS layout for one 32-row block. 
+
+so the bitmap word for that column is 0xDF and the two predicates are 
+
+p = (1 , 1, 1, 1, 1, 0, 1, 1) , n = (0 , 0, 0, 0, 1, 0, 1, 0) . (3) Equation (2) returns the unpacked column exactly: rows 0–3
+
+and 7 give 1 − 0 = +1 , rows 4 and 6 give 1 − 2 = −1, and the absent row 5 gives 0 − 0 = 0 . Materialized as bytes these are 
+
+P = ( FF , FF , FF , FF , FF , 00 , FF , FF ) and, after the mask with 
+
+0xFE , T = ( 00 , 00 , 00 , 00 , FE , 00 , FE , 00 ), so vpsubb leaves 
+
+(01 , 01 , 01 , 01 , FF , 00 , FF , 01 ), which is the original column as int8 . Note that n is not what the format stores. Only the 
+
+popcount( p) = 7 sign bits (0 , 0, 0, 0, 1, 1, 0) are stored, so the sign of row 6 is the sixth stored bit rather than the seventh. Recovering the n of (3) from those seven bits is exactly the 
+
+pdep of Figure 5. This alternative contraction algorithm has two implications. First, arithmetic moves from fp16 to integer: activations are quantized to int8 per group of 128, the dot product accu-mulates in int32 , and the group scales are applied once per group instead of being blended into the weights. The weights are therefore reconstructed as the values ±1 rather than ±s, and the layout is stored in VNNI4 order so that each vpdpbssd (AVX-VNNI-INT8 compute) consumes four consecutive reduction elements for each of eight rows. Second, and more consequentially, the absence of mask registers means the presence pattern must be materialized as one byte per lane before it can select anything. That expansion consists of a broadcast, an in-lane shuffle and a compare against the bit-select constant, and it costs 5 instructions where AVX-512 spends merely 1 mask move instruction kmovd . Once those byte masks exist, the last two instructions implement Eq. (2): masking Ni with 0xFE forms Ti = −2ni, and the vpsubb P,T,W computes Wi = Ti − Pi = pi − 2ni. Thus a positive present lane becomes +1 , a negative present lane becomes −1,and an absent lane remains zero.                                                                                                                                                                                 
+
+> per two 32-row blocks:
+> load.ugm.d32x3 r21, [p+rank/32] // 3sign words per lane, returned in r21--r23
+> per 32-row block, i.e. eight groups:
+> load_block2d.ugm bmp, [...] // one contiguous bitmap word for each of 16 output columns bfn w0, r21, r22, sel // mux: select the gathered word containing the window’s low bits bfn w1, r22, r23, sel // mux: the following word, for bits that cross the boundary and.eq f0, b, rank, 31 // b=rank mod 32
+> shr lo, w0, b // align low bits at current bit rank shl hi, w1, (-rank)&31 // complementary count
+> (32 −b) mod 32
+> (!f0) or signs, lo, hi // at b= 0 the high word contributes nothing cbit nsg, bmp // #of nonzeros in 32-row bitmap block add rank, rank, nsg // advance the block-level sign rank
+> per four-row group:
+> shr nib, bmp, imm_g // extract group’s 4presence bits and r68, nib, idxmask // presence nibble in LUT-key field cbit r68, r68 // #of sign bits consumed by this group shl r66, signs, 3 // shift sign window in key field and r66, r66, signmask // retain next 4compact sign bits bfn r67, nib, idxmask, r66 // merge: presence and sign fields into one byte offset add r67, r67, lut_base // add runtime SLM base of 2KB LUT load.slm.d32x2 r74, [r67] // 16 lookups, each lane receives 4fp16 ternary codes shr signs, signs, r68 // consume only the sign bits used by present rows mul r54, scale, r74 // multiply ternary codes with scales
+> once per four groups:
+> dpas.8x1 acc, acc, r54, act // fp16 XMX contraction
+
+Fig. 6. Xe2 instruction sequence to unpack the BITCOS format. Register names are shortened and independent operations are grouped by function rather than scheduler order. Address setup, predicate formation, and register repacking are omitted. The 16 SIMD lanes correspond to different output columns, so one four-row group produces 4 × 16 weights. Section II-D walks through the sequence. 
+
+D. BITCOS unpack sequence for Intel Xe2 GPUs 
+
+Both x86 sequences rely on pdep to scatter compact signs back to the rows marked present. Xe2 has no corresponding instruction, so the GPU kernel replaces that scatter with a small lookup table in shared local memory (SLM). We implement the kernel with the XeTLA templates [11], and use the conventional SYCL terminology of workgroups and subgroups throughout [12]. Figure 6 illustrates the assembly sequence for the Xe2 kernel. In the assembly sequence of Figure 6, one 
+
+load.ugm.d32x3 fetches the three consecutive sign words sufficient for two 32-row blocks. For each block, the contiguous bitmap load load_block2d.ugm bmp 
+
+supplies one 32-bit presence word per output column. Two 
+
+bfn instructions, the three-input bitwise Boolean operation of Xe2, select the adjacent low/high sign words, and an and ,two shifts and an or align them at the current bit rank. The 
+
+and reduces the rank to the in-word offset b, the shr aligns the low word by b and the shl brings in the b high bits that cross the word boundary. That last shift needs a count of 32 − b, so the complementary count is taken modulo 32 and the or is predicated off in the one case the wrap gets wrong, b = 0, where the high word contributes nothing. The block-wide cbit advances that rank by the number of presence m sign window s entry: four fp16 codes                                         
+
+> m0s0row 0 m1s1row 1 m2s2row 2 m3s3row 3
+> 111110101
+> BC00
+> +1
+> 3C00
+> 1
+> BC00
+> +1
+> 3C00
+> 11010110+1
+> 3C00
+> 1
+> BC00
+> 0
+> 0000
+> 1
+> BC00
+> 011001100
+> 0000
+> +1
+> 3C00
+> 1
+> BC00
+> 0
+> 0000
+> 000000000
+> 0000
+> 0
+> 0000
+> 0
+> 0000
+> 0
+> 0000
+
+Fig. 7. Representative entries of the 256 -entry lookup table. The key is the presence nibble m together with a four-bit window s of the compact sign stream, and the entry holds four fp16 constants, shown with their bit patterns. The second and third rows are the first two groups worked through in Figure 9, with keys 0xB6 and 0x66 .
+
+nonzeros in all 32 rows. Each block is then decoded as eight four-row groups. A group extracts one presence nibble (4 bits), combines it with the next 4 bits of the aligned sign window, and uses the resulting byte offset for one SIMD16 
+
+load.slm.d32x2 . The lookup returns four fp16 ternary codes per lane. The group-level cbit advances the sign window by only the bits actually consumed, an fp16 multiply applies the group scale, and one DPAS contraction is issued after four groups have supplied 16 reduction rows. The sequence touches two memories, load.ugm for the presence bitmap and sign vector in global memory and load.slm 
+
+for the table in SLM. The lookup table in SLM is indexed by an 8-bit key formed from two nibbles: the four presence bits m of the bitmap for rows 4g . . . 4g+3 , and the next four bits s of that column’s compact sign stream. Entry (m, s ) holds four fp16 constants 
+
+c0 . . . c 3, one per row, where 
+
+ci =
+
+
+
+0 if mi = 0 ,
+
++1 if mi = 1 and sri = 0 ,
+
+−1 if mi = 1 and sri = 1 ,ri = P 
+
+> j<i
+
+mj ,
+
+(4) and ri is the rank of row i among the present rows of the nibble. The table is a precomputed, four-bit-wide pdep 
+
+composed with the map from sign bit to ternary code; Figure 7 lists representative entries. Because a column’s sign bits are compacted, reading them requires tracking a per-column read position, which we call that column’s cursor : the number of sign bits the groups above it have already consumed, equivalently the rank of its next non-zero row among the non-zeros seen so far. The cursor is an offset into a variable-rate stream, and it is the only piece of per-column state whose value the bitmap alone does not give away. The sign field of the key always takes four bits, because four is the most a four-row group can need, but only 
+
+popcount( m) of them are consumed; that population count is a single cbit in Figure 6. The cursor therefore advances by 
+
+popcount( m) and the next group re-reads whatever this one left behind, so successive read windows overlap even though k 0, 1      
+
+> k2, 3
+> k4, 5
+> k6, 7
+> k8, 9
+> k10, 11
+
+16 output columns = the 16 SIMD lanes    
+
+> up to sg_k rows
+> one SIMD16 register (16 dwords) one d32x2
+> lookup
+
+(a) one lookup fills two register rows            
+
+> n0n1n2n3n12 n13 n14 n15
+> presence bitmap
+> each word ni: 32 kof one column adjacent in n:one block load
+> compact sign vector: one contiguous segment per column
+> sixteen unrelated addresses, each advancing by its own popcount per-lane gather, not a block load
+
+(b) presence bitmap and compact sign vector in memory 
+
+Fig. 8. Xe2 kernel mapping of a weight tile onto SIMD lanes. (a) Each grid column is one of the 16 output columns and is held by one SIMD lane, and each grid row is one register row. VNNI2 order puts a k-pair in every dword. The blue-shaded band is the output of a single load.slm.d32x2 ,which returns two dwords per lane and therefore fills 2 register rows, i.e. 4 reduction rows, in one lookup. (b) The presence bitmap and the compact sign vector in memory, for the 16 columns one subgroup owns: the bitmap words of adjacent columns are adjacent, whereas each column enters the sign vector at its own offset. one output column n, i.e. one of the 16 SIMD lanes                                
+
+> 1101
+> group 0
+> 0110
+> group 1
+> 1011
+> group 2
+> bitmap m
+> +1 1010 +1 1010 +1 +1 codes
+> 0110110010signs s
+> key 0xB6 , consumes 3 of 4 key 0x66 , consumes 2 of 4 key 0xD9 , consumes 3 of 4 each key reads 4 sign bits; the cursor advances by popcount( m), so the windows overlap
+
+Fig. 9. Three consecutive four-row lookups on one column. Each group forms an 8-bit key from its presence nibble and a four-bit window of the compact sign stream. The bracket under each window gives the resulting table index/key. The sign-stream consumption is disjoint, but because the cursor advances by popcount( m), the read windows overlap. The figure follows a single column, that is one SIMD lane. The kernel runs 16 of these in parallel, each with its own presence word, its own entry point into the sign stream and its own cursor. 
+
+the bits they consume are disjoint, as Figure 9 draws for three consecutive groups. This is why the key is formed by a shift and a mask of a running window rather than by indexing the stream. The kernel keeps the window in a register and shifts it right by popcount( m) after each group ( shr signs of Figure 6). The gather address is maintained more coarsely, where the kernel takes one cbit of the entire 32-bit presence word per block and adds that to the column rank. The two population counts cbit in Figure 6 therefore serve different purposes and are not redundant, i.e. the per-group one only drives the window shift, and the per-block one only drives the gather address. Keeping them apart is what keeps the loop-carried chain short, since the address depends on one count per thirty-two rows rather than on a chain of eight. The per-group count also depends only on the bitmap, so it can issue before the SLM lookup returns. Because m and s are four bits each, the table has 28 = 256 entries of four fp16 values, so its size is 2 KB in total. At kernel entry, the workgroup’s subgroups cooperatively initialize disjoint table entries in one SLM-resident LUT. The group size of four rows is not arbitrary. Four presence bits and four sign bits give a table small enough to sit in SLM, whereas an eight-row group would need 216 entries. Four is also compatible with the XMX/DPAS operand layout. The fp16 DPAS consumes the weight tensor in VNNI2 order, with reduction rows 2m and 2m+1 packed into one dword, so four consecutive rows are precisely two VNNI2 dwords. The entry is therefore stored in the order the tile needs, a single 
+
+d32x2 lookup returns both dwords, the load.slm.d32x2 
+
+of Figure 6, and they are written into the unpacked tile with no shuffle or transpose, thus meeting the VNNI2 requirement without any extra instructions. Figure 8(a) makes the mapping concrete. A subgroup builds a tile of sixteen weight columns by sg_k reduction rows, and because a dword holds two consecutive k of one column, one SIMD16 register is exactly one k-pair across all sixteen columns. One lookup therefore fills two adjacent register rows, that is four reduction rows of sixteen columns, or 64 weights per message. The sixteen lanes are sixteen output columns , so the sequence is vectorized along n while k is walked serially by the loop. A column’s cursor depends on the population counts of all its preceding groups, so neighboring lanes drift apart as they advance. Figure 8(b) shows the presence bitmap and the compact sign vector in memory. The presence bitmap is stored as ⌈K/ 32 ⌉ × N words, each folding 32 reduction rows of one column, and the words of adjacent columns are themselves adjacent, so sixteen lanes read them with a single block load, the load_block2d.ugm of Figure 6. The sixteen sign cursors, by contrast, are unrelated addresses, so the sign words must be gathered per lane (the gather 
+
+load.ugm.d32x3 ). One 32-row window needs two adjacent words, and the next block starts at most one word later, so the union of both windows is exactly three words and a single 
+
+d32x3 serves two blocks rather than one. A fourth word is never consumed: the cursor can sit at most 31 bits into a word and two blocks consume at most 32 sign bits each, so the span reaches bit 31+64 −1 = 94 at worst, still inside the third word. In group 0 of Figure 9 the bitmap nibble m = 1011 2 marks rows 0, 1 and 3 as non-zero and row 2 as zero, and the next four compact sign bits are s = 0110 2, so the key is table index 
+
+0xB6 . Row 0 takes sign s0 = 0 and row 1 takes s1 = 1 , but row 2 is absent and consumes nothing, so row 3 takes s2 = 1 
+
+rather than s3. The entry is therefore (+1 , −1, 0, −1) , and the cursor advances by popcount( m) = 3 , and the following groups advance it by 2 and 3.                                            
+
+> TABLE II BITCOS CPU ROOFLINE AT ZERO DENSITY z= 0 .40 .γIS THE MEASURED COST IN CYCLES OF ONE L1-RESIDENT MICROKERNEL ITERATION AND βIS THE PER -CORE SHARE OF THE MEASURED READ BANDWIDTH . T HE BOUNDING /BOTTLENECK TERM IS SET IN BOLD .
+> # of platform core type cores γβB/γ bound by
+> EMR P64 4.60 1.321 1.502 memory ARL P85.00 0.756 1.381 memory ARL E16 7.95 0.903 0.868 instructions (knee) LNL P45.00 3.224 1.381 instructions LNL E47.95 3.663 0.868 instructions
+
+III. E XPERIMENTAL RESULTS 
+
+A. Experimental platforms 
+
+We use three x86 CPU platforms with different core counts, core types and memory bandwidth:  
+
+> •
+
+One socket of an Intel Xeon Platinum 8592+ CPU (referred to as EMR) with 64 cores. It has DDR5@4400 MT/s memory and a measured streaming read bandwidth of ∼ 245 GB/s. It supports Advanced Matrix Extensions (AMX) and AVX-512, including AVX-512-FP16.  
+
+> •
+
+An Intel Core Ultra 9 285K CPU (referred to as ARL) with 24 cores ( 8 performance cores and 16 efficiency cores). It has dual-channel DDR5 memory and a mea-sured read bandwidth of ∼ 98 GB/s. It supports AVX-VNNI-INT8 but not AVX-512.  
+
+> •
+
+An Intel Core Ultra 7 258V CPU (referred to as LNL CPU) with 8 cores ( 4 performance and 4 efficiency cores). It has 32 GB of LPDDR5X memory and a measured read bandwidth of ∼ 108 GB/s. It supports AVX-VNNI-INT8 but not AVX-512. The instruction sets are relevant to the results: EMR runs the AVX-512 kernel of Section II-B, and ARL and LNL run the AVX2 kernel of Section II-C. For the GPU evaluation we use two Xe2 GPU platforms:  
+
+> •
+
+The Intel Arc 140V, which is the integrated GPU of the LNL platform above. It has 8 Xe2 cores, and it uses the same LPDDR5X memory as the LNL CPU, and its measured read bandwidth is ∼ 108 GB/s.  
+
+> •
+
+An Intel Arc Pro B70 discrete GPU. It has 32 Xe2 cores and 32 GB of dedicated GDDR6 memory, with a measured read bandwidth of ∼ 500 GB/s. 
+
+B. Results on the CPU platforms 
+
+We first introduce a roofline model to assess the efficacy and limitations of our CPU kernels, and then present the GEMV microbenchmarks and the end-to-end decode results. 
+
+1) A roofline model for the BITCOS CPU kernels: In this section we present a simple two-term bottleneck roofline model [13], similar to the one used for the fixed-width ternary kernels in prior work [9]. For both the AVX-512 and the AVX2 CPU microkernels (i.e. see Figures 3 and 5), one iteration of the innermost loop upconverts 32 ternary weight values. Let 
+
+γ be the number of cycles that iteration costs when every 0.0 0.5 1.0 1.5 2.0 2.5 3.0 3.5 4.0 : memory bandwidth per core (bytes/cycle)               
+
+> 0.0 0.5 1.0 1.5
+> ebw  = min(  , B/ ) (bytes/cycle)
+> ARL-P ARL-E LNL-P LNL-E EMR-P
+> BITCOS at z= 0.40 (B=6.90 B / 32 weights)
+> AVX2 VNNI-INT8, E core ( =7.95)
+> AVX2 VNNI-INT8, P core ( =5.00)
+> AVX-512 fp16 ( =4.59) Fig. 10. BITCOS CPU roofline at zero density z= 0 .40 . Each line is
+> ebw =min( β, B/γ )for one kernel and core type; the flat part is the instruction ceiling B/γ and the diagonal is the memory bandwidth limit. Markers place the five measured core groups. Emerald Rapids and the Arrow Lake performance cores sit on the diagonal (thus the kernels are bandwidth bound), the Arrow Lake efficiency cores sit at the knee, and Lunar Lake sits on the flat part (thus it is instruction bound).
+
+operand is already in L1, and β the share of read bandwidth available to one core, in bytes per cycle. For these 32 weight entries, an iteration reads (in bytes): 
+
+B(z) = 4|{z} 
+
+> bitmap
+
++ 4(1 − z)
+
+| {z }
+
+> signs
+
++ 0.5|{z} 
+
+> fp16 scale
+
+= 8 .5 − 4z (5) so the time T per iteration and the bandwidth ebw a core can sustain are: 
+
+T = max 
+
+ B(z)
+
+β , γ 
+
+
+
+, ebw = min 
+
+
+
+β, B(z)
+
+γ
+
+
+
+. (6) The BITCOS-based kernel is memory-bound while 
+
+B(z)/γ > β and instruction-bound otherwise. The fixed-width 2-bit kernels have a constant B while a BITCOS-based kernel does not, so its knee moves with the density of the model at hand since B(z) depends on z. For the per core bandwidth β,we take the per-core share of the streaming read bandwidth of the corresponding platform. We measure γ empirically on each platform by running the microkernel loop over an L1-resident block. Table II illustrates the measured γ values for the various core types, and we also report the term B/γ 
+
+for a zero density z = 0 .4 which implies B = 6 .9 bytes read per 32 weight entries. Arrow Lake and Lunar Lake have the same performance and efficiency cores and run the same AVX2 microkernel, so a single pair of measurements for γ
+
+on performance and efficiency cores serves both platforms. Table II also evaluates Equa˚ a (6) for the three CPU platforms, and Figure 10 depicts the corresponding roofline. Emerald Rapids is memory-bound on all of its cores and Arrow Lake on its performance cores, so the BITCOS-based kernel converts its smaller payload into savings in execution time; the Arrow Lake efficiency cores sit at the knee, where the two terms are within 4% of each other. Lunar Lake is instruction-bound on both core types: with only eight cores sharing 108 GB/s, each core has 3.2–3.7 bytes per cycle available but can only consume 0.87 –1.38 bytes per cycle, so roughly three quarters of the bandwidth the platform offers a core is not attainable for this kernel. A bandwidth-rich client platform with a limited number of cores is exactly the case where a cheaper decode (like the 2-bit kernels from prior work [9]) beats kernels with smaller payload and more expensive decode (like the BITCOS-based kernel of this work). 
+
+2) GEMV microbenchmarks on Emerald Rapids: To test the efficacy of the BITCOS-based GEMV microkernel we ex-perimented with a large 32768 ×16384 ternary weight matrix. Weights are replicated to a working set of at least 4 GB so that nothing is served from the last-level cache. We use group size 128, i.e. 128 entries along the inner-product dimension share one 16-bit scale, and we vary the zero density z. The 2-bit reference GEMV is the production LIBXSMM 2-bit microkernel for CPUs [9]. In Figure 11(a) top panel we illustrate the execution time of the GEMV on EMR, whereas on the bottom panel we show the corresponding effective bandwidth. We observe that the BITCOS format wins at every density, and converts most of its bit-width advantage into execution time savings (see Figure 11(a) bottom panel, where the effective bandwidth stays constant ∼ 225 GB/s for 
+
+z up to 0.6). This behavior is also validated by our roofline model, where on EMR the BITCOS kernel operates in a bandwidth-bound regime for z < 0.6. In these plots we highlight with a green area the zero densities of interest: the deployed ternary models/checkpoints we examined in Table I exhibit z ∈ [0 .297 , 0.515] . For these zero densities, the observed speedup of the BITCOS-based GEMV over the 2-bit SOTA GEMV is in the range of 1.14 –1.28 ×. For extreme zero densities (e.g. z = 0 .95 ) we observe that the per-iteration byte count drops, yielding B/γ = 1 .02 , and the unpack instruction sequence starts being the bottleneck, thus restricting the effective bandwidth to 190 .6 GB/s. 
+
+3) GEMV microbenchmarks on Arrow Lake: We repeat the same GEMV benchmark on Arrow Lake (see Figure 11(b)) and the conclusions are the same as the ones on EMR: the BITCOS-based GEMV wins at every density, and converts most of its bit-width advantage into execution time savings, which is in alignment with our roofline analysis. Over the same band of deployed zero densities, z ∈ [0 .297 , 0.515] , the observed speedup of the BITCOS-based GEMV over the 2-bit SOTA GEMV is in the range of 1.13 –1.27 ×, and the kernel holds 93 .4–93 .6 GB/s of effective bandwidth across that band. 
+
+4) GEMV microbenchmarks on Lunar Lake: Figure 11(c) illustrates the GEMV benchmark on Lunar Lake CPU, where our roofline model predicts that the BITCOS-based GEMV kernel is instruction-bound on both core types, and as such it is expected to be slower than the SOTA 2-bit GEMV. The measurements in Figure 11(c) bottom panel confirm that prediction: the BITCOS kernel sustains only 28 .9 GB/s of effective bandwidth at z = 0 .40 . The BITCOS kernel is slower than the 2-bit reference at every density, and its effective bandwidth never exceeds 33 .3 GB/s against the 74 .7 GB/s the two-bit kernel sustains. This result confirms our roofline analysis, and it is a cautionary tale for client platforms with a limited number of cores and high memory bandwidth per 0.0 0.5                    
+
+> GEMV time (ms)  deployed checkpoints
+> (a) Emerald Rapids, 64 cores
+> BITCOS, measured 2-bit (0.637 ms)
+> 012deployed checkpoints
+> (b) Arrow Lake, 8P+16E
+> BITCOS, measured 2-bit (1.497 ms)
+> 024
+> deployed checkpoints
+> (c) Lunar Lake, 4P+4E
+> BITCOS, measured 2-bit (1.909 ms)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> zero density z
+> 0100 200
+> bandwidth (GB/s)
+> BITCOS, measured 2-bit (223.9 GB/s)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> zero density z
+> 050 100
+> BITCOS, measured 2-bit (95.2 GB/s)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> zero density z
+> 050
+> BITCOS, measured 2-bit (74.7 GB/s)
+
+Fig. 11. Zero-density sweep for a 32 k × 16 k matrix-vector multiplication on: (a) Emerald Rapids, (b) Arrow Lake and (c) Lunar Lake, against the flat LIBXSMM 2-bit reference. The shaded band marks z ∈ [0 .297 , 0.515] , the range spanned by the deployed checkpoints of Table I. Top: GEMV time. Bottom: effective bandwidth. Bonsai 1.7B 
+
+> z=.40 Bonsai 4B
+> z=.38 Bonsai 8B
+> z=.38 Bonsai 27B
+> z=.30 CAT-Q 1.7B
+> z=.51 CAT-Q 8B
+> z=.47 CAT-Q 32B
+> z=.47
+> 050 100 150 200 250
+> decode throughput (tokens/s)
+> 167.1 174.2 170.3 197.0 92.6 95.3 94.6 110.0 61.4 63.2 65.3 76.0 14.0 13.6 18.1 20.1 123.3 135.9 64.9 76.2 18.0 21.2
+> 1.16× 1.16× 1.16× 1.11× 1.10× 1.17× 1.18×
+
+(a) Emerald Rapids, 64c 
+
+> Bonsai 1.7B
+> z=.40 Bonsai 4B
+> z=.38 Bonsai 8B
+> z=.38 Bonsai 27B
+> z=.30 CAT-Q 1.7B
+> z=.51 CAT-Q 8B
+> z=.47 CAT-Q 32B
+> z=.47
+> 025 50 75 100 125 150 175
+> 48.6  80.6  131.0 138.0 24.7 41.6 65.6 70.5 14.9 24.7 39.5 43.0 4.5 7.6 10.6 11.1 70.8 72.5 39.4 44.8 10.1 11.6
+> 1.05× 1.08× 1.09× 1.05× 1.02× 1.14× 1.15×
+
+(b) Arrow Lake, 24c 
+
+> Bonsai 1.7B
+> z=.40 Bonsai 4B
+> z=.38 Bonsai 8B
+> z=.38 Bonsai 27B
+> z=.30 CAT-Q 1.7B
+> z=.51 CAT-Q 8B
+> z=.47 CAT-Q 32B
+> z=.47
+> 020 40 60 80
+> 21.3  40.7  69.4 41.0 9.1  20.4  35.8 18.9 5.0 12.2 21.8 10.6 1.6 3.6 5.8 3.0 41.3 28.9 21.8 10.8 5.6 2.7
+> 0.59× 0.53× 0.49× 0.51× 0.70× 0.50× 0.47×
+
+(c) Lunar Lake, 8c 
+
+llama.cpp Q2_0 llama.cpp TQ1_0 LIBXSMM 2-bit BITCOS 
+
+Fig. 12. Decode throughput in tokens per second on the three CPU platforms, batch one, over 7 ternary LLMs, with each model’s measured zero density z
+
+under its name. The orange and green bars correspond to the Prism ML fork of llama.cpp and appear only for the Bonsai family of models that the fork supports. The purple bar corresponds to the SOTA LIBXSMM 2-bit kernel [9] and the blue bar is BITCOS (this work), both inside the vLLM CPU backend. The green number above each cluster of bars is the speedup of BITCOS over the SOTA 2-bit kernel. 
+
+core: a 2-bit, cheaper decode GEMV kernel beats kernels with smaller payload and more expensive decode. 
+
+5) End-to-end decode on the CPU platforms: We integrated both the 2-bit LIBXSMM kernel [9] and the BITCOS GEMV kernels into the vLLM CPU backend [14] and measured decode throughput on all three CPU platforms of Section III-A over 7 of the group-scaled LLM models of Table I. We also benchmarked the same 7 models with the Prism ML fork of 
+
+llama.cpp 1. Two formats in that build are relevant here: 
+
+Q2_0 , the fork’s 2-bit code with one fp16 scale per 128 
+
+weights, which is the same bit rate and group size as the SOTA 2-bit packing of prior work [9], and upstream’s TQ1_0 , a five-trit per byte format. Figure 12 shows the results of the end-to-end inference on the three CPU platforms. Each bar corresponds to the achieved decode throughput in tokens per second, for a single request of 256 output tokens, with each inference engine at its own best thread count. The green number above each cluster of bars is the speedup of BITCOS over the SOTA 2-bit 
+
+> 1
+
+https://github.com/PrismML-Eng/llama.cpp 
+
+kernel, and we conclude that the two memory-bound platforms (EMR and ARL) benefit from BITCOS on every model, while the instruction-bound LNL CPU platform does not see any benefit, which is consistent with the roofline analysis in Section III-B1. We also make the following observations regarding the llama.cpp bars. First, the five-trit per byte format TQ1_0 is faster than the 2-bit Q2_0 on the two client platforms, by 1.66 –1.68 × on Arrow Lake and 1.91 –2.44 × on Lunar Lake, whereas on the server socket the two converge within 4% . It is worth noting that the SOTA 2-bit kernels of prior work [9] move more data than the TQ1_0 kernels of 
+
+llama.cpp , and yet they outperform them by up to 1.78 ×.On the other hand, our BITCOS-based kernel outperforms the SOTA 2-bit kernel on the two memory-bound platforms in the range of 1.10 –1.18 × on Emerald Rapids and 1.02 –1.15 ×
+
+on Arrow Lake. Compared to the TQ1_0 five-trit per byte format (which in principle is memory efficient), BITCOS is 
+
+1.13 –1.48 × faster on Emerald Rapids and 1.46 –1.74 × faster on Arrow Lake. On the instruction-bound LNL CPU platform the SOTA 2-bit work delivers the best end-to-end results and 0.0 0.5 1.0 1.5 2.0              
+
+> GEMV time (ms)
+> deployed checkpoints
+> (a) Arc 140V (LNL), 32768 × 16384
+> BITCOS, measured 2-bit (1.697 ms)
+> 0.0 0.1 0.2 0.3 0.4 deployed checkpoints
+> (b) Arc Pro B70, 32768 × 16384
+> BITCOS, measured 2-bit (0.293 ms)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> zero density z
+> 020 40 60 80
+> bandwidth (GB/s)
+> BITCOS, measured 2-bit (84.1 GB/s)
+> 0.0 0.2 0.4 0.6 0.8 1.0
+> zero density z
+> 0200 400
+> BITCOS, measured 2-bit (487.7 GB/s)
+
+Fig. 13. Zero-density sweep for a 32 k × 16 k matrix-vector multiplication on (a) the Arc 140V and (b) the Arc Pro B70, against the flat XeTLA int2 reference, with every point tuned independently. The shaded band marks z ∈ [0 .297 , 0.515] , the range spanned by the deployed checkpoints of Table I. Top: GEMV time. Bottom: effective bandwidth. Bonsai 1.7B 
+
+> z=.40 Bonsai 4B
+> z=.38 Bonsai 8B
+> z=.38 Bonsai 27B
+> z=.30 CAT-Q 1.7B
+> z=.51 CAT-Q 8B
+> z=.47 CAT-Q 32B
+> z=.47
+> 020 40 60 80 100 120
+> decode throughput (tokens/s)
+> 78.3 77.2 88.8 37.5 39.1 43.6 23.1 23.5 25.7 6.6 6.9 7.8 50.0 56.6 23.7 27.0 5.7 7.0
+> 1.15× 1.12× 1.09× 1.13× 1.13× 1.14× 1.22×
+
+(a) Arc 140V, integrated 
+
+> Bonsai 1.7B
+> z=.40 Bonsai 4B
+> z=.38 Bonsai 8B
+> z=.38 Bonsai 27B
+> z=.30 CAT-Q 1.7B
+> z=.51 CAT-Q 8B
+> z=.47 CAT-Q 32B
+> z=.47
+> 0100 200 300 400 500 600
+> 197.6 418.3 453.7 119.9 195.5 247.8 88.9 148.4 160.8 29.4 42.9 47.2 304.7 311.2 149.8 164.6 35.5 39.9
+> 1.08× 1.27× 1.08× 1.10× 1.02× 1.10× 1.12×
+
+(b) Arc Pro B70, discrete 
+
+llama.cpp Q2_0 (Vulkan) XeTLA 2-bit BITCOS 
+
+Fig. 14. Decode throughput in tokens per second on the two Xe2 platforms, batch one, over 7 ternary LLMs, with each model’s measured zero density z
+
+under its name. The orange bar corresponds to the Prism ML fork of llama.cpp on its Vulkan backend and appears only for the Bonsai family of models that the fork supports. The purple bar corresponds to the SOTA XeTLA int2 kernel [9] and the blue bar is BITCOS (this work), both inside the vLLM XPU backend. The green number above each cluster of bars is the speedup of BITCOS over the SOTA int2 kernel. 
+
+BITCOS loses on every model as predicted by the roofline model and the microbenchmarks of the previous section. 
+
+C. Results on the Xe2 GPU platforms 
+
+We first present the GEMV microbenchmarks on each GPU platform (integrated GPU Arc 140V and discrete Arc Pro B70) and then the end-to-end decode results. 
+
+1) GEMV microbenchmarks on the Arc 140V: To test the efficacy of the BITCOS-based Xe2 GEMV microkernel of Section II-D we use the same large 32768 ×16384 ternary weight matrix as on the CPUs, group size 128, and a varying zero density z. Every BITCOS point is tuned independently over the candidate tiles and the int2 reference is tuned the same way. In Figure 13(a) top panel we illustrate the execution time of the GEMV on the Arc 140V, whereas on the bottom panel we show the corresponding effective bandwidth. We observe that the BITCOS format wins at every sampled density. In these plots we highlight with a green area the zero densities of interest, i.e. the z ∈ [0 .297 , 0.515] that the deployed checkpoints of Table I exhibit. For these zero densities, the observed speedup of the BITCOS-based GEMV over the int2 state-of-the-art GEMV is in the range of 1.04 –1.14 ×, and the kernel delivers 71 .7–75 .6 GB/s of effective bandwidth across that band. The effective bandwidth does not stay flat but falls steadily with z, from 87 .2 to 65 .5 GB/s across the full sweep, because the payload shrinks while the decode work per weight does not. This is why the realized speedup is smaller than the corresponding payload reduction. 
+
+2) GEMV microbenchmarks on the Arc Pro B70: We repeat the same GEMV benchmark on the discrete Arc Pro B70 (see Figure 13(b)) and the conclusions are largely the same as the ones on the Arc 140V: the BITCOS-based GEMV is never slower than the int2 reference. Over the same band of deployed zero densities, z ∈ [0 .297 , 0.515] , the observed speedup is in the range of 1.01 –1.12 ×, and the kernel holds 
+
+398 .7–421 .9 GB/s of effective bandwidth across that band. The effective bandwidth declines with z for the same reason as on the integrated GPU platform, from 476 .6 to 342 .6 GB/s. For example, at z = 0 .40 the measured speedup of 1.06 ×
+
+(BITCOS vs 2-bit kernel) falls short of the 1.23 × byte ratio. 
+
+3) End-to-end decode on the GPU platforms: We integrated both the int2 XeTLA kernel [9] and the BITCOS GEMV kernels into the same vLLM XPU backend [14] and measured decode throughput on both Xe2 platforms of Section III-A over the same 7 group-scaled LLM models of Table I. We also benchmarked the same 7 models with the Prism ML fork of 
+
+llama.cpp , this time on its Vulkan backend, i.e. the vendor-neutral GPU path that is available in llama.cpp . Vulkan is the only backend of that fork which is available for the Xe2 GPUs, as the SYCL backend does not support the two relevant formats ( Q2_0 and TQ1_0 ). Of those two formats only Q2_0 ,the 2-bit code with one fp16 scale per 128 weights, has a Vulkan kernel. The five-trit per byte TQ1_0 format does not have any supporting Xe2 GPU kernel. Figure 14 shows the results of the end-to-end inference on the two Xe2 platforms. Each bar corresponds to the achieved decode throughput in tokens per second, for a single request of 256 output tokens. The green number above each cluster of bars is the speedup of BITCOS over the SOTA int2 kernel, and we conclude that both Xe2 platforms benefit from BITCOS on every model, by 1.09 –1.22 × on the integrated Arc 140V and 1.02 –1.27 × on the discrete Arc Pro B70. We also make the following observations regarding the llama.cpp bars. At identical 2-bit format, identical group size and identical checkpoint the two 2-bit packing methods, ( Q2_0 and the XeTLA int2 packing [9]) converge on the integrated GPU part within 5% in the end-to-end inference results (Figure 14(a)). On the discrete GPU part (Figure 14(b)) the 2-bit XeTLA kernel delivers 1.46 –2.12 × speedup over the Q2_0 -based in-ference. Our BITCOS-based inference outperforms the Q2_0 
+
+of llama.cpp by 1.11 –1.18 × on the Arc 140V and by 1.61 –
+
+2.30 × on the Arc Pro B70 and pushes the envelope of ternary LLM inference on Xe2 GPUs. IV. R ELATED WORK 
+
+A. Ternary Quantization of LLMs 
+
+There are two main approaches to producing ultra-low-bit LLMs: quantization-aware training (QAT) and post-training quantization (PTQ). QAT applies the ternary-weights con-straint during pretraining or fine-tuning. Early work estab-lished that binary and ternary weights are viable for natural language generation [15], and the seminal BitNet work [1], [2] showed that ternary {− 1, 0, +1 } weights keep the accuracy of full-precision weights at scale. A subsequent work, ParetoQ [5] showed that ternary and 2-bit formats live on the accuracy-size Pareto frontier, ahead of 1-bit and 4-bit formats, refining the earlier k-bit inference scaling laws that placed the optimum at 4 bits [16], [17]. The Spectra/TriLM suite [6] pretrained ternary models ranging from 99M to 3.9B parameters. A more recent QAT work, Tequila [18], removes the trapping behavior that makes ternary QAT unstable by re-activating deadzone-trapped weights in the training process. Finally, more recent ternary QAT work has produced SOTA accuracy ternary LLMs for various LLM architectures: Bonsai [3] models range from 1.7B to 27B parameters and offer multi-step reasoning, struc-tured tool calls, vision tasks and agentic loops, while Maple [7] is a 20B SOTA Mixture-of-Experts (MoE) ternary LLM with 1B active parameters. Such compact, high-quality models are a key enabler of on-device agentic systems [10]. Post-training quantization (PTQ) does not involve training steps and weight gradient updates. Instead, PTQ quantizes a pre-trained model and calibrates on a few sequences. Compared to QAT, PTQ is generally faster and less data-intensive, but may result in lower accuracy. Early PTQ methods at 4 and 2 bits, such as AWQ [19] and QuIP [20], have not matched QAT at ultra-low bit-widths. Recent advancements in PTQ, CAT-Q [4] and TWLA [21], make ternary weights directly from a pre-trained model and substantially narrow the accuracy gap compared to the QAT methods. These QAT and PTQ methods are complementary to our work: QAT and PTQ methods provide the means to obtain high-quality ternary LLM models, while our work yields memory-efficient and performant kernels to serve such ternary LLM inference on CPU and GPU platforms. 
+
+B. Kernels and runtimes for ternary LLM inference 
+
+Bitnet.cpp [22] is the reference runtime for ternary LLMs and it is the companion runtime of the seminal ternary LLM work [1]. It is faster than stock llama.cpp [23], but recent work showed that it does not deliver performance close to roofline [9], thus in this work we compared against the SOTA runtime [9]. Earlier libraries targeted ternary and binary inference on edge devices by packing several low-bit weights per word and exploiting bit-serial or sign-based arithmetic, e.g. TernGEMM [24] and TABv2 [25]. One related approach for ternary LLM kernels replaces multiplication with table lookup [26]–[28]. T-MAC [29] pre-computes partial dot prod-ucts, and uses the packed low-bit codes as indices in a table lookup. This approach is applicable to CPUs with low vector FMA throughput. On GPUs, prior work mixes 2-bit and 4-bit groups within a weight matrix and overlaps dequantization with the contraction to contain the accuracy loss [30]. The 2-bit reference in this work is the LIBXSMM [31]/XeTLA [11] kernels [9], and it is the strongest published baseline for CPU and Xe2 GPU platforms to date. Section III shows that the LIBXSMM/XeTLA kernels are equal to or faster than the best 
+
+llama.cpp configurations on all platforms. Therefore, the reported gains of this work are measured against kernels that are roofline-optimal: the advantage of our work over these SOTA kernels stems from the fact that we exploit the inherent zero density of ternary LLM weights. 
+
+C. Use of sparsity in ternary LLM inference 
+
+Recent work [32] exploits sparsity in ternary LLMs by storing only the indices of the non-zero weights in a Ternary CSC format, since the sign alone describes a non-zero ternary weight, and replaces the multiplications with additions and subtractions of the activations, which in theory reduces arith-metic by 4× at 50% sparsity. This technique helps only in compute-bound cases: prefill is compute-bound and becomes 
+
+1.2–2.3× faster than libTorch on Spectra TriLM 1.1B, but decode at batch size of one yields bandwidth-bound GEMV operations and the performance is even worse than the one of libTorch. The ternary CSC kernels also need 75 –88% sparsity to overtake dense cuBLAS at the layer level, well above the 
+
+29 .7–51 .5% that most ternary checkpoints exhibit (Table I). Finally, the proposed index format has a variable bit rate and reads the weights through irregular gathers, whereas our BIT-COS work consists of a dense and positional bitmap, offering sequential accesses and the resulting format is amenable to vectorizable unpacking. Recent work makes the ternary sparsity semi-structured , so that N:M kernels can exploit it. Unlike the one-shot unstruc-tured pruning of dense LLMs [33], the zeros here are produced by the quantizer itself. Sparse-BitNet [34] observes that the 
+
+42% zeros of a pretrained BitNet model are unstructured, and trains ternary quantization jointly with a dynamic N:M mask, reporting up to 1.30 × end to end speedup. Sherry [35] constrains every block of four weights to hold exactly one zero, which leaves 4 × 23 = 32 distinct blocks that a five-bit code stores exactly, i.e. 1.25 bits per weight. Both these recent lines of work replace the distribution that the quantizer produces and therefore require training: Sparse-BitNet must apply the mask over the full pretraining run, while Sherry fixes the zero density at 25% and enforces a 3:4 pattern. Enforcing semi-structured sparsity also costs accuracy: Sparse-BitNet reports that its 6:8 ternary models lose 0.17 –0.32 perplexity and 0.8 to 3.8 points of downstream accuracy against their own dense ternary baselines. BITCOS instead uses the unstructured zeros that existing SOTA ternary LLM checkpoints already contain. It is a change of the storage layout only, it applies to an existing checkpoint, it needs neither retraining nor sparsity hardware, and it is bit-exact, because it decodes the same ternary values as the existing/original ternary model. V. C ONCLUSION 
+
+We introduced BITCOS, a distribution-adaptive ternary lay-out of a presence bitmap plus a compacted sign vector that costs 2−z bits per weight at a zero density z. Across 29 SOTA ternary LLM checkpoints the zero density ranges from 29 .7% 
+
+to 51 .5% , so BITCOS stores 26 of them more compactly than the five-trit packing and reaches 1.485 bits per weight on the sparsest, while against the 2-bit format in production it reduces weight traffic by 1.16 –1.32 × on all 29 models. Over the zero densities these checkpoints exhibit, the BITCOS GEMV is 
+
+1.14 –1.28 × faster than the state-of-the-art 2-bit kernel on a 64-core server Emerald Rapids CPU, 1.13 –1.27 × on a 24-core client Arrow Lake CPU, 1.04 –1.14 × on the integrated Intel Xe2 Arc 140V GPU (Lunar Lake GPU) and 1.01 –1.12 ×
+
+on the Arc Pro B70 discrete Intel GPU. End to end in vLLM over 7 ternary LLMs, decode throughput improves by 1.10 –
+
+1.18 ×, 1.02 –1.15 ×, 1.09 –1.22 × and 1.02 –1.27 × on the same four platforms. As future work we plan to extend the BITCOS layout and its unpacking sequences to more CPU and GPU architectures. REFERENCES [1] S. Ma, H. Wang, L. Ma, L. Wang, W. Wang, S. Huang, L. Dong, R. Wang, J. Xue, and F. Wei, “The era of 1-bit LLMs: All large language models are in 1.58 bits,” arXiv:2402.17764, 2024. [2] S. Ma, H. Wang, S. Huang, X. Zhang, Y. Hu, T. Song, Y. Xia, and F. Wei, “BitNet b1.58 2B4T technical report,” arXiv:2504.12285, 2025. [3] Prism ML, “Ternary Bonsai models,” https://huggingface.co/prism-ml, 2026. [4] S. Wang, C. Li, Y. Kang, J. Fan, and A. Yao, “CAT-Q: Cost-efficient and accurate ternary quantization for LLMs,” in Proc. Int. Conf. on Machine Learning (ICML) , 2026, arXiv:2606.26650. [5] Z. Liu, C. Zhao, H. Huang, S. Chen, J. Zhang, J. Zhao, S. Roy, L. Jin, Y. Xiong et al. , “ParetoQ: Improving scaling laws in extremely low-bit LLM quantization,” arXiv:2502.02631, 2025, models available: https: //huggingface.co/collections/facebook/mobilellm. [6] A. Kaushal, T. Vaidhya, A. K. Mondal, T. Pandey, A. Bhagat, and I. Rish, “Spectra: Surprising effectiveness of pretraining ternary language models at scale,” arXiv:2407.12327, 2024, models available: https://huggingface. co/collections/SpectraSuite/trilms-unpacked. [7] DeepGrove, “Maple: a 20B-A1B ternary-weight reasoning model,” https: //huggingface.co/deepgrove/maple-preview, 2026. [8] OpenBMB, “BitCPM-CANN: full-pipeline ternary quantized mod-els trained on CANN,” https://huggingface.co/collections/openbmb/ bitcpm-cann, 2025. [9] E. Georganas, D. Kalamkar, A. Heinecke, and P. Dubey, “Pushing the envelope of LLM inference with ultra-low-bit quantized models,” arXiv:2508.06753v3, 2026. [10] P. Belcak, G. Heinrich, S. Diao, Y. Fu, X. Dong, S. Muralidharan, Y. C. Lin, and P. Molchanov, “Small language models are the future of agentic AI,” arXiv:2506.02153, 2025. [11] Intel, “XeTLA: Intel Xe templates for linear algebra,” https://github. com/intel/xetla. [12] R. Keryell, R. Reyes, and L. Howes, “Khronos SYCL for OpenCL: A tutorial,” in Proc. 3rd Int. Workshop on OpenCL , 2015, pp. 1–1. [13] S. Williams, A. Waterman, and D. Patterson, “Roofline: An insightful visual performance model for multicore architectures,” Communications of the ACM , vol. 52, no. 4, pp. 65–76, 2009. [14] W. Kwon, Z. Li, S. Zhuang, Y. Sheng, L. Zheng, C. H. Yu, J. E. Gonzalez, H. Zhang, and I. Stoica, “Efficient memory management for large language model serving with PagedAttention,” in Proc. 29th ACM Symp. on Operating Systems Principles (SOSP) , 2023, pp. 611–626. [15] Z. Liu, B. Oguz, A. Pappu, Y. Shi, and R. Krishnamoorthi, “Binary and ternary natural language generation,” in Proc. 61st Annual Meeting of the Association for Computational Linguistics (ACL) , 2023, pp. 65–77. [16] T. Dettmers and L. Zettlemoyer, “The case for 4-bit precision: k-bit inference scaling laws,” in International Conference on Machine Learning . PMLR, 2023, pp. 7750–7774. [17] T. Kumar, Z. Ankner, B. F. Spector, B. Bordelon, N. Muennighoff, M. Paul, C. Pehlevan, C. R´ e, and A. Raghunathan, “Scaling laws for precision,” arXiv:2411.04330, 2024. [18] H. Huang, D. Wu, R. Cen, G. Yu, Z. Li, K. Liu, J. Zhu, P. Chen, X. Liu, and D. Wu, “Tequila: Trapping-free ternary quantization for large language models,” arXiv:2509.23809, 2025. [19] J. Lin, J. Tang, H. Tang, S. Yang, G. Xiao, and S. Han, “AWQ: Activation-aware weight quantization for on-device LLM compression and acceleration,” GetMobile: Mobile Computing and Communications ,vol. 28, no. 4, pp. 12–17, 2025. [20] J. Chee, Y. Cai, V. Kuleshov, and C. D. Sa, “QuIP: 2-bit quantization of large language models with guarantees,” in Advances in Neural Information Processing Systems (NeurIPS) , vol. 36, 2023, pp. 4396– 4429. [21] Z. Zhao, Z. Xu, Z. Chen, X. Hu, Z. Jiang, and D. Yang, “TWLA: Achieving ternary weights and low-bit activations for LLMs via post-training quantization,” in Proc. Int. Conf. on Machine Learning (ICML) ,2026, arXiv:2606.13054. [22] J. Wang, H. Zhou, T. Song, S. Cao, Y. Xia, T. Cao, J. Wei, S. Ma, H. Wang, and F. Wei, “bitnet.cpp: Efficient edge inference for ternary LLMs,” in Proc. 63rd Annual Meeting of the Association for Computa-tional Linguistics (ACL) , 2025, pp. 9305–9322. [23] “llama.cpp: LLM inference in C/C++,” https://github.com/ggml-org/ llama.cpp. [24] S. Choi, K. Shim, J. Choi, W. Sung, and B. Shim, “TernGEMM: General matrix multiply library with ternary weights for fast DNN inference,” in 
+
+Proc. IEEE Workshop on Signal Processing Systems (SiPS) , 2021, pp. 111–116. [25] G. Fu, O. Fischer, S. Zhu, and G. Alonso, “TABv2: A faster ternary and binary neural network inference library on the edge,” IEEE Trans. Very Large Scale Integr. (VLSI) Syst. , pp. 1–13, 2026. [26] D. Blalock and J. Guttag, “Multiplying matrices without multiplying,” in Proc. Int. Conf. on Machine Learning (ICML) , 2021, pp. 992–1004. [27] X. Tang, Y. Wang, T. Cao, L. L. Zhang, Q. Chen, D. Cai, Y. Liu, and M. Yang, “LUT-NN: Empower efficient neural network inference with centroid learning and table lookup,” in Proc. 29th Annual Int. Conf. on Mobile Computing and Networking (MobiCom) , 2023, pp. 1–15. [28] D. C. Ganji, S. Ashfaq, E. Saboori, S. Sah, S. Mitra, M. AskariHemmat, A. Hoffman, A. Hassanien, and M. L´ eonardon, “DeepGEMM: Acceler-ated ultra low-precision inference on CPU architectures using lookup tables,” in Proc. IEEE/CVF Conf. on Computer Vision and Pattern Recognition Workshops (CVPRW) , 2023, pp. 4656–4664. [29] J. Wei, S. Cao, T. Cao, L. Ma, L. Wang, Y. Zhang, and M. Yang, “T-MAC: CPU renaissance via table lookup for low-bit LLM deployment on edge,” in Proc. 20th European Conf. on Computer Systems (EuroSys) ,2025, pp. 278–292. [30] J. Li, J. Xu, S. Li, S. Huang, J. Liu, Y. Lian, and G. Dai, “Fast and efficient 2-bit LLM inference on GPU: 2/4/16-bit in a weight matrix with asynchronous dequantization,” in Proc. 43rd IEEE/ACM Int. Conf. on Computer-Aided Design (ICCAD) , 2024, pp. 1–9. [31] “LIBXSMM: Library for specialized dense and sparse matrix operations, and deep learning primitives,” https://github.com/libxsmm/libxsmm. [32] S. Zhu, G. Fu, M. Kjoseva, and G. Alonso, “Efficient addition-based sparse GEMM for fast ternary large language model inference on edge devices,” ACM Trans. Embedded Computing Systems , vol. 25, no. 4, pp. 60:1–60:29, 2026. [33] E. Frantar and D. Alistarh, “SparseGPT: Massive language models can be accurately pruned in one-shot,” in Proc. Int. Conf. on Machine Learning (ICML) , 2023, pp. 10 323–10 337. [34] D. Zhang, X. Wu, S. Huang, Y. Wang, H. Shao, Y. Hao, Z. Chi, L. Dong, T. Song, Y. Xia, Z. Sui, and F. Wei, “Sparse-BitNet: 1.58-bit LLMs are naturally friendly to semi-structured sparsity,” arXiv:2603.05168, 2026. [35] H. Huang, D. Wu, Q. Hu, G. Yu, J. Yang, J. Zhu, X. Liu, and D. Wu, “Sherry: Hardware-efficient 1.25-bit ternary quantization via fine-grained sparsification,” arXiv:2601.07892, 2026. Optimization Notice: Software and workloads used in performance tests may have been optimized for performance only on Intel microprocessors. Performance tests, such as SYSmark and MobileMark, are measured using specific computer systems, components, software, operations and functions. Any change to any of those factors may cause the results to vary. You should consult other information and performance tests to assist you in fully evaluating your contemplated purchases, including the performance of that product when combined with other products. For more information go to http://www.intel.com/performance. Intel, Xeon, and Intel Xeon Phi are trademarks of Intel Corporation in the U.S. and/or other countries.

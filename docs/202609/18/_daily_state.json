@@ -1,0 +1,41 @@
+{
+  "date": "20260918",
+  "date_label": "",
+  "generated_at": "2026-09-18 21:42:13 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2609.16391v1",
+      "route": "202609/18/2609.16391v1-where-post-training-quantization-breaks-text-embedders-a-measured-map-across-four-embedder-families",
+      "title": "Where Post-Training Quantization Breaks Text Embedders: A Measured Map Across Four Embedder Families",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 7.0,
+      "evidence": "对嵌入器做权重量化后训练量化，检验LLM量化启发式",
+      "first_seen_at": "2026-09-18 21:42:13 UTC",
+      "updated_at": "2026-09-18 21:42:13 UTC"
+    },
+    {
+      "paper_id": "2609.18131v1",
+      "route": "202609/18/2609.18131v1-colla-q-toward-collaborative-experts-in-moe-quantization-via-minimax-precision-balancing",
+      "title": "Colla-Q: Toward Collaborative Experts in MoE Quantization via Minimax Precision Balancing",
+      "section": "quick",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "elblq"
+        }
+      ],
+      "score": 6.0,
+      "evidence": "MoE大模型的低比特量化与逐专家比特分配",
+      "first_seen_at": "2026-09-18 21:42:13 UTC",
+      "updated_at": "2026-09-18 21:42:13 UTC"
+    }
+  ]
+}

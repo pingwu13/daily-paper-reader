@@ -1,0 +1,39 @@
+{
+  "label": "2026-09-18",
+  "date": "2026-09-18",
+  "generated_at": "2026-09-18T21:42:18",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202609/18/2609.16391v1-where-post-training-quantization-breaks-text-embedders-a-measured-map-across-four-embedder-families",
+      "section": "quick",
+      "title_en": "Where Post-Training Quantization Breaks Text Embedders: A Measured Map Across Four Embedder Families",
+      "authors": "Hyojung Han",
+      "date": "2026-09-14",
+      "pdf": "https://arxiv.org/pdf/2609.16391v1",
+      "score": "7.0",
+      "evidence": "对嵌入器做权重量化后训练量化，检验LLM量化启发式",
+      "tldr": "权重后训练量化（PTQ）常被用来压缩检索嵌入器，但保护嵌入表、按模块敏感度分位宽、以排序目标替代重建等建议多来自LLM量化。本文在四个架构家族、五个检查点上跨位宽/组大小网格隔离嵌入、注意力和前馈块实测。结果这些启发式均不能原样迁移：INT3排序随家族变化且损伤不可加，INT2保留率仅1.3%–65.9%。109M蒸馏学生INT3达78.04 NDCG@10、68.4MB，超越0.6B教师的极端PTQ臂，但仅在蒸馏任务内成立。",
+      "tags": "query:elblq",
+      "abstract_en": "Weight-only post-training quantization is the cheapest way to shrink a retrieval embedder, and the received advice for applying it -- protect the embedding table, allocate bits by module sensitivity, prefer a ranking-aware objective over weight reconstruction -- was carried into LLM quantization largely intact. We test that advice on retrieval embedders directly, quantizing five checkpoints from four architecture families across a grid of bit widths and group sizes, and isolating the embedding, attention and feed-forward blocks at each width.   Every heuristic fails to transfer as stated. The embedding table never emerges as the dominant isolated protection priority in any family, despite being the largest tensor in several of them. Module sensitivity does not survive as a transferable ordering: at INT4/g16 the spread between modules is too small to allocate against, at INT3 the ordering becomes family-dependent and joint damage stops being the sum of its parts, and at INT2 comparable reconstruction error accompanies retention ranging from 1.3 to 65.9 percent of full precision. A cheap reconstruction proxy is useful for screening uniform bit widths but substantially less reliable for choosing which tensors to protect; its apparent strength across the whole grid is a range-extension artifact.   A distilled 109M student at INT3 holds 78.04 NDCG@10 in 68.4 MB and dominates the extreme-PTQ arm of its own 0.6B teacher, 297.9 MB at 64.46, on both size and quality -- but only inside the task it was distilled for. Sizes are byte counts of files that exist rather than arithmetic estimates, and the measurement repository carries the byte provenance for every one of them.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202609/18/2609.18131v1-colla-q-toward-collaborative-experts-in-moe-quantization-via-minimax-precision-balancing",
+      "section": "quick",
+      "title_en": "Colla-Q: Toward Collaborative Experts in MoE Quantization via Minimax Precision Balancing",
+      "authors": "Eunju Shin, Jongbin Ryu",
+      "date": "2026-09-16",
+      "pdf": "https://arxiv.org/pdf/2609.18131v1",
+      "score": "6.0",
+      "evidence": "MoE大模型的低比特量化与逐专家比特分配",
+      "tldr": "MoE 量化虽能降低显存与计算开销，却因单个专家参数少且对低比特敏感，易导致部分专家性能骤降，进而拖累整体集成效果。Colla-Q 提出基于激活熵的比特分配框架，通过最小化专家间精度失衡为各专家动态分配位宽，促使量化后专家协同贡献。该方法提升整体 MoE 性能，并降低对校准数据集的依赖。其贡献在于以专家间性能均衡增强鲁棒性与跨校准集泛化能力，为 MoE 低比特量化提供新思路。",
+      "tags": "query:elblq",
+      "abstract_en": "In this paper, we present a Mixture-of-Experts (MoE) quantization method based on activation entropy. Although quantization reduces memory and computational costs, it can substantially degrade performance. In particular, performance decline is pronounced in quantized MoE models, where individual experts have a small number of parameters that are sensitive to low-bit representation. Considering that MoE operates as an ensemble model with collaborative contributions from routed experts, a significant performance decline of a particular expert due to quantization can harm model performance. Therefore, we propose Colla-Q, a bit-allocation framework to maintain balanced performance across experts through an activation-entropy-based bit-width allocation algorithm. This approach encourages each expert to operate collaboratively in the quantized model, thereby 1) improving the overall MoE performance and 2) reducing the dependence on the calibration dataset. Since uniformly adjusting each expert's performance facilitates robustness and stability of the MoE model, the proposed MoE quantization method can generalize more consistently across different calibration datasets. Our code is available at: https://github.com/mmai-laboratory/Colla_Q",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}

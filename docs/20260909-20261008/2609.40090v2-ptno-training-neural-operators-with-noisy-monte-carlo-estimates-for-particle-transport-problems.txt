@@ -1,0 +1,1844 @@
+Title: PTNO: Training Neural Operators with Noisy Monte Carlo Estimates for Particle Transport Problems
+
+URL Source: https://arxiv.org/pdf/2609.40090v2
+
+Published Time: Mon, 05 Oct 2026 00:11:30 GMT
+
+Number of Pages: 41
+
+Markdown Content:
+# PTNO: T RAINING NEURAL OPERATORS WITH NOISY MONTE 
+
+# CARLO ESTIMATES FOR PARTICLE TRANSPORT PROBLEMS 
+
+A P REPRINT 
+
+Yubo Cao *1 , Xi Deng *1 , Mengqi Xia 2, Vignesh Gopakumar 1,3 , Ander Gray 4, and Anima Anandkumar 11California Institute of Technology 
+
+> 2
+
+Yale University 
+
+> 3
+
+UK Atomic Energy Authority 
+
+> 4
+
+LIX, CNRS, École polytechnique October 5, 2026 
+
+## ABSTRACT 
+
+Particle transport under multiple scattering is central to radiative transfer and plasma physics, yet high-fidelity Monte Carlo (MC) simulations must trace prohibitively many particles. Learning-based surrogates can amortize this cost, but their training typically requires expensive, well-converged MC solutions. We propose the Particle Transport Neural Operator (PTNO) , a neural operator framework that learns particle transport surrogates directly from noisy, low-cost MC labels. Such labels pose two challenges: (1) high variance, which destabilizes standard supervised learning, and (2) a high dynamic range (HDR) spanning many orders of magnitude. For the first, we learn the solution operator from noisy labels of many configurations, amortizing MC cost and generalizing to unseen configurations. Because MC labels are unbiased, we show that the squared loss on them shares its minimizer with the loss on converged solutions, and our budget-allocation study over training scenes M , Monte Carlo samples per render N , and independent renders per scene K shows that many noisy scenes beat fewer converged ones. For the second, a nonlinear transform such as the logarithm biases noisy supervision. Instead, PTNO keeps labels in physical space and enforces positivity with a softplus output layer that represents small values effectively. We further train with a pointwise relative 
+
+L2 loss ( PRel L2), the stop-gradient relative loss of HDR denoising and neural rendering, which normalizes each residual by the stop-gradient prediction instead of the noisy label. We demonstrate PTNO on neutron transport in fusion reactors and radiative transfer in participating media, yielding accurate surrogates in both domains. On the two neutronics tasks, PTNO is 10 4–10 5× faster than converged MC on the same CPU and 10 3–10 5× cheaper than MC at matched accuracy; on the two radiative-transfer tasks, MC at matched accuracy costs 0.8–11 × as much as PTNO. 
+
+Keywords neural operators · Monte Carlo · particle transport · noisy labels · neutronics · radiative transfer 
+
+## 1 Introduction 
+
+Particle transport governs the spatial, angular, and energy distribution of particles as they propagate and interact with matter. It underpins a wide range of applications: light transport in participating media [1], neutron transport in shielding and reactor design [2, 3], and neutral particle transport in plasma physics [4, 5]. Though these domains differ in their scattering laws, energy dependence, and material modeling, they share a common foundation in the Boltzmann transport equation. Monte Carlo (MC) methods remain the standard approach for solving particle transport problems in complex geometries and high-dimensional state spaces, due to their generality and physical fidelity. Rather than solving the Boltzmann equation directly, MC methods simulate particle propagation by sampling from probability distributions over possible 
+
+> ∗
+
+Equal contribution. arXiv:2609.40090v2 [cs.AI] 1 Oct 2026 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT                            
+
+> U(a)GT Solution
+> ˆUN(a, ξ )MC Label
+> Bθ(a)PTNO output
+> S(·)stop grad. & clamp at η
+> Particle Transport NO FNO Softplus Activation
+> ln(1 + eGθ(a))
+> Supervision Training
+> PRel L2
+> Bθ(a)−ˆUN(a,ξ )
+> S(Bθ(a))
+> 2
+> Gθ(a)
+> Input a
+> MC Solver Tracing Particles High Variance
+> ˆUN(a, ξ )Increase N(# Particles) Converged 1.1 s 6.7 s 58 s 9.0 min 5.3k core-h Source Geo Scene Neutron Transport in Tokamak
+
+Figure 1: PTNO learns from extremely high-variance MC labels and, at inference, predicts the well-converged solution. The Particle Transport Neural Operator is trained on MC supervision (left green box, columns 1–2) across varying configurations of the input a. Bottom row shows the EU-DEMO 1/16 wedge neutron-transport task: columns 1–4 are analog OpenMC runs (no variance reduction) of one held-out configuration (the scene of Figure 2) with N =10 3, 10 4, 10 5, 10 6 histories, i.e., simulated neutron trajectories, on one 24-thread Xeon Platinum 8352Y CPU, labeled with their measured transport wall-clock (library initialization, 
+
+35 –41 s, excluded). Column 5 is the converged reference of the same configuration, computed with weight windows (a variance reduction that splits or randomly terminates particles to keep their statistical weights within a target band in each region) at a cost of 
+
+5,280 core-hours. PTNO keeps positivity and a wide dynamic range with a softplus output activation, and our PRel L2 loss keeps MC labels in physical space. 
+
+transport events—free flight, scattering, absorption, and boundary interactions—and estimate the solution as an expectation over many particle histories, the simulated trajectories of individual particles. We distinguish between low-variance MC estimates , obtained with many particles and therefore close to the converged solution, and high-variance MC estimates , obtained with few particles and therefore much noisier but significantly cheaper. Obtaining a smooth, low-noise solution requires tracing a large number of particles, prohibitively costly when repeated solves are needed across varying geometries, material configurations, or boundary conditions, as in inverse design, optimization, and multiphysics coupling. Recent learning-based approaches reduce this cost via learned sampling strategies [6, 7], learned caching and variance reduction [8, 9], or denoising of high-variance MC estimates [10–12]. However, these methods either retain MC simulation at inference time or operate as post-processing modules, so prediction still depends on an external solver. This motivates a different goal: a standalone surrogate that directly maps a transport environment to its solution field. Neural operators [13] provide a natural framework by learning mappings from input functions—geometry, material coefficients, sources, boundary conditions—to output solution fields, enabling fast inference across varying environments without running a solver. However, training typically requires near-converged MC labels, making dataset construction expensive. Recent work has shown this requirement can be relaxed: Walk-on-Spheres Neural Operator (WoSNO) [14] trains neural operators from noisy walk-on-spheres estimates for elliptic PDEs, demonstrating operator learning under weak stochastic supervision. This result is limited to elliptic PDEs and does not address the high-dimensional, multiple-scattering transport problems we consider here. Following a similar philosophy, our Particle Transport Neural Operator (PTNO) trains neural operators directly from high-variance MC estimates . The key insight is that unbiased stochastic estimates provide sufficient supervision to learn the underlying operator across a distribution of transport scenarios, without requiring a converged solution for each input. An additional challenge is that particle transport solutions are positive and often span many orders of magnitude (about 
+
+10 to 17 in our 3D fluence and neutronics datasets), making direct regression poorly conditioned. A common remedy is to normalize errors by the target magnitude—e.g., through the reciprocal of the supervision label. However, when supervision is a noisy MC estimate, such nonlinear operations introduce bias, since nonlinear functions do not commute with expectation. We show that existing bias-correction strategies [15] do not fully resolve this issue in our training dynamics. Rather than correcting transformed noisy targets, PTNO avoids transforming the MC labels altogether. It applies a softplus output parameterization to enforce positivity and evaluates errors in the original value space. For the loss, the standard relative L2—which places the noisy label in the denominator—leads to instability; instead we normalize by the 2PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+(a) EU-DEMO 
+
+5,280 core-h (b) GT slice 
+
+t = 1 .2 s(c) Operator 
+
+t = 1 .7 s(d) MC, equal time 
+
+converged (e) GT zoom 
+
+10 −14 
+
+10 −12 
+
+10 −10 
+
+10 −8                                                        
+
+> ϕ (cm −3 per source  n)
+> Figure 2: PTNO predicts the EU-DEMO neutron flux in about a second, closer to the converged reference than Monte Carlo run for the same time. One held-out source configuration of the EU-DEMO 1/16 wedge. (a) Rendering of the DEMO tokamak; the wireframe marks the inspected poloidal cross-section [21]. (b) Converged reference flux on the full slice (OpenMC with weight windows at 700 ×365 ×730 , block-averaged to the 140 ×73 ×146 training mesh; 5,280 core-hours for this scene, median 6,130
+> over the 24 held-out scenes); the orange box marks the region zoomed in panels (c)–(e). (c) Neural operator (NO) prediction on the zoomed region ( 1.2s on a 24-thread Xeon Platinum 8352Y CPU). (d) Analog Monte Carlo (MC, no variance reduction) matched to that wall-clock time: N=2 ×10 3histories on the same CPU ( 1.7s of transport), still visibly noisy. (e) Converged reference on the zoomed region, for direct comparison with (c)–(d). PTNO uses about 6×10 5×less CPU time than the converged reference on the training mesh ( 1.2×10 4×on the reference grid, section 5.3), and its log 10 relative L2is 3.2×lower than that of MC at the same wall-clock time (per-seed median over the 24 held-out scenes; 3.18 ±0.02 , mean ±std over five seeds, range 3.16 –3.20 ×), scored only on cells where the reference is measured (Appendix F).
+
+predicted value at each point. This stop-gradient relative L2, which we call the pointwise relative L2 loss (PRel L2), is established for training on noisy HDR targets in image denoising and neural rendering [16, 17, 9, 18, 19]; to our knowledge it has not been used to train neural operators from noisy MC transport labels, where it provides a stable objective for high-variance supervision. Under a fixed simulation budget, this creates a fundamental allocation tradeoff: spending many particles on few configurations yields low-variance labels, while spending fewer particles per configuration covers many more training environments. In our experiments, a converged MC label costs up to 10 5× more than the noisy labels we use. Cheaper labels, therefore, allow broader coverage of geometries and material configurations, relying on the unbiasedness of MC estimates and operator learning across environments to recover the underlying solution map. Our framework is domain-agnostic: we formulate radiative transfer and neutron transport as instances of a unified particle transport problem, and show that a single neural-operator formulation can be applied across both domains despite differences in their physical parameters and interaction models. In summary, we make the following contributions: • PTNO, a neural-operator framework that learns particle-transport surrogates directly from high-variance, unbiased MC labels, applicable to both radiative transfer and neutron transport under multiple scattering. • A justification and a budget study for noisy supervision: unbiased labels leave the population minimizer of the squared loss unchanged, and a controlled allocation study over the number of training scenes, Monte Carlo samples per render, and independent renders per scene shows that, until scene coverage saturates, many noisy scenes outperform fewer converged ones, in line with walk-on-spheres operator learning and Monte Carlo surrogate models [14, 20]. What the allocation buys depends on the loss: from 10 5 to 10 6 far-field scenes, PTNO gains 0.14 in log 10 SSIM while L2 and log MSE gain 0.02 and 0.01 , respectively. • An analysis of the Jensen bias introduced by nonlinear transformations of noisy MC labels, and a recipe that avoids it for neural operators on radiative and neutron transport: a softplus output head that enforces positivity in the original physical space, the physical-space L2 residual that anchors the minimizer to the label mean, and the stop-gradient relative loss PRel L2 of prior denoising and rendering work [16, 17, 9, 18, 19], together with an analysis of why the combination is stable. • Demonstrations of prediction on held-out geometries and material configurations, achieving 3.4–8.2% log 10 relative error on the radiative-transfer benchmarks and 4.5–8.4% on the two tokamak neutron-transport benchmarks (with the historical rows qualified in Appendix F), while providing 10 4–10 5× faster prediction than converged MC on the same hardware for neutron transport. 3PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## 2 Related Work 
+
+Learning-based methods for radiative and neutron transport fall into two categories: replacing specific components of the transport pipeline with neural counterparts, or learning end-to-end surrogates that predict the final physical quantity. 
+
+Modular neural components. This approach integrates neural networks into traditional Monte Carlo (MC) pipelines to accelerate convergence or reduce variance without discarding the underlying physical framework. • Computer Graphics: In rendering, neural networks are widely used for denoising, mapping noisy renders with few samples per pixel (SPP) to clean images by leveraging geometric features like normals and albedo as auxiliary inputs [22, 11, 23]. Beyond post-processing, path-guiding reduces variance by learning incident radiance distribu-tions [24–26, 6]. Neural radiance caching replaces expensive recursive path tracing with learned regression models that approximate the radiance field for real-time global illumination [9]. Training such models on noisy HDR targets commonly uses a relative L2 whose normalizer is the stop-gradient prediction, in Noise2Noise denoising [16], neural control variates [17], radiance caching [9], and RawNeRF [18]; Tinits and Mann [19] analyze which nonlinear target transforms keep Noise2Noise training nearly unbiased. PRel L2 is this loss; we apply it to neural operators on transport problems. • Other Transport Domains: In nuclear engineering, MC neutron-transport simulations can be inefficient because few particle histories reach a detector or a deeply shielded region, so the tallies there, the accumulated particle scores that estimate the flux, converge slowly. Classical variance reduction relies on “importance” maps such as weight windows, which split particles entering important regions and randomly terminate particles in unimportant ones so that statistical weights stay within a target band; CADIS/ADVANTG automate their construction via deterministic adjoint transport [27, 28]. Recent work explores neural alternatives for source biasing, flux prediction, or surrogate transport models [29–31]. 
+
+End-to-end surrogates and neural operators. An alternative line of work replaces the entire transport solver with a learned proxy. Earlier efforts used point-wise surrogates such as Physics-Informed Neural Networks (PINNs), enforcing the transport equation at discrete coordinates, but they generalize poorly across geometries and source terms [32]. Neural operators such as Fourier Neural Operators (FNO) instead learn mappings between function spaces, enabling generalization across environments [33]. Surrogates have been applied to plasma modeling [34] and Tritium Breeding Ratio estimation in tokamaks and stellarators [35, 36], but not yet for predicting full neutron-flux fields. Existing neural operators for physics typically assume access to high-quality simulation data or rely on PDE residuals that are hard to optimize for the stiff, high-dynamic-range equations of particle transport. We target this gap by training neural operators directly from low-sample MC estimates. WoS-NO trains neural operators for elliptic PDEs from walk-on-spheres estimates [14], and Pratt and Prosper-Feldman [20] show for Monte Carlo surrogates of Markov-chain moments that mean estimates benefit most from parameter-space coverage, while nonlinear targets such as covariances also need replication to control bias; our allocation study adds how this trade-off interacts with the loss. 
+
+Bias correction. Bias enters MC pipelines through many channels. Classical debiasing typically targets biased estimators arising from finite approximations (step size, kernel radius, path-length truncation) and removes them by constructing sequences of increasingly accurate estimators. Randomized debiasing and multilevel Monte Carlo can convert convergent biased approximations into unbiased ones, but remain expensive [37–39]. In computer graphics, Misso et al. [15] unify this view via Taylor- and telescoping-series corrections for transmittance, photon mapping, and finite-difference derivatives. Our setting differs: the supervision targets are unbiased in the original physical scale, but a nonlinear log transformation introduces Jensen bias. Series-expansion corrections require sufficiently many samples for the estimator to be near the true value, which is impractical here. We instead keep the noisy target in unbiased linear form while using a positive model output head and prediction-normalized residual for stability under high dynamic range. 
+
+## 3 Background 
+
+We formulate particle transport as an operator-learning problem with noisy Monte Carlo supervision. For each input configuration a, including geometry, material properties, and source parameters, there is an unknown transport response 
+
+U(a) that we would like to predict. Monte Carlo solvers provide unbiased but noisy estimates ˆUN (a, ξ ) of U(a) from 
+
+N particles, and our goal is to train a neural operator directly from the high-variance estimates. Appendix A lists the notation. Particle transport describes the evolution of particles undergoing scattering and absorption within a medium. The solution is expressed as an integral over particle trajectories. Let ξ ∈ Ω denote a particle path consisting of a sequence 4PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+of free-flight segments and scattering events, and let Ω = ∪k≥1Ωk be the space of all paths grouped by the number of scattering events k. The measurable response can be written as 
+
+U(a) = 
+
+Z
+
+> Ω
+
+f (ξ, a )d ν(ξ), (1) where ν is the underlying path-space measure induced by the transport process. The contribution function f (ξ, a )
+
+encodes the accumulated weight of a particle trajectory ξ, including emission at the source, attenuation along free-flight segments, and scattering events along the path (see Appendix B for details). This formulation is equivalent to the integral form of the Boltzmann equation. MC methods approximate this integral by sampling N paths ξi ∼ p(· | a) from a proposal distribution p and collecting them in ξ = ( ξ1, . . . , ξ N ). The estimator is given by 
+
+ˆUN (a, ξ ) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+f (ξi, a )
+
+p(ξi | a) . (2) This estimator is unbiased but often exhibits high variance, particularly in multiple-scattering regimes where the path length k can be large, the contribution function f is only implicitly defined (i.e., not available in closed form), and it is difficult to construct a sampling distribution p proportional to f . As a result, obtaining low-noise estimates of U(a)
+
+requires a large number of particle paths, making data generation expensive. 
+
+3.1 Neural Operator 
+
+Neural operators learn mappings between function spaces and provide a natural framework for amortizing the solution of parametric PDEs and integral equations. For particle transport, we view the transport environment as an input function or configuration a, which may include spatially varying material coefficients, boundary conditions, source parameters, and geometry. The corresponding output is the measurable response or solution field U(a) defined by the transport equation. The goal is to learn the solution operator 
+
+Gθ : a 7 → U (a), (3) from training examples drawn from a distribution of environments. In contrast to standard neural networks that approximate a finite-dimensional input-output map tied to a particular discretization, neural operators are designed to approximate the underlying continuous operator and can be evaluated across different resolutions or discretizations. This property is especially useful for particle transport, where one often needs to solve the same physical model repeatedly across many geometries, material fields, or source conditions. After training, the neural operator can predict U(a) for a new configuration a at a fraction of the cost of a full MC solve. 
+
+## 4 Method 
+
+We formulate particle transport surrogate learning as operator learning from unbiased but high-variance stochastic simulation labels. For each input configuration a ∼ P a, including geometry, material properties, and source parameters, let U(a) denote the converged transport response. An MC solver provides a noisy estimate 
+
+ˆUN (a, ξ ) = U(a) + ζN (a, ξ ), (4) where ξ denotes the random particle histories used by the estimator. We assume that the MC estimator is unbiased in the original physical space: 
+
+Eξ [ ˆUN (a, ξ ) | a] = U(a), Eξ [ζN (a, ξ ) | a] = 0 . (5) Our goal is to learn a neural operator that maps a to U(a) without requiring well-converged MC labels for every training configuration. 
+
+4.1 Learning from Unbiased Stochastic Labels 
+
+The ideal supervised objective assumes access to the converged solution: 
+
+LC (Gθ ) = Ea[∥G θ (a) − U (a)∥22]. (6) In practice, U(a) is unavailable, and we instead observe noisy MC labels ˆUN (a, ξ ). Training with these labels yields the surrogate objective 
+
+LN (Gθ ) = Ea,ξ [∥G θ (a) − ˆUN (a, ξ )∥2]. (7) 5PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Substituting the decomposition of ˆUN (a, ξ ) from Equation 4 gives 
+
+LN (Gθ ) = Ea,ξ [∥G θ (a) − U (a) − ζN (a, ξ )∥2]= LC (Gθ ) + Ea,ξ [∥ζN (a, ξ )∥2] − 2Ea[⟨G θ (a) − U (a), Eξ [ζN (a, ξ ) | a]⟩].
+
+The cross term vanishes by the unbiasedness of ˆUN (Equation 5), and the variance term Ea,ξ [∥ζN (a, ξ )∥22] is independent of Gθ . Hence the two objectives share the same population minimizers: 
+
+arg min 
+
+> Gθ
+
+LN (Gθ ) = arg min 
+
+> Gθ
+
+LC (Gθ ). (8) Unbiased Monte Carlo labels therefore provide statistically valid supervision in the original linear physical space, even when individual labels have high variance. The variance term inflates the loss value but leaves the optimum unchanged. 
+
+4.2 Jensen Bias from Nonlinear MC-Label Transforms 
+
+Although the squared-loss argument justifies training from noisy labels in the linear physical space, particle-transport solutions often span many orders of magnitude (about 10 to 17 in our 3D fluence and neutronics references, Table 24). Direct regression in value space can therefore be poorly conditioned: High-flux regions dominate the loss, while low-flux regions may be ignored. A natural remedy is the pointwise relative error, which normalizes each residual by the local field value before squaring and averaging. With access to the clean solution, the corresponding objective is 
+
+Lrel (Gθ ) = Ea[∥(Gθ (a) − U (a)) /(U(a) + η)∥2].
+
+If we instead substitute a noisy MC label inside the reciprocal, the objective becomes 
+
+LN, rel (Gθ ) = Ea,ξ [∥(Gθ (a) − ˆUN (a, ξ )) /( ˆUN (a, ξ ) + η)∥2]. (9) This objective is biased because the reciprocal does not commute with the expectation over MC noise: 
+
+Eξ [ 1ˆUN (a, ξ ) + η | a]̸ = 1
+
+U(a) + η = 1
+
+Eξ [ ˆUN (a, ξ ) | a] + η . (10) Applying a nonlinear transformation to noisy labels, therefore, changes the expected training objective and shifts its minimizer away from U. We refer to this effect as Jensen bias . This motivates a key design choice in our method: keep MC labels in the original physical space and avoid passing them through nonlinear transformations such as logarithms or reciprocal normalizers. 
+
+4.3 Particle Transport Neural Operator 
+
+To handle high dynamic range (HDR) without transforming noisy labels, we modify the surrogate architecture rather than the target. Let Gθ (a) be a neural operator backbone (e.g., an FNO) that produces a latent field. We map this latent field to the physical solution space through a softplus activation: 
+
+Bθ (a) = softplus( Gθ (a)) = ln(1 + eGθ (a)). (11) From here on, Gθ denotes this latent backbone and Bθ the physical prediction of PTNO. For large negative latent values, the softplus behaves approximately exponentially, allowing negative activations to represent very small positive physical values. For large positive values, it behaves approximately linearly, avoiding the severe gradient growth of a pure exponential parameterization. This makes softplus a useful positive parameterization for high-dynamic-range nonnegative fields. Crucially, the prediction Bθ (a) is compared directly against the noisy MC label in the original physical scale. 
+
+Pointwise relative L2. We avoid applying a nonlinear reciprocal to the MC label by using the prediction as the local normalization scale. Specifically, we define S(x) = max(sg( x), η ), where sg( ·) denotes stop-gradient and η > 0
+
+prevents division by very small values. 
+
+LN, PRel (Gθ ) = Ea,ξ [∥(Bθ (a) − ˆUN (a, ξ )) /S(Bθ (a)) ∥2]. (12) The denominator provides a local scale estimate, but it is treated as constant during backpropagation. Therefore, gradients are taken through the linear residual in the numerator, and the MC label enters the loss only in the original physical space. While the exact minimizer-equivalence argument applies to the unweighted squared loss, this objective preserves the key requirement that noisy MC labels are not passed through a nonlinear transformation. Appendix I shows that, in expectation over MC noise, its gradient has no stationary point other than Bθ (a) = U(a) wherever the output Jacobian has full row rank. The formula is not new: the same stop-gradient relative L2 trains HDR denoisers on noisy targets [16, 19], neural control variates and radiance caches [17, 9], and NeRF on noisy raw images [18]. What we add is its use for neural-operator learning from noisy MC transport labels, paired with the softplus head, and the stationary-point analysis above for that combination. 6PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Fixed points. For a fixed input a, let Bθ = Bθ (a) denote the physical prediction, U = Eξ [ ˆUN (a, ξ ) | a] the mean of the noisy label, D(B) = diag(max( Bi, η )2) the diagonal matrix of squared normalizers, and J = ∂B θ /∂θ the output Jacobian. Because the pointwise denominator is detached, the expected parameter gradient of the per-sample loss ℓ, up to a positive constant, is 
+
+Eξ [∇θ ℓ | a] = J⊤D(Bθ )−1(Bθ − U ). (13) Thus, a stationary point satisfies J⊤D(Bθ )−1(Bθ − U ) = 0 . Since D(Bθ ) is positive definite, the normalization introduces no zero directions. Under the standard local assumption that J has full row rank ( JJ ⊤ ≻ 0), J⊤ is injective and stationarity forces Bθ = U . PRel L2 therefore introduces no additional biased fixed point in output space. A rank-deficient Jacobian can create parameter-space stationary points, but that limitation is shared by ordinary squared loss. 
+
+Optimization dynamics. The stop-gradient update is the gradient of the output-space potential 
+
+Φ( Bθ ) = X
+
+> i
+
+Z Bθ,i 
+
+> Ui
+
+s − Ui
+
+max( s, η )2 ds, (14) because ∇B Φ = D(Bθ )−1(Bθ − U ). Under continuous-time gradient descent, ˙θ = −J⊤∇B Φ, so 
+
+dΦ dt = −∇ B Φ⊤JJ ⊤∇B Φ ≤ 0. (15) The expected dynamics therefore decrease Φ monotonically. The prediction-dependent denominator rescales the per-voxel update but cannot reverse its direction or create another output-space minimum. Under JJ ⊤ ≻ 0, the dynamics stop only at Bθ = U ; when Ui = 0 exactly, softplus approaches this solution as a boundary limit rather than attaining it at a finite latent value. This is a population-gradient argument; finite steps, stochastic-gradient variance, and rank-deficient parameterizations remain practical considerations. 
+
+Sample allocation. In finite training we draw M training scenes and, for each scene, K independent renders of N
+
+Monte Carlo samples each. The empirical objective is 
+
+bLM,K,N (θ) = 1
+
+M K 
+
+> M
+
+X
+
+> i=1
+> K
+
+X
+
+> j=1
+
+∥(Bθ (ai) − ˆUN (ai, ξ i,j )) /S(Bθ (ai)) ∥2, (16) where ai is the i-th scene and ξi,j the samples of its j-th render. M controls coverage of the scene distribution, while N
+
+and K control the noise of the supervision. Under a fixed particle budget Ntot = M KN , reducing N frees samples for more scenes M or more renders K; subsection 5.2 studies this trade-off empirically. Two exact facts and one standard bound organize the trade-off (Appendix J.4). First, because the normalizer is detached, for fixed normalizers the K
+
+renders of a scene enter the objective and its gradient only through their mean, whose noise variance is σ2/(N K )
+
+for single-sample variance σ2; a full pass over K renders of N samples is therefore equivalent to one render of N K 
+
+samples. Second, for the unweighted squared loss with unbiased labels, the standard least-squares bound for a realizable class F of effective dimension deff gives 
+
+E R(ˆθ) − inf  
+
+> θ∈Θ
+
+R(θ) ≲ EM (F) + σ2deff 
+
+M N K , (17) where ℓ is the per-sample loss, R(θ) = E[ℓ(θ)] its population risk, ˆθ the minimizer of bLM,K,N over the parameter set Θ, and EM (F) the excess risk the same class would reach from M converged labels. Scene coverage enters through EM and the 1/M of the noise term, label noise only through 1/(M N K ), and there is no term in N or K
+
+alone. Third, a nonlinear label transform such as the logarithm moves the population minimizer from log 10 U to 
+
+E[log 10 ˆUN ] = log 10 U + O(1 /N ), or O(1 /(N K )) when the K renders are averaged before the transform; this adds a risk floor of order 1/N 2 (respectively 1/(N K )2) that no number of scenes removes. For PRel L2, Appendix I shows that the expected gradient Eξ [∇θ ℓ | a] = J⊤D(Bθ )−1(Bθ − U ) has no output-space stationary point other than the label mean, so this Jensen shift does not arise; the bound (17) itself is proved only for the unweighted squared loss. 
+
+## 5 Experiments 
+
+We evaluate PTNO on four datasets spanning two physical regimes of particle transport—photon transport and neutron transport—comparing against the NO baseline under matched architectures and varying loss formulations. The far-field 
+
+7PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+radiance task models light propagating through a heterogeneous participating medium bounded by a ball (with spatially varying extinction and albedo defined in spherical coordinates) and predicts the far-field radiance; this is a canonical problem in atmospheric and volumetric rendering, where multiple scattering renders analytic solutions intractable. Its references span only about 3 orders of magnitude (Table 24), so it is not a high-dynamic-range case; because converged references are affordable for thousands of its scenes, we use it as a controlled testbed for label noise and particle-budget allocation. The 3D fluence task extends this setting and defines the spatially varying material parameters and emission functions in 3D Cartesian coordinates, predicting the full 3D fluence field, whose references span about 
+
+10 orders of magnitude. The spherical-tokamak neutron transport task moves to nuclear fusion: a parametric tokamak geometry with a varying D–T plasma source produces 14 .1 MeV fusion neutrons that scatter and attenuate through shield, first-wall, and blanket materials. The resulting neutron flux distribution [40] is the key quantity for estimating material activation (radioactivity induced in structures by neutron capture), nuclear heating, and tritium breeding. Finally, the EU-DEMO task targets a reactor-scale engineering model of the European demonstration fusion reactor [21, 41], where predicting the neutron flux across the full poloidal cross-section under varying plasma-source conditions is essential for shielding design, diagnostic placement, and blanket performance assessment. Full dataset details are in Appendix E. Our experiments show that (1) PTNO outperforms alternatives and (2) high-variance MC labels are more sample-efficient than converged references. The main text reports log 10 relative L2 and log 10 SSIM, both computed on the output field itself (the angular map or the 3D volume) after log 10 (max( ·, ϵ )) with a per-dataset floor ϵ, so that accuracy counts across the entire dynamic range; appendix tables add linear-space % RMSE, PSNR, and SSIM, and Appendix F defines every metric. All validation and test metrics are computed on unseen input configurations held out from training. Unless noted otherwise, entries are the mean ± sample standard deviation over five training seeds, scored against converged MC references. Far-field radiance and EU-DEMO now use the final checkpoint of a fixed training schedule; the 3D fluence and spherical-tokamak rows remain historical checkpoint-selected results pending replacement (Appendix F). (M, N, K ) denotes the number of training scenes, the Monte Carlo samples per render, and the independent renders per scene (section 4); on the radiative-transfer tasks N is counted in samples per pixel or per voxel (SPP), and on the neutron-transport tasks in histories, a render being one OpenMC run. 
+
+5.1 Jensen Bias and Loss Comparison 
+
+Passing noisy MC labels through a nonlinear map moves the minimizer of the training objective away from the physical solution; this is the Jensen bias of section 4, illustrated in Figure 11. We study this effect extensively in Appendix G. On the far-field radiance dataset, Figure 13 shows that training with the biased objective of Equation 9 collapses the prediction by several orders of magnitude. PTNO avoids this failure mode by normalizing with a stop-gradient prediction rather than the noisy MC label. In Table 13 (Appendix H), we evaluate the effect of Jensen bias on training with the far-field radiance dataset. We find that bias correction does not fully close the performance gap, whereas PTNO trained with PRel L2 achieves stable performance by avoiding nonlinear transformations of noisy MC labels, and therefore avoiding Jensen bias. Appendix D isolates the mechanism with a full denominator × activation ablation on the 3D fluence dataset and a matching 2×2
+
+recipe ablation on EU-DEMO: every variant whose residual scale is the noisy MC label, or the prediction with gradients flowing through it, either collapses or inflates its output scale, while only the stop-gradient pointwise residual paired with the softplus head remains stable. 
+
+5.2 Particle-Budget Allocation and Noise Stability 
+
+Table 1 varies the Monte Carlo samples per render, N ∈ { 4, 64 , 128 }, for three losses on the far-field radiance testbed and reports log 10 SSIM. L2 changes least with N but stays weak in dim regions (Table 11 in Appendix G); log MSE degrades sharply at lower N , consistent with a Jensen bias that grows with label noise; PTNO + PRel L2 keeps 0.96 ×
+
+of its N =128 score at N =4 .                                                                       
+
+> Table 1: PTNO + PRel L2loses less accuracy than log MSE as labels get noisier. Far-field radiance with M=10 6training scenes and Nsamples per pixel per label; all other settings shared. Entries are log 10 SSIM on the 100 held-out scenes against the converged reference, mean ±std over five seeds (higher is better); parenthesized ratios compare each lower-Ncolumn against N=128 .Arch. Loss N=128 ↑N=64 (vs. N=128 )↑N=4 (vs. N=128 )↑
+> NO L20.660 ±0.026 0.662 ±0.022 (1.00 ×)0.652 ±0.020 (0.99 ×)NO log MSE 0.853 ±0.003 0.812 ±0.002 (0.95 ×)0.470 ±0.001 (0.55 ×)PTNO PRel L2(ours) 0.952 ±0.002 0.949 ±0.002 (1.00 ×)0.917 ±0.004 (0.96 ×)
+
+8PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+At equal particle budget (Figure 3), we fix the objective to PTNO + PRel L2 and sweep N ∈ { 8, 16 , 32 , 64 } on the same M =10 6 training set. For the same total number of simulated particles, lower-N runs reach lower error, so the particle budget is better spent on covering more scenes than on reducing the noise of each label; this sweep has one seed per N , and the multi-seed allocation study of Appendix J finds the same trend until scene coverage saturates, as reported for other operator and surrogate models trained on Monte Carlo labels [14, 20].                   
+
+> 816 32 64
+> N
+> 0.13 0.14 0.15
+> rel.  L2 (linear)  (a) test rel. L2
+> 816 32 64
+> N
+> 0.93 0.94
+> log 10  SSIM (b) test log 10 SSIM
+> 0100 200
+> Epoch
+> 0.2 0.4 14
+> val rel.  L2
+> (c) val rel. L2vs epoch
+> 10 610 7
+> M≤e·N
+> 0.10.20.40.7
+> val rel.  L2
+> (d) equal-budget
+> 816 32 64
+
+Figure 3: Under PTNO + PRel L2, more scenes outperform more particles per scene. Far-field radiance; all runs use the same loss with M =10 6 and a 200-epoch cosine schedule, one seed per N , scored on the 100 held-out scenes against the earlier 10 5-SPP reference (Appendix E.1). (a,b) End-of-training test linear rel. L2 and log 10 SSIM vs. training N at fixed M =10 6, i.e. with a budget that grows with N . (c) Per-epoch validation linear rel. L2 (log scale). (d) Per-epoch validation against cumulative budget M≤e·N ,where M≤e is the number of distinct scenes seen by epoch e and reaches M =10 6 at the final epoch; the shaded band marks the budgets at which every run has data ( ≤8×10 6 particles), and gray vertical lines mark equal-budget slices. At equal budget, lower-N
+
+runs win. 
+
+5.3 Multi-Domain and 3D Validation 
+
+We replicate the loss comparison on the 3D fluence dataset, on spherical-tokamak neutron transport, and on the reactor-scale EU-DEMO benchmark, confirming the findings transfer across physics domains and unseen inputs. Table 2 reports five-seed results on all four datasets. 
+
+3D fluence (historical results). We train on a 64 3 fluence dataset (Appendix E.2) at (M, N, K )=(3 ×10 5, 4, 2) ; the reference fluence of a scene spans about 10 orders of magnitude. A 3D PTNO (modes 20 3, width 64 , 6 layers) is trained for 120 epochs ( 1.5×10 5 optimizer updates) and validated on 100 unseen held-out scenes. Linear-output L2 fails in dim regions, and naive log-target MSE trails PTNO + PRel L2 by 0.054 in log 10 SSIM, consistent with Jensen bias. PTNO + PRel L2 achieves the best performance in both log-space metrics. 
+
+Spherical-tokamak neutron transport (historical results). We train on (M, N, K )=(4 ×10 5, 10 5, 1) , drawn without repetition from a pool of 1,024 ,000 configurations of a parametric D–T spherical-tokamak distribution varying both geometry and plasma source [40]; the reference flux of a scene spans about 10 orders of magnitude per energy group. A 3D NO (modes 24 3, width 32 , 4 layers) is trained for 40 epochs ( 10 5 optimizer updates) at batch 4, with validation on 50 unseen configurations against a 10 9-history reference. Naive log-target MSE reaches only log 10 SSIM 0.560 , while PTNO + PRel L2 retains log 10 SSIM 0.863 and log 10 rel. L2 0.045 on the unseen validation split. 
+
+EU-DEMO. Building on the EU-DEMO accuracy reported in Table 2, we now quantify the practical speed–accuracy tradeoff against the converged MC reference. We train on (M, N, K )=(10 5, 5×10 5, 1) on a 140 ×73 ×146 mesh and validate on 24 unseen configurations against references computed with FW-CADIS and MAGIC weight windows (median 6,130 CPU core-hours per configuration). Weight windows are a variance reduction that splits or randomly terminates particles to keep their statistical weights within a target band in each region; FW-CADIS derives them from an approximate deterministic adjoint solution, and MAGIC refines them over successive MC runs. On one 24-thread CPU, the converged reference costs 1.2×10 4× the operator’s forward pass on the reference grid. With an FW-CADIS weight window, MC needs 1.6×10 3× the operator’s cost, window generation included, to match its log 10 rel. L2, and on none of the 24 configurations does it reach the operator’s log 10 SSIM within 10 7 histories. Appendix K reports the same-hardware and matched-accuracy comparison for all four datasets. 
+
+## 6 Discussion 
+
+PTNO offers several advantages for particle-transport surrogate learning. It learns directly from high-variance MC labels, avoiding the need to generate expensive converged labels for every training configuration. Rather than treating MC noise as a preprocessing problem, it leverages noisy but unbiased estimates as stochastic supervision: high-variance 9PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT geometry source                              
+
+> 𝑡 =55 ms MC
+> 𝑡 =38 ms NO
+> 𝑡 =81 h GT geometry source
+> 𝑡 =49 ms MC
+> 𝑡 =37 ms NO
+> 𝑡 =67 h GT
+> 10 −7
+> 10 −5
+> 10 −3
+> 10 −1
+> flux
+> setup source
+> 𝑡 =5 ms MC
+> 𝑡 =4 ms NO
+> 𝑡 ≈31 min GT setup source
+> 𝑡 =5 ms MC
+> 𝑡 =4 ms NO
+> 𝑡 ≈40 min GT
+> 10 −3
+> 10 −2
+> 10 −1
+> 10 0
+> radiance
+
+1
+
+Figure 4: At matched wall-clock time, MC is still dominated by noise while the NO prediction is close to the converged reference. Each block shows five panels left-to-right: geometry, source distribution, low-budget MC, NO prediction, and converged-MC ground truth (GT), for the two held-out configurations closest to the median per-scene log 10 SSIM of the seed-42 model of Table 2. All timings are measured on one node with an NVIDIA H200 GPU and a 24-thread AMD EPYC 9554 CPU; the MC budget is the smallest whose wall-clock comes closest to one NO forward pass. Top—Spherical tokamak neutron flux: NO inference takes 
+
+37 –38 ms on the GPU; OpenMC on 24 CPU threads needs 49 –55 ms for N =37 –43 histories, the smallest budgets it runs near that time. The GT pools 10 9 histories from 100 independent 10 7-history runs ( 67 –81 h of summed wall-clock, each run on 4 CPU cores, that is 270 –320 core-hours). Bottom—Spherical-slab far-field radiance L: NO inference takes 3.6 ms and a Mitsuba render with one sample per pixel 4.8 ms on the same GPU; the GT accumulated 10 7 SPP in 31 –40 min on one H200. Table 2: PTNO achieves superior performance across all four datasets. Each block compares loss formulations under matched architectures, data, and optimizer-update budgets; bolded values are the best per dataset. EU-DEMO replaces the linear-L2 loss with relative L2 because the flux peak sits near the Adam ϵ scale. Mean ± standard deviation over five seeds on held-out configurations against converged references ( 100 far-field scenes, 100 3D fluence scenes, 50 spherical-tokamak configurations, 24 EU-DEMO configurations). Far-field and EU-DEMO use final checkpoints; the 3D fluence and spherical-tokamak blocks are provisional historical results selected on their evaluation configurations. EU-DEMO is scored only on cells where the converged reference is measured ( 45 .4% of the mesh; Appendix F).                                                                                             
+
+> Dataset Method log 10 rel. L2↓log 10 SSIM ↑
+> Far-field radiance NO + L20.4782 ±0.0408 0.6524 ±0.0196
+> NO + log MSE 1.3994 ±0.0013 0.4699 ±0.0007
+> PTNO + PRel L2(ours) 0.0825 ±0.0022 0.9165 ±0.0040
+> 3D fluence NO + L20.2824 ±0.0006 0.7243 ±0.0004
+> NO + log MSE 0.0843 ±0.0045 0.8977 ±0.0042
+> PTNO + PRel L2(ours) 0.0338 ±0.0005 0.9518 ±0.0011
+> Sph. tokamak NO + L20.4062 ±0.0058 0.2021 ±0.0227
+> NO + log MSE 0.3364 ±0.0027 0.5604 ±0.0286
+> PTNO + PRel L2(ours) 0.0453 ±0.0011 0.8627 ±0.0024
+> EU-DEMO NO + rel. L20.2310 ±0.0050 0.1455 ±0.0066
+> NO + log MSE 0.2388 ±0.0002 0.5846 ±0.0001
+> PTNO + PRel L2(ours) 0.0839 ±0.0006 0.7923 ±0.0016
+
+labels provide an unbiased estimate of the converged solution up to an additive noise term independent of the model. To handle high dynamic range, PTNO avoids Jensen bias by applying a softplus activation to the model prediction and using the prediction, rather than the noisy MC estimate, as the denominator in the pointwise relative loss. This keeps MC targets in the original physical scale. Under a fixed simulation budget, this regime is especially valuable for multiple-scattering transport, where low-sample MC labels enable broader coverage of input configurations than fully converged labels. The method has important limitations. PTNO assumes an unbiased MC estimator in linear physical space; bias from path truncation, approximate physics, or a biased Russian roulette (random termination of low-weight particles without the compensating weight increase) weakens the risk-equivalence argument underpinning the training scheme. Effectiveness is also constrained by the capacity of the underlying neural operator: while the approach generalizes well across in-distribution variations, far out-of-distribution configurations can lead to failure modes not covered by the training distribution. Our analysis of PRel L2 concerns the expected gradient under continuous-time, full-batch dynamics with a full-row-rank output Jacobian, and does not establish convergence for Adam or finite stochastic steps (Appendix I). All evaluations are simulation-based and test interpolation within parameterized families; generalization to measured data or to new geometry families is not established (Appendix L). Safety-critical applications would still require validation against high-fidelity MC references before the surrogate could be trusted as a replacement rather than an accelerator. Future work includes applying PTNO to full-resolution tokamak models, extending it to neutral transport in plasma-edge simulation, and integrating it into coupled multiphysics, inverse design, and differentiable optimization pipelines. 10 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## Acknowledgments 
+
+Anima Anandkumar is supported in part by Bren endowed chair, ONR (MURI grant N00014-23-1-2654), and the AI2050 senior fellow program at Schmidt Sciences. Ander Gray is partially funded by the Academic and Research Chaire “Architecture des Systèmes Complexes” Dassault Aviation, Naval Group, Dassault Systèmes, KNDS France, Agence de l’Innovation de Défense, Institut Polytechnique de Paris. The Fusion Futures Programme partially funds Vignesh Gopakumar. As announced by the UK Government in October 2023, Fusion Futures aims to provide holistic support for the development of the fusion sector. The authors thank Modal for providing part of the compute credits. 
+
+## References 
+
+[1] Wenzel Jakob, Sébastien Speierer, Nicolas Roussel, Merlin Nimier-David, Delio Vicini, Tizian Zeltner, Baptiste Nicolet, Miguel Crespo, Vincent Leroy, and Ziyi Zhang. Mitsuba 3 renderer. https://mitsuba-renderer.org ,2022. Version 3.0.1. [2] Paul K. Romano, Nicholas E. Horelik, Bryan R. Herman, Adam G. Nelson, Benoit Forget, and Kord Smith. OpenMC: A state-of-the-art Monte Carlo code for research and development. Annals of Nuclear Energy , 82:90–97, 2015. ISSN 0306-4549. doi: 10.1016/j.anucene.2014.07.048. URL https://www.sciencedirect.com/ science/article/pii/S030645491400379X . Joint International Conference on Supercomputing in Nuclear Applications and Monte Carlo 2013, SNA + MC 2013. Pluri- and Trans-disciplinarity, Towards New Modeling and Numerical Simulation Paradigms. [3] Michael Evan Rising, Jerawan Chudoung Armstrong, Simon R. Bolding, Jeffrey S. Bull, Alexander Rich Clark, Cole Spencer Frederick, Jesse Frank Giron, Avery Sumner Grieve, Wim Haeck, Fred Burke Jones, Colin James Josey, Joel Aaron Kulesza, Michael Aaron Lively, Sriram Swaminarayan, Jeremy Ed Sweezy, Colin Andrew Weaver, and Anthony J. Zukaitis. MCNP ® Code Version 6.3.1 Release Notes. Technical Report LA-UR-25-23548, Rev. 1, Los Alamos National Laboratory, Los Alamos, NM, USA, April 2025. URL https: //www.osti.gov/biblio/2563101 .[4] D. Reiter, M. Baelmans, and P. Börner. The EIRENE and B2-EIRENE codes. Fusion Science and Technology , 47 (2):172–186, 2005. doi: 10.13182/FST47-172. [5] S. Wiesen, D. Reiter, V. Kotov, M. Baelmans, W. Dekeyser, A.S. Kukushkin, S.W. Lisgo, R.A. Pitts, V. Rozhansky, G. Saibene, I. Veselova, and S. Voskoboynikov. The new SOLPS-ITER code package. Journal of Nuclear Materials , 463:480–484, 2015. ISSN 0022-3115. doi: 10.1016/j.jnucmat.2014.10.012. URL https://www. sciencedirect.com/science/article/pii/S0022311514006965 .[6] Thomas Müller, Brian McWilliams, Fabrice Rousselle, Markus Gross, and Jan Novák. Neural importance sampling. ACM Transactions on Graphics , 38(5):145:1–145:19, 2019. doi: 10.1145/3341156. [7] Shilin Zhu, Zexiang Xu, Tiancheng Sun, Alexandr Kuznetsov, Mark Meyer, Henrik Wann Jensen, Hao Su, and Ravi Ramamoorthi. Photon-driven neural reconstruction for path guiding. ACM Transactions on Graphics , 41(1): 7:1–7:15, 2022. doi: 10.1145/3476828. [8] Zilu Li, Guandao Yang, Xi Deng, Christopher De Sa, Bharath Hariharan, and Steve Marschner. Neural caches for Monte Carlo partial differential equation solvers. In SIGGRAPH Asia 2023 Conference Papers , pages 34:1–34:10, New York, NY, USA, 2023. Association for Computing Machinery. doi: 10.1145/3610548.3618141. [9] Thomas Müller, Fabrice Rousselle, Jan Novák, and Alexander Keller. Real-time neural radiance caching for path tracing. ACM Transactions on Graphics , 40(4):36:1–36:16, 2021. doi: 10.1145/3450626.3459812. [10] Kin-Ming Wong and Tien-Tsin Wong. Robust deep residual denoising for Monte Carlo rendering. In SIGGRAPH Asia 2018 Technical Briefs , pages 14:1–14:4, New York, NY, USA, 2018. Association for Computing Machinery. doi: 10.1145/3283254.3283261. [11] Steve Bako, Thijs Vogels, Brian McWilliams, Mark Meyer, Jan Novák, Alex Harvill, Pradeep Sen, Tony DeRose, and Fabrice Rousselle. Kernel-predicting convolutional networks for denoising Monte Carlo renderings. ACM Transactions on Graphics , 36(4):97:1–97:14, 2017. doi: 10.1145/3072959.3073708. [12] Chakravarty R. Alla Chaitanya, Anton S. Kaplanyan, Christoph Schied, Marco Salvi, Aaron Lefohn, Derek Nowrouzezahrai, and Timo Aila. Interactive reconstruction of Monte Carlo image sequences using a recurrent denoising autoencoder. ACM Transactions on Graphics , 36(4):98:1–98:12, 2017. doi: 10.1145/3072959.3073601. [13] Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik Bhattacharya, Andrew Stuart, and Anima Anandkumar. Fourier neural operator for parametric partial differential equations. In International Confer-ence on Learning Representations (ICLR) , 2021. URL https://openreview.net/forum?id=c8P9NQVtmnO .11 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+[14] Hrishikesh Viswanath, Hong Chul Nam, Xi Deng, Julius Berner, Anima Anandkumar, and Aniket Bera. Operator learning using weak supervision from Walk-on-Spheres. arXiv preprint arXiv:2603.01193 , 2026. URL https: //arxiv.org/abs/2603.01193 .[15] Zackary Misso, Benedikt Bitterli, Iliyan Georgiev, and Wojciech Jarosz. Unbiased and consistent rendering using biased estimators. ACM Transactions on Graphics , 41(4):48:1–48:13, 2022. doi: 10.1145/3528223.3530160. [16] Jaakko Lehtinen, Jacob Munkberg, Jon Hasselgren, Samuli Laine, Tero Karras, Miika Aittala, and Timo Aila. Noise2Noise: Learning image restoration without clean data. In International Conference on Machine Learning (ICML) , 2018. URL https://arxiv.org/abs/1803.04189 .[17] Thomas Müller, Fabrice Rousselle, Jan Novák, and Alexander Keller. Neural control variates. ACM Transactions on Graphics (Proc. SIGGRAPH Asia) , 2020. URL https://arxiv.org/abs/2006.01524 .[18] Ben Mildenhall, Peter Hedman, Ricardo Martin-Brualla, Pratul Srinivasan, and Jonathan T. Barron. NeRF in the dark: High dynamic range view synthesis from noisy raw images. In IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR) , 2022. URL https://arxiv.org/abs/2111.13679 .[19] Andrew Tinits and Stephen Mann. Nonlinear Noise2Noise for efficient Monte Carlo denoiser training. In 
+
+SIGGRAPH Asia 2025 Conference Papers , 2025. doi: 10.1145/3757377.3763931. [20] Madison Pratt and Olivia Prosper-Feldman. Learning moment maps for continuous-time Markov chains under Monte Carlo noise. arXiv preprint arXiv:2606.18409 , 2026. URL https://arxiv.org/abs/2606.18409 .[21] Raul Luís, Yohanes Nietiadi, Antonio Quercia, Alberto Vale, Jorge Belo, António Silva, Bruno Gonçalves, Artur Malaquias, Andrei Gusarov, Federico Caruggi, Enrico Perelli Cippo, Maryna Chernyshova, Barbara Bienkowska, and Wolfgang Biel. Neutronics simulations for DEMO diagnostics. Sensors , 23(11):5104, 2023. ISSN 1424-8220. doi: 10.3390/s23115104. URL https://www.mdpi.com/1424-8220/23/11/5104 .[22] Nima Khademi Kalantari, Steve Bako, and Pradeep Sen. A machine learning approach for filtering Monte Carlo noise. ACM Transactions on Graphics , 34(4):122:1–122:12, 2015. doi: 10.1145/2766977. [23] Chuhao Chen, Yuze He, and Tzu-Mao Li. Temporally stable Metropolis light transport denoising using recurrent transformer blocks. ACM Transactions on Graphics , 43(4):123:1–123:14, 2024. doi: 10.1145/3658218. [24] Jiˇ rí Vorba, Ondˇ rej Karlík, Martin Šik, Tobias Ritschel, and Jaroslav Kˇ rivánek. On-line learning of parametric mixture models for light transport simulation. ACM Transactions on Graphics , 33(4):101:1–101:11, 2014. doi: 10.1145/2601097.2601203. [25] Sebastian Herholz, Oskar Elek, Jiˇ rí Vorba, Hendrik Lensch, and Jaroslav Kˇ rivánek. Product importance sampling for light transport path guiding. Computer Graphics Forum , 35(4):67–77, 2016. doi: 10.1111/cgf.12950. [26] Thomas Müller, Markus Gross, and Jan Novák. Practical path guiding for efficient light-transport simulation. 
+
+Computer Graphics Forum , 36(4):91–100, 2017. doi: 10.1111/cgf.13227. [27] Christopher N. Culbertson and John S. Hendricks. An assessment of the MCNP4C weight window. Technical Report LA-13668, Los Alamos National Laboratory, Los Alamos, NM (United States), 1999. [28] Scott W Mosher, Aaron M Bevill, Seth R Johnson, Ahmad M Ibrahim, Charles R Daily, Thomas M Evans, John C Wagner, and Jeffrey O Johnson. ADVANTG—an automated variance reduction parameter generator. Technical Report ORNL/TM-2013/416, Oak Ridge National Laboratory (ORNL), Oak Ridge, TN (United States), 2013. [29] E. Martínez-Fernández, J. Alguacil, J. Sanz, and R. Juárez. Neural network-based source biasing to speed-up challenging MCNP simulations. Fusion Engineering and Design , 202:114406, 2024. doi: 10.1016/j.fusengdes. 2024.114406. [30] Lesego E Moloko, Pavel M Bokov, Xu Wu, and Kostadin N Ivanov. Prediction and uncertainty quantification of SAFARI-1 axial neutron flux profiles with neural networks. Annals of Nuclear Energy , 188:109813, 2023. doi: 10.1016/j.anucene.2023.109813. [31] Kazuma Kobayashi and Syed Bahauddin Alam. Deep neural operator-driven real-time inference to enable digital twin solutions for nuclear energy systems. Scientific Reports , 14(1):2101, 2024. doi: 10.1038/ s41598-024-51984-x. [32] Konstantinos Prantikos, Stylianos Chatzidakis, Lefteri H Tsoukalas, and Alexander Heifetz. Physics-informed neural network with transfer learning (TL-PINN) based on domain similarity measure for prediction of nuclear reactor transients. Scientific Reports , 13(1):16840, 2023. doi: 10.1038/s41598-023-43325-1. [33] Zongyi Li, Daniel Zhengyu Huang, Burigede Liu, and Anima Anandkumar. Fourier neural operator with learned deformations for PDEs on general geometries. Journal of Machine Learning Research , 24(388):1–26, 2023. 12 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+[34] Vignesh Gopakumar, Stanislas Pamela, Lorenzo Zanisi, Zongyi Li, Ander Gray, Daniel Brennand, Nitesh Bhatia, Gregory Stathopoulos, Matt Kusner, Marc Peter Deisenroth, Anima Anandkumar, JOREK Team, and MAST Team. Plasma surrogate modelling using Fourier neural operators. Nuclear Fusion , 64(5):056025, April 2024. doi: 10.1088/1741-4326/ad313a. URL https://doi.org/10.1088/1741-4326/ad313a .[35] P Mánek, G Van Goffrier, V Gopakumar, N Nikolaou, J Shimwell, and I Waldmann. Fast regression of the tritium breeding ratio in fusion reactors. Machine Learning: Science and Technology , 4(1):015008, January 2023. doi: 10.1088/2632-2153/acb2b3. URL https://doi.org/10.1088/2632-2153/acb2b3 .[36] Enrique Miralles-Dolz, Michael Churchill, Jacob Schwartz, Javier Hidalgo-Salaverri, Connor Moreno, Tim Bohm, and Paul Wilson. Stellarator design exploration using symbolic-regression neutronics surrogates. IEEE Transactions on Plasma Science , 54(6):2879–2886, 2026. doi: 10.1109/TPS.2026.3680528. [37] Don McLeish. A general method for debiasing a Monte Carlo estimator. Monte Carlo Methods and Applications ,17(4):301–315, 2011. doi: 10.1515/mcma.2011.013. [38] Chang-han Rhee and Peter W Glynn. Unbiased estimation with square root convergence for SDE models. 
+
+Operations Research , 63(5):1026–1043, 2015. doi: 10.1287/opre.2015.1404. [39] Jose H Blanchet and Peter W Glynn. Unbiased Monte Carlo for optimization and functions of expectations via multi-level randomization. In 2015 Winter Simulation Conference (WSC) , pages 3656–3667. IEEE, 2015. doi: 10.1109/WSC.2015.7408524. [40] J. Shimwell, J. Billingsley, R. Delaporte-Mathurin, D. Morbey, M. Bluteau, P. Shriwise, and A. Davis. The Paramak: automated parametric geometry construction for fusion reactor designs. F1000Research , 10:27, 2021. doi: 10.12688/f1000research.28224.1. URL https://doi.org/10.12688/f1000research.28224.1 .[41] Yudong Lu, Guangming Zhou, Francisco A. Hernández, Pavel Pereslavtsev, Jaakko Leppänen, and Minyou Ye. Benchmark of Serpent-2 with MCNP: Application to European DEMO HCPB breeding blanket. Fusion Engineering and Design , 155:111583, 2020. doi: 10.1016/j.fusengdes.2020.111583. [42] Rémi Delaporte-Mathurin, Jonathan Shimwell, Liam Pattinson, Ariful Islam Pranto, and Mohammed Faisal. OpenMC Plasma Source. https://github.com/fusion-energy/openmc-plasma-source , January 2023. Version 0.3.0. [43] D. Flammini. 2017 Generic DEMO MCNP Model at 22.5 Degree v1.3, 2019. EUROfusion IDM UID: 2MCJ69. [44] Clement Fausser, Antonella Li Puma, Franck Gabriel, and Rosaria Villari. Tokamak D-T neutron source models for different plasma physics confinement modes. Fusion Engineering and Design , 87(5-6):787–792, 2012. doi: 10.1016/j.fusengdes.2012.02.025. [45] Boris Bonev, Thorsten Kurth, Christian Hundt, Jaideep Pathak, Maximilian Baust, Karthik Kashinath, and Anima Anandkumar. Spherical Fourier neural operators: Learning stable dynamics on the sphere. In Proceedings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research ,pages 2806–2823. PMLR, 2023. [46] Md Ashiqur Rahman, Zachary E. Ross, and Kamyar Azizzadenesheli. U-NO: U-shaped neural operators. 
+
+Transactions on Machine Learning Research , 2023. ISSN 2835-8856. URL https://openreview.net/ forum?id=j3oQF9coJd .[47] Bogdan Raoni´ c, Roberto Molinaro, Tim De Ryck, Tobias Rohner, Francesca Bartolucci, Rima Alaifari, Siddhartha Mishra, and Emmanuel de Bézenac. Convolutional neural operators for robust and accurate learning of PDEs. In Advances in Neural Information Processing Systems , volume 36, pages 77187–77200, 2023. doi: 10.52202/ 075280-3376. [48] Olaf Ronneberger, Philipp Fischer, and Thomas Brox. U-Net: Convolutional networks for biomedical image segmentation. In Medical Image Computing and Computer-Assisted Intervention – MICCAI 2015 , volume 9351 of Lecture Notes in Computer Science , pages 234–241. Springer, 2015. doi: 10.1007/978-3-319-24574-4_28. [49] Lu Lu, Pengzhan Jin, Guofei Pang, Zhongqiang Zhang, and George Em Karniadakis. Learning nonlinear operators via DeepONet based on the universal approximation theorem of operators. Nature Machine Intelligence , 3(3): 218–229, 2021. doi: 10.1038/s42256-021-00302-5. [50] Haixu Wu, Huakun Luo, Haowen Wang, Jianmin Wang, and Mingsheng Long. Transolver: A fast transformer solver for PDEs on general geometries. In Proceedings of the 41st International Conference on Machine Learning ,volume 235 of Proceedings of Machine Learning Research , pages 53681–53705. PMLR, 2024. [51] Zhongkai Hao, Zhengyi Wang, Hang Su, Chengyang Ying, Yinpeng Dong, Songming Liu, Ze Cheng, Jian Song, and Jun Zhu. GNOT: A general neural operator transformer for operator learning. In Proceedings of the 40th International Conference on Machine Learning , volume 202 of Proceedings of Machine Learning Research , pages 12556–12569. PMLR, 2023. 13 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+[52] Ethan E. Peterson, Paul K. Romano, Patrick C. Shriwise, and Patrick A. Myers. Research data supporting article on implementation and validation of OpenMC cell-based R2S shutdown dose rate capabilities, 2024. URL 
+
+https://doi.org/10.5281/zenodo.10660030 .[53] S. Agostinelli, J. Allison, et al. Geant4—a simulation toolkit. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment , 506(3):250–303, 2003. doi: 10.1016/S0168-9002(03)01368-8. [54] J. Allison, K. Amako, et al. Recent developments in Geant4. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment , 835:186–225, 2016. doi: 10.1016/j.nima.2016.06.125. 14 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## A Notation 
+
+Table 3 lists the symbols used across the paper, each with one meaning; symbols local to a single table (the sampling boxes of Table 8 and Table 9) are defined there. 
+
+Table 3: Each symbol keeps one meaning throughout the paper. Symbols grouped by where they first appear. 
+
+Symbol Meaning Defined in 
+
+Problem and Monte Carlo labels 
+
+a, Pa input configuration (geometry, materials, source) and its distribution Secs. 3, 4 
+
+U(a) converged transport response section 3 
+
+ξ ∈ Ω, ν, k particle path, path space, path-space measure, number of scattering events section 3 
+
+f , p path contribution function and proposal distribution section 3 
+
+ˆUN (a, ξ ), ζN (a, ξ ) N -particle MC estimate from the paths ξ = ( ξ1, . . . , ξ N ) and its zero-mean noise Secs. 3, 4 
+
+M , N , K training scenes, Monte Carlo samples per render (histories or SPP), independent renders per scene section 4 
+
+Ntot particle budget M KN section 4 
+
+Model and losses 
+
+θ, Θ, ˆθ network parameters, parameter set, empirical-risk minimizer section 4 
+
+Gθ neural operator; from section 4 on, the latent backbone section 4 
+
+Bθ = softplus( Gθ ), Bθ physical prediction of PTNO; Bθ = Bθ (a) at a fixed input section 4 
+
+LC , LN , Lrel , LN, rel ,
+
+LN, PRel 
+
+population objectives: clean, noisy, clean relative, noisy relative, PRel L2 section 4 
+
+bLM,K,N , ℓ, R empirical objective, per-sample loss, population risk section 4 
+
+sg , S(x) = max(sg( x), η ) stop-gradient and the detached PRel L2 normalizer section 4 
+
+η denominator floor of PRel L2 and of the relative losses section 4 
+
+U , J, D(B), Φ label mean, output Jacobian, squared-normalizer matrix, output-space potential section 4 
+
+F, deff , EM (F) hypothesis class, its effective dimension, its excess risk from M converged labels section 4 
+
+σ single-sample standard deviation of a Monte Carlo label section 4 
+
+Evaluation 
+
+ϵ floor of the log 10 metrics, per dataset App. F 
+
+ϕ, ˆϕ reference and predicted field (flux or radiance) App. F 
+
+u, ˆu, C, wi scored field ( ϕ or log 10 max( ϕ, ϵ )), scored cells, cell weights App. F 
+
+R, μ, σ, C1, C2 PSNR/SSIM data range, SSIM local mean and standard deviation, SSIM constants App. F 
+
+Transport and datasets 
+
+ψ(x, ω, E ) angular flux at position x, direction ω, energy E App. B 
+
+σt, σs, σa, fs total, scattering, absorption cross sections (extinction); scattering function App. B 
+
+Q, χ, τ source, detector response, transmittance App. B 
+
+c, g single-scattering albedo, Henyey–Greenstein asymmetry App. E 
+
+(ϑ, φ ) polar and azimuthal angle of the far-field sphere App. E.1 
+
+R0, ap, κ, δ plasma major radius, minor radius, elongation, triangularity App. E.3 
+
+n, cm, H, h refractive index, matte albedo, cube half-width, voxel width App. P 
+
+Debiasing estimators 
+
+Yi, ¯YK , ˆμ, rj repeated renders of one pixel, their mean, expansion point, relative residual App. G 
+
+Ai, A′ 
+
+> j
+
+, w(x), cW , qm anchor and correction renders, inverse-square weight and its estimate, continuation probability App. H 
+
+## B Particle Transport 
+
+Particle transport describes the evolution of particles undergoing scattering and absorption within a medium. The spatial, angular, and energy distribution of particles is governed by the steady-state linear Boltzmann transport equation. Let 
+
+ψ(x, ω, E ) denote the angular particle density at position x, direction ω ∈ S, and energy E. The transport equation reads 
+
+ω · ∇ xψ(x, ω, E ) + σt(x, E )ψ(x, ω, E ) = Q(x, ω, E )+
+
+Z ∞
+
+0
+
+Z
+
+S
+
+σsfs(x, E ′ → E, ω ′ → ω)ψ(x, ω ′, E ′)d ω′dE′
+
+Here Q is the source term, σt is the total cross section (the probability per unit path length that a particle interacts), σs
+
+is the scattering cross section (the same probability for scattering alone), and fs is the scattering function; all three are properties of the material the particle is interacting with. Applications usually require a lower-dimensional response, such as detector flux, surface current, or image radiance, rather than the full angular density ψ. We denote this response 15 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+by U(a) and express it as a linear functional of ψ. We write 
+
+U(a) = 
+
+Z
+
+dE
+
+Z
+
+dω
+
+Z
+
+dx χ(x, ω, E )ψ(x, ω, E ) (18) where χ(x, ω, E ) is a test function encoding the measurement process (e.g., detector response, surface current, or volume flux), and a denotes the input configuration, including geometry, material properties, and source parameters. The same response can be viewed as an expectation over simulated particle trajectories, each contributing to image radiance or a neutron-flux tally. The path-space integral below expresses this average over trajectories. Let ξ ∈ Ω
+
+denote a particle path consisting of a sequence of free-flight segments and scattering events, and let Ω = ∪k≥1Ωk be the space of all paths grouped by the number of scattering events k. The measurable response can be written as 
+
+U(a) = 
+
+Z
+
+> Ω
+
+f (ξ, a )d ν(ξ), (19) where ν is the underlying path-space measure induced by the transport process. The contribution function f (ξ, a )
+
+encodes the accumulated weight of a particle trajectory ξ, including emission at the source, attenuation along free-flight segments, and scattering events along the path. More concretely, for a path ξ = ( x0 → x1 → · · · → xk) with k
+
+scattering events, f takes the form of a product of source, transmittance, and scattering terms derived from the transport equation: 
+
+f (ξ, a ) ∝ Q(x0 → x1)[ 
+
+> k−1
+
+Y
+
+> j=0
+
+τ (xj → xj+1 )] 
+
+> k−1
+
+Y
+
+> j=1
+
+[ σs(xj+1 ) fs(xj−1 → xj → xj+1 ) ] χ(xk), (20) where τ denotes the transmittance along each segment, which depends on the total cross section σt, and χ encodes the measurement response. This formulation is equivalent to the integral form of the Boltzmann equation. Monte Carlo methods approximate this integral by sampling N paths ξi ∼ p(· | a) from a proposal distribution p and collecting them in ξ = ( ξ1, . . . , ξ N ). The estimator is given by 
+
+ˆUN (a, ξ ) = 1
+
+N
+
+> N
+
+X
+
+> i=1
+
+f (ξi, a )
+
+p(ξi | a) . (21) With a proposal that covers all contributing paths and the corresponding importance weights f /p , this estimator is unbiased. Its variance can be high in multiple-scattering or shielding regimes because only a small fraction of sampled histories contribute appreciably to the response. Sampling paths in proportion to their contribution would reduce this variance, but constructing such a distribution requires knowing which complete trajectories contribute most before tracing them. As a result, obtaining low-noise estimates of U(a) requires a large number of samples, making data generation expensive. 
+
+## C Loss Definitions and Engineering Stabilizers 
+
+Output head. The PTNO output head Bθ (a) = softplus( Gθ (a)) is the default everywhere in the main paper; we use 
+
+softplus( s) = ln(1 + es), which is smooth, monotone, and nonnegative, asymptotically linear for s ≫ 0 and decays smoothly to zero for s ≪ 0. Its derivative ∂s softplus( s) = 1 /(1 + e−s) ≤ 1 already bounds the per-voxel gradient. 
+
+Floors. We use small positive floors in two places: a stop-gradient denominator floor η in the training residual (section 4), and a log-metric floor ϵ when reporting log 10 metrics. The paper reports log 10 (max( ·, ϵ )) metrics with the task floors in Table 4 (all metric definitions are in Appendix F); for EU-DEMO, the post-hoc checkpoint evaluation floors both prediction and reference at ϵ = 10 −17 .
+
+Where the linear error lives on 3D fluence. The linear rel. L2 of the 3D fluence models is dominated by the voxels around the point emitters, not by the emitter voxel alone. Re-scoring the five PTNO seeds of Table 2 on the 100 held-out scenes with the emitter voxels excluded ( 2.0 voxels per scene on average) removes only 35% of the squared error (mean over scenes; 30% median), whereas excluding the 3×3×3 core around each emitter ( 54 voxels, 0.02% of the grid) removes 95 .0% and lowers the mean rel. L2 from 2.11 ± 1.41 to 0.270 ± 0.104 (median over scenes 0.301 ± 0.030 to 
+
+0.182 ± 0.018 ). The emitter voxel itself is a grid convention with no continuum limit (its cell average scales as h−2
+
+with the voxel width h), but its neighbors are converged field values, so the remaining near-source error is a genuine model error; the mean is inflated by a handful of scenes per seed with rel. L2 above one, and the log-space metrics, which are unaffected by this concentration, are the ones we rank by. 16 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+PRel L2 normalizer. For PTNO targets the PRel L2 normalizes the residual by the prediction itself, with the gradient on the denominator detached: 
+
+ri(a, ξ ) = [Bθ (a)] i − ˆUN,i (a, ξ )sg   max([ Bθ (a)] i, η ) , (22) where sg( ·) blocks gradient flow through the normalizer. The denominator floor caps the per-voxel gradient magnitude when [Bθ ]i underestimates the target by many orders of magnitude. 
+
+Per-experiment instantiations. Table 4 lists the reported log-metric floor ϵ used per experiment. All entries use the softplus head and the PRel L2 residual of Equation (22); no model-side clamp or robust-loss transition is active.                             
+
+> Table 4: Each dataset has its own log 10 floor, and every experiment uses the softplus head with PRel L2.ϵis the lower bound used when reporting log 10 metrics; EU-DEMO numbers are post-hoc checkpoint evaluations with prediction and reference both floored at 10 −17 . All experiments use the softplus head Bθ(a) = softplus( Gθ(a)) with no latent clamp. Experiment Reported floor ϵLoss Far-field radiance (Sec. 5.1) 10 −6PTNO + PRel L2
+> 3D fluence 10 −10 PTNO + PRel L2
+> Spherical-tokamak 10 −10 PTNO + PRel L2
+> EU-DEMO 1/16 wedge 10 −17 PTNO + PRel L2
+
+The floor never binds on far-field radiance, whose references stay above 10 −6; on 3D fluence, the spherical tokamak, and EU-DEMO it removes the deepest 1.6, 2.0, and 6.1 orders of magnitude of the mean reference span (Table 24). On EU-DEMO, voxels outside the transport domain and voxels the reference never reaches sit exactly on the 10 −17 
+
+floor. Appendix I analyzes the stationary points of the PRel L2 residual; the EU-DEMO scores in Table 2 exclude these voxels and use only the cells the reference measured. 
+
+Reference engines. Far-field radiance references use Mitsuba 3 [1]; 3D fluence references use the same forward MC estimator as its labels, cross-checked against OpenMC; neutron transport uses OpenMC [2]. Each held-out set is independently rendered to convergence; architecture and schedule details are stated in each subsection. 
+
+## D Denominator and Output-Head Ablations 
+
+The PRel L2 residual of Equation (22) makes two coupled design choices: the softplus output head and the detached-prediction denominator, i.e., the prediction with its gradient stopped. We isolate both with matched-compute ablations on the 3D fluence and EU-DEMO datasets. 
+
+3D fluence: denominator × activation. Table 5 crosses the output head (softplus vs. raw identity) with four residual denominators (detached prediction, live prediction, plain per-sample relative L2, and the noisy MC target) on the 3D fluence dataset ( M =3 ×10 5, N =4 , 60 epochs of 5,000 scenes, i.e. one pass over the training set, FNO modes 16 3,width 32 ; evaluation on 100 held-out scenes with a converged 1,048 ,576 -SPP reference). The detached-prediction denominator is essential: with a live prediction denominator, through which gradients flow, the loss is flat wherever the prediction overshoots (gradient ∝ target/pred 2), so training either inflates its output (softplus: total flux ∼15 × too high and linear rel. L2≈500 ) or collapses to a negative constant field (identity). With the noisy target in the denominator, zero-flux voxels in the N =4 labels are divided by the 10 −10 denominator floor, which amplifies their residuals by up to ten orders of magnitude The softplus head, in turn, only helps when paired with the pointwise stop-gradient residual (first two rows); paired with a per-sample norm ratio it reproduces the absorbing softplus( −∞ ) = 0 fixed point. The plain-FNO variant (identity head, per-sample norm) wins the linear median (it directly optimizes that metric) but loses the entire shadow region in log space. 
+
+EU-DEMO: head × pointwise residual. Prediction normalization is the dominant component on EU-DEMO. Holding the softplus head fixed, replacing PRel L2 with per-sample relative L2 lowers log 10 SSIM by 0.3788 and raises its seed standard deviation from 0.0016 to 0.1181 . Holding PRel L2 fixed, replacing softplus with an identity head lowers SSIM by 0.0845 . The normalization establishes accuracy and seed stability; softplus supplies an additional SSIM gain and enforces positive flux. 17 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Table 5: Only the stop-gradient prediction denominator with the softplus head trains stably on 3D fluence. All runs share data, architecture, and schedule; only the output head and the residual denominator change. One seed per row; 100 held-out scenes against the converged reference; the linear median is over scenes and includes the emitter voxel. sg denotes stop-gradient (detached). Head Denominator log 10 rel. L2 ↓ log 10 SSIM ↑ Median rel. L2 ↓ Outcome softplus (PTNO) sg prediction 0.050 0.928 1.03 stable identity sg prediction 0.188 0.755 0.74 8.7% negative voxels softplus per-sample norm 0.801 0.614 1.000 collapsed: 
+
+softplus( −∞ ) = 0 
+
+identity per-sample norm 0.231 0.667 0.066 shadow region lost softplus live prediction 0.166 0.871 515 .8 output inflated (flux 
+
+∼15 ×)identity live prediction 0.801 0.614 6194 collapsed: negative constant softplus noisy target 0.801 0.614 1.000 collapsed at epoch 1: all zero identity noisy target 0.285 0.724 0.999 collapse: uniform constant Table 6: On EU-DEMO, the pointwise stop-gradient residual matters most, and softplus adds a further gain. Five-seed output-head × residual ablation on the EU-DEMO continuous-energy training setup. Entries are mean ± sample standard deviation over five seeds from independent evaluation of final checkpoints on the 24 held-out configurations at 140 ×73 ×146 , scored only on cells where the converged reference is measured ( 45 .4% of the mesh). The softplus– PRel L2 and identity–relative-L2 rows share their runs with Table 2. Head Residual log 10 SSIM ↑ log 10 rel. L2 ↓
+
+softplus (PTNO) pointwise sg ( PRel L2) 0.7923 ± 0.0016 0.0839 ± 0.0006 
+
+identity pointwise sg ( PRel L2) 0.7078 ± 0.0139 0.0885 ± 0.0047 
+
+softplus per-sample rel. L2 0.4135 ± 0.1181 0.2227 ± 0.0232 
+
+identity per-sample rel. L2 0.1455 ± 0.0066 0.2310 ± 0.0050 
+
+## E Datasets 
+
+Table 7 summarizes the four datasets of the main text; Appendix P adds a fifth. 
+
+Table 7: The four main-text datasets span two physical regimes and two output types. Each maps varying scene inputs to a transport solution on a fixed output grid; “Varied inputs” lists what changes between scenes, and held-out scenes are fresh draws from the same design.                                 
+
+> Dataset Physics Solver Geometry Output grid Varied inputs Far-field radiance radiative transfer MC labels; reference by Mitsuba 3 [1] spherical slab (fixed) 40 ×80 far-field radiance σt, c, Q fields, g
+> 3D fluence radiative transfer MC labels and reference, validated against OpenMC [2] cube [−1,1] 364 3Cartesian fluence σt, c fields, g, source field Sph. tokamak neutron transport OpenMC [2] parametric (Paramak) 64 3Cartesian flux 20 (geometry and source) EU-DEMO neutron transport OpenMC [2] EU-DEMO 1/16 wedge (fixed)
+> 140 ×73 ×146 flux 8 (source only)
+
+E.1 Radiative Transfer in a Spherical Slab 
+
+The medium is the unit ball {x : ∥x∥ ≤ 1}. Inside it, the extinction σt and single-scattering albedo c depend only on the line-of-sight direction ˆx = x/∥x∥, defined analytically and tabulated on arccos-uniform spherical grids (equal solid-angle bins in the polar angle ϑ, ϑi = arccos(1 −2( i + 12 )/n ϑ) for nϑ polar bins; 40 ×80 for training inputs). Anisotropic scattering uses a Henyey–Greenstein phase function with one asymmetry parameter g ∈ (−0.99 , 0.99) per scene. The source is an environment map Q(ω) at infinity; the boundary is a null interface, so light enters without refraction or reflection. A reference spans only about 3 orders of magnitude (Table 24): this dataset is a controlled testbed for label noise and particle-budget allocation, where converged references are affordable, not a high-dynamic-range case. 
+
+Sampling. Each scene draws three resolution-independent analytical fields plus one scalar. The source combines 1–4
+
+spherical Gaussian lobes (angular width in [0 .15 , 0.5] , random centers) with 1–4 boxes in polar and azimuthal angle 18 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+(ϑ, φ ), each carrying an intensity drawn from [0 .1, 10] . Extinction and albedo are piecewise-constant Heaviside fields: with probability 12 a spherical checkerboard ( 1–3 polar × 1–6 azimuthal bins), otherwise 1–6 random (ϑ, φ ) boxes, with values drawn from σt ∈ [0 .01 , 10] and c ∈ [0 .01 , 0.99] . Because the fields are analytical, the discontinuous region boundaries are represented exactly at every rendering resolution. The HG parameter is g ∼ Unif( −0.99 , 0.99) .
+
+Reference. Evaluation references use Mitsuba 3’s volumetric path tracer with multiple importance sampling [1], and the training labels are forward MC estimates of the same scenes: a sphere boundary (null BSDF) encloses a heterogeneous medium that reads (σt, c ) from the angular tables, an HG phase function with parameter g, and an environment-map emitter carrying the equirectangular source bitmap (resampled to the Mitsuba Y-up convention). A distant angular sensor records the far-field radiance on the same arccos-uniform 40 ×80 grid. Training: 10 6 scenes with K = 1 renders at 4 SPP (Monte Carlo samples per pixel of the 40 ×80 sensor) each. Evaluation: 100 unseen scenes rendered at native 120 ×240 with 960 ×1,920 material and environment textures, accumulated adaptively until convergence (per-pixel coefficient of variation < 0.5% and successive-mean rel. L2 < 10 −4) or a 10 7 SPP cap; the 
+
+40 ×80 and 80 ×160 evaluation grids are conservative equal-solid-angle downsamples of these renders. An earlier fixed-budget 10 5 SPP reference on the same 100 scenes, used for earlier loss-comparison tables, agrees with the converged reference to a median per-scene rel. L2 of 1.9% ; re-evaluating the checkpoints that are still available against the converged reference moves the main metrics by 1–2% relative. Figure 5 shows one converged scene next to a training-budget render and the PTNO prediction. 0 ¼ 2¼                
+
+> '
+> 10
+> −1
+> cos  #
+> (a) PTNO + PRel L2(rel. L2= 0.077)
+> 0¼2¼
+> '
+> cos  μ
+> (b) MC, N= 4 SPP (rel. L2= 1.17)
+> 0¼2¼
+> '
+> cos  μ
+> (c) MC reference L(N= 3 :8£10 6SPP)
+> 12345
+> radiance  L [a.u.]
+
+Figure 5: PTNO recovers the converged far-field radiance from the scene inputs, while one training label is mostly noise. 
+
+Held-out scene 2 in an equal-solid-angle layout (azimuth φ against cos ϑ) on a shared color scale. (a) The seed-42 PTNO + PRel L2
+
+checkpoint from Table 2, using the source, extinction, and albedo tables. (b) A single MC render at the training budget of N =4 SPP, i.e. what one training label looks like. (c) The converged MC reference. Panel titles give the rel. L2 against (c); the cost comparison is in Appendix K. 
+
+E.2 3D Fluence 
+
+The medium occupies [−1, 1] 3 in scene units, discretized on a 64 3 Cartesian grid. Each scene is built from resolution-independent ingredients: 2–5 large axis-aligned boxes in a near-vacuum background ( σt = 0 .01 , c = 0 .5), each box carrying its own extinction σt and albedo c, and 1–3 point emitters at random positions. About half of the emitters are isotropic; the others carry a random Perlin angular emission profile in a random orientation. Anisotropic scattering uses an HG phase function with one g per scene. The boundary is an open vacuum. 
+
+Sampling. Per scene: box centers Unif( −0.6, 0.6) 3 and half-extents Unif(0 .1, 0.7) per axis, with σt ∼ Unif(0 .01 , 50) 
+
+and c ∼ Unif(0 .01 , 0.99) drawn per box and later boxes overwriting earlier ones where they overlap; emitter positions 
+
+Unif( −0.85 , 0.85) 3 and intensity Unif(1 , 20) , with a Perlin angular profile (values in [0 .1, 2] ) on each emitter with probability 1/2; g ∼ Unif( −0.95 , 0.95) . The 100 evaluation scenes realize g ∈ [−0.92 , 0.93] .
+
+Reference. All renders use a forward Monte Carlo collision estimator with double-precision per-voxel accumulators (necessary for HDR), cross-checked against OpenMC [2] on the evaluation scenes. Training: 300 ,000 scenes with 
+
+K=2 independent noisy renders at 4 SPP each, i.e., 4 Monte Carlo samples per voxel of the 64 3 grid ( ∼ 10 6 particles per render—a deliberately weak supervision regime that exercises the loss family at extreme noise). Evaluation: a held-out batch of 100 unseen scenes whose reference flux is re-rendered to ∼ 10 6 SPP ( ∼ 2.7×10 11 particles per scene, 
+
+∼ 2.6×10 5 times one training render). The reference fluence of a scene spans about 10 orders of magnitude (Table 24); 19 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+over the 100 evaluation scenes, 2.3% of reference voxels are exact zeros that no particle reaches even at the reference budget (cast shadows), against 18% in a four-SPP training render (both means over scenes). (a) geometry 
+
+−0.5 0.0 0.5
+
+𝑥 
+
+−0.50 
+
+−0.25 0.00 0.25 0.50 
+
+> 𝑦
+
+(b1) 𝜎 𝑡 
+
+−0.5 0.0 0.5
+
+𝑥 
+
+(b2) albedo 
+
+−0.5 0.0 0.5
+
+𝑥 
+
+(b3) log 10 𝜙 (c) isosurfaces 
+
+> 020 40
+> 0.00.51.0
+> 10 −4
+> 10 −3
+
+𝜎 𝑡 box, low albedo 
+
+𝜎 𝑡 box, high albedo point source log 10 𝜙 = −2 shell log 10 𝜙 = −3 shell log 10 𝜙 = −4 shell 
+
+1
+
+Figure 6: In the 3D fluence dataset, contrast blocks cast shadows that span orders of magnitude around the point emitters. 
+
+(a) A representative scene: two σt blocks rendered as translucent boxes inside the cube (axes in normalized units) (purple / orange tint by σt magnitude), with the three point sources as bright spheres. (b) Mid-cut slices ( z = 32 , i.e. z = 0 in scene units) of the same scene’s σt, albedo, and reference fluence (log scale); only the high-σt/high-albedo block intersects this plane; the dark rectangle in the fluence panel is its cast shadow. (c) Half-cut ( X ≤ 0 visible) view of the same scene’s log-fluence iso-surfaces at {− 2, −3, −4},illustrating the multi-order-of-magnitude attenuation around the two emitters in this half.       
+
+> scene 9
+> σt+ src. MC ref.
+> 0.286
+> NO + L2
+> 0.113
+> NO + log MSE
+> 0.044
+> PTNO + PRel L2
+> scene 33
+> 0.289 0.052 0.025
+> −5
+> −4
+> −3
+> −2
+> −1
+> log 10  fluence
+> −10
+> −8
+> −6
+> −4
+> −2
+> log 10  fluence
+
+Figure 7: PTNO + PRel L2 more closely reproduces the source halo and shadowed fluence than the baseline losses. Predictions from the seed-42 checkpoints in Table 2 on held-out scenes 9 and 33. Columns: extinction σt with source locations marked, MC reference (log scale), and predictions from PTNO and the baseline losses on a shared row-wise color scale; inset numbers are per-scene log 10 rel. L2. The raw-output L2 prediction is nearly spatially constant; log MSE retains the main spatial structure but has larger errors near the source and in dim regions. 
+
+E.3 Spherical-Tokamak Neutronics 
+
+Each scene is a full toroidal fusion spherical tokamak built parametrically with Paramak using a 6-axis radial build (center-column shield inner/outer radius, blanket thickness, divertor width) plus major and minor radius [40]. The geometry is configured with a plasma source expressed as toroidal rings, radially weighted as a function of fusion reactivity in an H-mode configuration [42]. The CAD assembly is voxelized and tagged with five materials (vacuum, plain-carbon shield, ferritic steel first wall and vessel, Pb–Li breeder blanket). The bounding box, a cube of side 
+
+1,800 cm, is voxelized on a 64 3 Cartesian mesh; the per-voxel material id is queried from the OpenMC geometry, giving a volumetric label that conditions the operator. The prediction target is the raw OpenMC flux-tally mean in each energy group, in neutron-cm per source neutron, integrated over each mesh cell and without conversion to a reactor source rate. 
+
+Sampling. The 20 scalar parameters in Table 8 are drawn from Latin-hypercube space-filling designs over the box specified there: 4 paramak radial-build axes, the four D-shape descriptors (R0, a p, κ, δ ) shared between the paramak 20 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+surface and the H-mode plasma source [42] (D–T fusion ring), 10 axes for the peaked ion-density and ion-temperature profiles (origin, pedestal/separatrix fractions, peaking factor, pedestal radius fraction, temperature exponent β) together with a Shafranov shift of the magnetic axis, and a rigid radial offset of the whole source. The 8 geometry parameters are drawn once per group of 32 consecutive training configurations, which share one CAD model, while the source parameters are drawn per configuration; the source offset has its own one-dimensional design. 
+
+Table 8: Spherical-tokamak scenes vary 20 geometry and plasma-source parameters. Sampling box of the 20 scalar parameters, drawn from Latin-hypercube designs. The geometry block parameterizes the paramak radial build; D-shape descriptors (R0, a p, κ, δ )
+
+are shared between the paramak surface and the plasma source ring; the profile blocks parameterize the H-mode ion-density and ion-temperature radial profiles.                                                                                        
+
+> Symbol Range Unit Description
+> Paramak radial build (geometry only)
+> Rcs ,in [20 ,40] cm center-column shield inner radius
+> Rcs ,out [55 ,95] cm center-column shield outer radius
+> tblk [40 ,110] cm blanket thickness
+> wdiv [25 ,65] cm divertor width
+> D-shape descriptors (shared geometry ↔source)
+> R0[250 ,500] cm major radius
+> ap[60 ,140] cm minor radius
+> κ[1 .2,2.0] —elongation
+> δ[0 .2,0.6] —triangularity
+> Magnetic-axis and source offsets (source only)
+> ∆Shaf [0 ,20] cm Shafranov shift of the magnetic axis
+> foff [−1,1] —radial source offset, as a fraction of min( plasma gap ,20 cm)
+> Ion-density profile (source only)
+> ni, 0[8 ×10 18 ,1.2×10 20 ]m-3 on-axis ion density
+> fn, ped [0 .65 ,0.95] —pedestal-to-axis density ratio
+> fn, sep [0 .08 ,0.22] —separatrix-to-axis density ratio
+> αn[0 .8,2.0] —density peaking factor
+> rped /a p[0 .75 ,0.92] —pedestal radius fraction
+> Ion-temperature profile (source only)
+> Ti, 0[8 ,25] keV on-axis ion temperature
+> fT , ped [0 .25 ,0.60] —pedestal-to-axis temperature ratio
+> fT , sep [0 .01 ,0.06] —separatrix-to-axis temperature ratio
+> αT[1 .5,5.0] —temperature peaking factor
+> βT[1 .5,4.5] —temperature profile exponent
+
+Training and reference. The training pool has 1,024 ,000 configurations, each labeled by one OpenMC fixed-source run of N =10 5 histories ( 10 batches of 10 4); training draws 4 × 10 5 of them without repetition ( 10 5 optimizer updates at batch size 4). The 50 held-out configurations carry a 10 9-history reference pooled from 100 independent 10 7-history runs; its residual noise is 0.017 in log 10 relative L2, against 0.045 for the operator. The operator is a 3D FNO (modes 
+
+24 3, width 32 , 4 layers) trained for 10 5 optimizer updates. (a) geometry (b) source (c) poloidal flux (d) 𝑍 = 0 source (e) 𝑍 = 0 flux (f) 3D geometry    
+
+> 10 −310 −110 −310 −1
+
+1
+
+Figure 8: Each spherical-tokamak scene couples a parametric radial build to a D-shaped plasma source, and the flux falls by orders of magnitude from the plasma through the shield and blanket. (a) Paramak radial build for one scene with the D-shaped plasma source outline, major/minor radius, elongation, and triangularity annotated. (b)–(e) Per-scene 64 3 mesh views: toroidally averaged source Q and group-summed flux (log) on the poloidal plane, then Z=0 source and flux slices showing the annular plasma ring and inboard/outboard attenuation. (f) Half-cut 3D view: the toroidal source isosurface inside translucent shield/first-wall/blanket/vessel shells. 
+
+21 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+E.4 EU-DEMO 1/16 Sector 
+
+The fourth dataset uses an OpenMC model over a 1/16 toroidal slice of the EU-DEMO reactor [43]. Sector neutronics models of this kind are widely used in fusion analysis because they retain the main blanket, vessel, shielding, and source-transport physics of a reactor-scale configuration while exploiting toroidal symmetry to reduce computational cost. They are a standard setting for studies of neutron flux distribution, nuclear heating, shielding performance, activation, and diagnostic response in DEMO-like designs. The geometry of the reactor is modeled using a CSG geometry of about 5,300 surfaces (planes, quadrics, cylinders, tori, and cones) [21, 41]. The surfaces describing the inboard/outboard blanket modules, divertor, vacuum vessel, and shielding, are closed by two reflective planes at ±11 .25 ◦ and a vacuum plane at z = −2,732 cm. Materials use the upstream physics-resolved compositions (water-cooled lithium–lead blanket, Eurofer first wall and vessel, etc.) with TENDL-2019 nuclear cross-section data. Geometry, materials, and reactor configuration are fixed across the dataset; only the plasma source varies. 
+
+Sampling. The 8 plasma-source shape parameters in Table 9 are drawn from a Latin-hypercube space-filling design over the upstream ranges of the EU-DEMO parametric plasma source (PPS) configuration. 
+
+Table 9: EU-DEMO scenes vary only the plasma source, through 8 shape parameters. Sampling box of these parameters, drawn from a Latin-hypercube space-filling design. Ranges are the upstream EU-DEMO PPS configuration; the geometry and materials are fixed.                                    
+
+> Symbol Range Unit Description
+> T[14 .00 ,17 .00] keV plasma ion temperature (D–T thermal broadening)
+> α[1 .20 ,1.80] —radial peaking factor of the source profile
+> R0[715 .04 ,1,072 .56] cm major radius of the plasma ring
+> ap[230 .64 ,345 .96] cm minor radius of the plasma ring
+> κ[1 .32 ,1.98] —plasma elongation
+> δ[0 .2664 ,0.3996] —plasma triangularity
+> ∆R[−20 ,20] cm radial shift of the magnetic axis
+> ∆Z[−20 ,20] cm vertical shift of the magnetic axis
+
+Reference. The neutron source is a parametric D–T plasma source parameterized by the 8 plasma-shape variables above together with the wedge angles. The emitted neutron energy is modeled as a thermally broadened 14.1 MeV D–T fusion spectrum, with broadening controlled by the ion temperature. The source is broadly similar in spirit to the more general confinement-mode-dependent source models described by [44], but uses a reduced geometric parameterization and a simplified spectral model. Per scene we (i) voxelize the source onto the flux-tally mesh, so that the operator input and output share a coordinate frame, and (ii) run OpenMC continuous-energy fixed-source transport with neutron-flux mesh tallies on a trimmed 140 × 73 × 146 Cartesian mesh. The prediction target is the OpenMC flux-tally mean divided by the mesh-cell volume, in neutrons per square centimeter per source neutron, without conversion to a reactor source rate. The 24 held-out configurations use a reference computed at 700 × 365 × 730 with FW-CADIS and MAGIC weight windows, a median of 6,130 core-hours per configuration, and conservatively block-averaged to the 70 , 140 , and 280 
+
+grids used for evaluation. Figure 9 shows the wedge geometry and a representative scene. 
+
+Training. M =10 5 configurations from the sampling design above, each labeled by one OpenMC run of N =5 × 10 5
+
+histories on the 140 × 73 × 146 mesh ( K=1 ). The backbone is a 3D FNO (modes 32 × 24 × 38 , width 32 , 4 layers, 
+
+6.3 × 10 7 parameters) that reads a four-class material-density geometry channel and the 8 source parameters as NeRF-embedded scalars ( 37 input channels). Every EU-DEMO model in Table 2 trains with AdamW (learning rate 10 −3, no weight decay, gradient clipping at 1.0) at batch size 1 with 4-step gradient accumulation for two passes over the 10 5
+
+configurations, that is 5 × 10 4 optimizer updates under a cosine schedule that reaches zero at the last update, taking about 2.9 hours per run on one H200. Log-space metrics use a floor of 10 −17 for both predictions and references. 
+
+## F Evaluation Protocol 
+
+Every metric is computed per scene on the physical prediction ˆϕ and reference ϕ, averaged over the scenes of the held-out set, and reported as the mean ± sample standard deviation of that average across training seeds, or as the two per-seed values when there are two seeds; rows that report a median over scenes say so. A scene is scored on a set of cells C with weights wi, P 
+
+> i∈C
+
+wi = 1 , given by the cell volume on Cartesian grids and by the solid angle on the far-field sphere. The structured grids have equal-measure cells (uniform Cartesian voxels and arccos-uniform angular bins), so their weights are uniform. The tetrahedral extension in Appendix O instead uses the volume of each tetrahedron. 22 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT (a) geometry (b) source 𝑄 , 𝑧 ≃ 0 (c) flux 𝜙 (d) materials (e) source (f) PTNO ˆ𝜙              
+
+> 𝜌 < 1.5 coolant 1.5≤𝜌 < 3.5 blanket 3.5≤𝜌 < 5.5 mult. 𝜌 ≥5.5 steel reference
+
+1                                    
+
+> Figure 9: The EU-DEMO reference flux falls by more than nine orders of magnitude over one poloidal slice, and the PTNO prediction follows it through the inboard blanket toward the divertor. One held-out validation configuration (the scene of Figure 2). (a) Rendering of the DEMO tokamak [21]; the wireframe brackets the 1/16 wedge whose poloidal cross-section is plotted in the remaining panels. (b) The z≃0slice of the plasma source Qon the 140 ×73 ×146 training mesh. (c) The converged reference flux ϕon the physical y= 0 slice, shown over nine orders of magnitude below its peak. (d) Material classes on the same slice, binned by mass density as in the legend. (e) Iso-contours of the source over the materials; the D-shaped plasma sits inside the vacuum vessel. (f) The PTNO prediction ˆϕover three orders of magnitude, with dashed reference iso-contours at 10 −1,10 −2, and
+> 10 −3of the peak; the predicted field follows the reference through the inboard blanket and toward the divertor.
+
+For a field u, which is either ϕ itself (linear metrics) or log 10 max( ϕ, ϵ ) (log 10 metrics, with the same floor ϵ applied to prediction and reference), we report 
+
+rel L2(ˆ u, u ) = 
+
+ P 
+
+> i∈C
+
+wi(ˆ ui − ui)2 P  
+
+> i∈C
+
+wiu2
+
+> i
+
+1/2
+
+, (23) 
+
+PSNR(ˆ u, u ) = 10 log 10 
+
+
+
+R2 P  
+
+> i∈C
+
+wi(ˆ ui − ui)2
+
+
+
+, (24) 
+
+SSIM(ˆ u, u ) = P 
+
+> i∈C
+
+wi
+
+(2 μˆu,i μu,i + C1)(2 σˆuu,i + C2)(μ2ˆu,i + μ2 
+
+> u,i
+
++ C1)( σ2ˆu,i + σ2 
+
+> u,i
+
++ C2) . (25) Relative L2 is a ratio of sums over the scene, not a mean of per-cell ratios, and the % RMSE of some appendix tables is 100 times the linear relative L2. For structured-grid SSIM, μ, σ2, and σˆuu are local means, variances, and covariance under a separable Gaussian window with standard deviation 1.5 cells truncated to 11 taps per axis (2D on the sphere, 3D on volumes), with reflective padding at the domain boundary, C1 = (0 .01 R)2, and C2 =(0 .03 R)2. The tetrahedral extension instead uses volume-weighted neighborhoods with a physical scale of 100 cm (Appendix O). The data range R is the span of the scene’s own reference: max u − min u, which for the log 10 metrics is 
+
+log 10 max ϕ − log 10 max(min ϕ, ϵ ); predictions are never rescaled independently of the reference. On the multi-group spherical-tokamak flux, every metric is computed per energy group and averaged over the groups whose reference is not identically zero. The reporting rule is the final checkpoint of a fixed training schedule, with no checkpoint selection on a validation or reference set. The far-field reruns (200 epochs, 10 5 updates), EU-DEMO reruns, tetrahedral extension, and interface models follow this rule. The 3D fluence main-table replacement is still running, and the original spherical-tokamak training corpus is unavailable locally for an exact rerun; their historical rows are explicitly provisional because checkpoints were selected on the same configurations used for evaluation. Earlier single-seed diagnostics and qualitative figures retain their documented historical checkpoints until replaced. Far-field hyperparameters, including HPO candidates and promotions, were chosen using the same 100 evaluation scenes; the new runs remove checkpoint selection but do not provide an independent test of hyperparameter selection. Table 10 lists the settings that differ between datasets; within a dataset they are identical for every model compared. Some tables report linear metrics with the voxels around point emitters removed, or score EU-DEMO only on the cells its reference measured; each such table says so in its caption. 
+
+## G Explicit Debiasers for Log-Space Training 
+
+Setup. The single-seed and earlier-model figures below retain their historical checkpoints. Tables 11 and 13 use the new fixed-schedule final checkpoints; the remaining diagnostics await replacement. We confirm the log 10 -target Jensen bias under two configurations: Setup A (single scene, M =1 , 5 seeds, labels of one 4-SPP render) and Setup B (multi-scene, M =10 6 train / M =100 test, 6 seeds, labels averaging 20 four-SPP renders, i.e. 80 SPP), both for 10 5
+
+optimization steps. Figures 10 and 11 show that log MSE converges to a strictly higher validation rel. L2 than a model trained in physical space (an earlier version of our method: a physical-space L2 loss on a 10 Gθ output head, without the softplus head and the pointwise normalization of PRel L2), and that an NO trained against log 10 ˆUN (a, ξ ) systematically under-predicts the solution by the empirical Jensen offset. 23 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Table 10: Evaluation settings for the five structured-grid datasets. ϵ is the floor of the log 10 metrics; these grids have equal-measure cells, so the measure weights are uniform; R is the reference’s own span for PSNR and SSIM. The SSIM window is the same Gaussian ( σ = 1 .5 cells, 11 taps per axis) on these grids; tetrahedral settings are in Appendix O. Dataset ϵ Measure and grid Data range R
+
+Far-field radiance 10 −6 solid angle, 40 ×80 span of the scene’s reference 3D fluence 10 −10 volume, 64 3 span of the scene’s reference Spherical tokamak 10 −10 volume, 64 3, per energy group span of the scene’s reference, per group EU-DEMO wedge 10 −17 volume, 140 ×73 ×146 span of the scene’s reference Interfaces (App. P) 3.28 × 10 −7 volume, 64 3 span of the scene’s reference 
+
+Stratified loss comparison. Table 11 stratifies % RMSE and log 10 SSIM by reference brightness across the 100 
+
+held-out far-field scenes, for the five-seed far-field models of Table 2. Log MSE underperforms PTNO + PRel L2 in every bin; L2 on raw NO output loses contrast in dim regions ( log 10 SSIM 0.24 in the dimmest bin and at most 0.78 in any bin); PTNO + PRel L2 keeps log 10 SSIM between 0.89 and 0.94 across all four brightness bins. This table does not separate the contributions of the softplus head and the PRel L2 residual to the dim-bin improvement; Appendix D does. 
+
+Table 11: PTNO + PRel L2 is the only loss that is accurate in every brightness bin. Far-field radiance, 100 held-out scenes against the converged reference; columns stratify scenes by their mean reference radiance ( 8, 16 , 42 , and 32 scenes), and the last column covers all 100 scenes (two lie outside the bin edges) and reproduces Table 2. Mean ± standard deviation over the five seeds of Table 2; bolded values are best per metric and bin.                                                                                                             
+
+> Metric Arch. Loss 0.0016 –0.013 0.013 –0.10 0.10 –0.85 0.85 –6.9All % RMSE ↓
+> NO L264 .0±6.918 .5±1.58.2±0.25.6±0.115 .3±1.3
+> NO log MSE 99 .9±0.090 .6±0.258 .2±0.229 .7±0.257 .6±0.2
+> PTNO PRel L2(ours) 29 .1±2.715 .7±1.815 .4±0.514 .4±0.616 .4±0.6log 10 SSIM ↑
+> NO L20.241 ±0.079 0.490 ±0.046 0.699 ±0.009 0.781 ±0.009 0.652 ±0.020
+> NO log MSE 0.514 ±0.001 0.509 ±0.001 0.441 ±0.001 0.471 ±0.002 0.470 ±0.001
+> PTNO PRel L2(ours) 0.935 ±0.003 0.945 ±0.006 0.925 ±0.004 0.888 ±0.005 0.917 ±0.004
+
+Explicit log-target debiasers. The log MSE row in Table 1 suffers Jensen bias because E
+
+h
+
+log 10 ˆUN
+
+i̸
+
+= log 10 E
+
+h ˆUN
+
+i
+
+at finite N . A natural fix is to construct an explicitly debiased or lower-bias log 10 -target estimator from K independent renders and feed that into a standard log-space MSE. We compare three such estimators against PRel L2 trained with the exponential output head 10 Gθ of an earlier model version: • Log of mean (K=10 ): the log 10 of the average of 10 available 4-SPP renders, equivalent in expectation to one 
+
+40 -SPP render. • Second-moment correction (K=10 ): log 10 ¯YK + bσ2/(2 K ¯Y 2 
+
+> K
+
+ln 10) where the same K renders are used to estimate the mean and variance. • Taylor fallback (5+5 ): a Taylor–Russian-roulette log estimator with a second-moment fallback on high-coefficient-of-variation pixels. 
+
+Implementation of the log-target debiasers. All log-target debiasers are applied independently at every output pixel to the stored stack of repeated 4-SPP renders for the same scene. Let Y1, . . . , Y K denote the selected independent renders, let ¯YK = K−1 P 
+
+> i
+
+Yi, and let ϵ = 10 −6 be the same floor used by the far-field evaluation. The log-of-mean target is 
+
+bzmean = log 10 
+
+ max( ¯Y10 , ϵ ) .
+
+The second-moment row uses the delta-method correction 
+
+bz2nd = 1ln 10 
+
+
+
+ln  max( ¯Y10 , ϵ ) + bσ2
+
+2K max( ¯Y10 , ϵ )2
+
+
+
+,
+
+where bσ2 is the unbiased sample variance of the same K=10 renders. The Taylor fallback row splits the selected renders into 5 anchor renders and 5 correction renders. The anchor group forms ˆμ = max( 15
+
+P5 
+
+> i=1
+
+Yi, ϵ ). For correction render 
+
+Y5+ j , j = 1 , . . . , 5, define rj = ( Y5+ j − ˆμ)/ˆμ. The estimator uses product terms from the Taylor series of the log of the pixel mean μ = E[Yi]ln μ = ln ˆ μ + X
+
+> m≥1
+
+(−1) m+1 
+
+m
+
+ μ − ˆμ
+
+ˆμ
+
+m
+
+,
+
+24 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+with Qmj=1 rj estimating the mth power term. We average 32 Russian-roulette paths, i.e., randomly truncated series whose surviving terms are reweighted by their survival probability, with continuation probability qm = min(CV m/ (m+1) , 0.95) , where CV is the coefficient of variation estimated from the selected renders. Pixels with CV ≥ 1 or non-finite roulette output fall back to the second-moment estimator above. These procedures debias the transformed target as much as possible under the K=10 render budget, but the resulting training objective is still ordinary log-space MSE; the K extra renders are amortized over the training set, not the stochastic gradient. Table 12 reports metrics averaged over the 100 held-out scenes against the naive baseline at N =4 ; each debiaser cuts the naive-log % RMSE by 50 –59% , but none closes the gap to PRel L2, shown here with the exponential 10 Gθ output head of an earlier model version rather than the softplus head of PTNO. 
+
+Table 12: Even with explicit Jensen-bias correction, log-target debiasers leave a substantial residual gap. All methods are trained at N =4 on the far-field radiance dataset; explicit debiasing methods consume up to K=10 renders for target estimation. One run per row, scored on the 100 held-out scenes against the converged reference; % RMSE, PSNR, and SSIM are linear, the other two columns log 10 .                                              
+
+> Arch. Loss / target % RMSE ↓log 10 rel. L2↓PSNR ↑SSIM ↑log 10 SSIM ↑
+> NO log MSE 56.23 1.357 19.23 0.561 0.474 NO Log-mean MSE ( K=10 )25.44 0.489 27.29 0.848 0.787 NO 2nd-moment MSE ( K=10 )23.21 0.456 28.18 0.861 0.797 NO Taylor-fallback MSE ( 5+5 )28.39 0.516 25.10 0.829 0.735 NO, 10 Gθhead PRel L217.17 0.083 29.53 0.942 0.914
+
+0 200 400 600 800 1000 
+
+Epoch 
+
+10 −2
+
+10 −1
+
+10 0
+
+> Val rel  L2
+
+(a) Setup A: single scene  
+
+> Power L2
+> Naive log
+
+0 200 400 600 800 1000 
+
+Epoch 
+
+10 −2
+
+10 −1
+
+10 0
+
+10 1
+
+> Val rel  L2
+
+(b) Setup B: multi-scene  
+
+> Power L2
+> Naive log
+
+Figure 10: Log MSE converges to a higher error floor than training in physical space. Validation linear rel. L2 against training epoch for (a) Setup A, one scene with 4-SPP labels, and (b) Setup B, M =10 6 training scenes with 80 -SPP labels; “Naive log” in the legend is log MSE, and “Power L2” is the earlier physical-space L2 loss on a 10 Gθ head described in the setup above, not the softplus head with PRel L2.   
+
+> 0π2π
+> −101
+
+(a) Power L2, ¯b = −0.003    
+
+> 0π2π
+> −101
+
+(b) Naive log, ¯b = −1.925    
+
+> 0π2π
+> −101
+
+(c) Dataset gap, ¯b = −1.973 
+
+> −0.05 0.00 0.05
+> log 10  bias
+> −202
+> log 10  bias
+> −202
+> log 10  bias
+
+Figure 11: Log MSE learns the biased target; training in physical space does not. Setup A. Per-pixel mean residual ˆb(x) is log 10 
+
+prediction minus log 10 U(a, x); ¯b is the spatial mean. (a) Physical-space L2 on a 10 Gθ head, labeled “Power L2” (an earlier version of our method; ¯b≈0). (b) log MSE ( ¯b≈− 1.9). (c) Empirical Jensen bias estimated on the train set, matching panel (b). 
+
+Each explicit debiaser cuts the naive-log % RMSE by 50 –59% , but none achieves performance comparable to training the model with our proposed loss, even though they require extra renders. The gap is widest in log 10 rel. L2, where ours reaches 0.083 versus 0.456 for the next best (2nd-moment MSE, K=10 ). 25 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+> Best scene 15 pred.
+
+GT  
+
+> log L2=1.551
+
+Naive log  
+
+> log L2=0.723
+
+Log mean K=10  
+
+> log L2=0.659
+
+2nd moment K=10  
+
+> log L2=0.709
+
+Taylor fb 5+5  
+
+> log L2=0.021
+
+PRel L2                 
+
+> resid.
+> ¯b=-3.37 ¯b=-1.55 ¯b=-1.41 ¯b=-1.51 ¯b=+0.01
+> Worst scene 58 pred.
+> log L2=4.782 log L2=0.088 log L2=0.074 log L2=0.188 log L2=0.092
+> resid.
+> ¯b=-1.41 ¯b=-0.01 ¯b=+0.00 ¯b=+0.05 ¯b=-0.01
+> −2
+> −10
+> log 10  radiance
+> −202
+> log 10  ˆU −  log 10  U
+
+Figure 12: The explicit debiasers reduce the log-MSE offset but keep structured errors; PRel L2 keeps the residual centered. 
+
+Best- and worst-case predictions and residuals per debiasing strategy on the 100 held-out far-field scenes, using the earlier 10 Gθ -head model for the PRel L2 column as in Table 12. Rows are selected by log 10 rel. L2: the best block is the lowest-error scene under our loss, and the worst block is the highest-error scene under log MSE . Prediction rows use one shared log 10 radiance scale; residual rows show the log 10 prediction minus log 10 U(a) with one symmetric ±3 orders-of-magnitude scale. Log MSE under-predicts the bright lobes uniformly; the explicit debiasers reduce the offset but retain structured errors; PRel L2 keeps the residual centered near zero without large-area bias. 
+
+## H Bias Correction for Target-Denominator rel L2
+
+Figure 13 and Table 13 study how Jensen bias affects relative-L2 training on the far-field radiance dataset. The baseline rel L2 objective uses noisy MC labels in the denominator, so the nonlinear reciprocal-square map moves the empirical minimizer away from the physical solution. We compare that baseline with two rel L2 bias-correction strategies that estimate the inverse-square scale from extra independent renders, and with our pointwise relative loss. The bias-corrected rel L2 variants reduce the collapse but still land far worse than PTNO + PRel L2. This appendix documents the full definitions of the corresponding losses. 
+
+Table 13: Bias correction improves the label-denominator relative L2 loss but leaves it at least 5× worse than PTNO. We compare four loss variants on the far-field radiance dataset at (M, N, K ) = (10 6, 4, 10) and evaluate on the 100 held-out scenes against the converged reference. The variants are: (1) the baseline relative ( L2) loss, which uses MC labels in the denominator; (2–3) relative ( L2) with bias-correction strategies described in Appendix H; and (4) PTNO with our prediction-normalized pointwise relative loss. Bias correction improves over the biased baseline but remains at least 5× worse than our method in relative L2. Mean 
+
+± standard deviation over three seeds. Objective Bias Correction rel. L2 ↓ log 10 rel. L2 ↓ log 10 SSIM ↑
+
+rel L2 – 1.0000 ± 0.0000 5.0226 ± 0.0000 0.1347 ± 0.0000 
+
+rel L2 2nd-order approx. Taylor 0.7230 ± 0.0011 0.6571 ± 0.0009 0.4393 ± 0.0052 
+
+rel L2 Taylor 0.7188 ± 0.0028 0.6486 ± 0.0028 0.4413 ± 0.0025 PRel L2 (ours) – 0.1304 ± 0.0031 0.0624 ± 0.0008 0.9454 ± 0.0019 
+
+Why the label denominator cannot be repaired. The weak labels put a point mass at zero, so the inverse-square weight of the label-denominator loss has no finite expectation (Table 14). About 15% of the pixels of a ten-render mean are exactly zero, and their weights reach ∼10 12 against ∼2 × 10 2 for a typical (median) pixel of the same label (∼2 × 10 4 for a single render). The loss then reduces to reproducing zeros where the label is zero, the optimizer drives the whole field to the softplus floor, and the vanishing gradient there prevents recovery, which is the first-epoch collapse behind the baseline row of Table 13 and panel (b) of Figure 13. Any repair, such as a label floor or a mask on zero pixels, changes the target rather than removing the bias. 26 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+0 π 2π
+
+−101
+
+(a) target-denom optimum 
+
+¯b = −4.01 
+
+0 π 2π
+
+(b) trained denom. 
+
+¯b = −4.03 
+
+0 π 2π
+
+(c) PTNO + PRel L2
+
+¯b = −0.00 
+
+−4
+
+−2024
+
+> log 10 (estimate /U)
+
+Figure 13: With the noisy label in the denominator, the relative L2 loss collapses the prediction by several orders of magnitude; PTNO + PRel L2 does not. One far-field scene with high dynamic range; both models are trained on this scene alone ( M =1 ) and scored against its converged reference. Each panel shows log 10 estimate minus log 10 U(a, x). (a) The exact stationary point of the baseline rel L2 objective, (( B−Y )/(Y +η)) 2, uses 1/(Y +η)2 weights and collapses the prediction by several orders of magnitude. (b) A trained baseline rel L2 NO converges to the same collapsed field (rel. L2≈1.000 ). (c) The matched PTNO + PRel L2 run is centered at the physical solution (rel. L2=0 .0067 ). Table 14: Weak labels have a point mass at zero, so the label-denominator weight 1/(Y + η)2 has no finite mean. 100 training scenes of the far-field radiance corpus, η = 10 −6; fractions are means over scenes (medians in parentheses), and the maximum pixel weight is each scene’s maximum averaged over scenes. Label Pixels exactly zero Pixels below η Max pixel weight One 4-SPP render 0.326 (0.140 ) 0.392 9.6 × 10 11 
+
+Mean of ten renders (40 SPP) 0.148 (0.009 ) 0.201 8.0 × 10 11 
+
+Implementation of the rel L2 bias corrections. PTNO + PRel L2 uses a 10 -render target mean ¯Y10 , i.e., a 40 -SPP effective target, but its denominator is the prediction: 
+
+ℓsg =
+
+ Bθ − ¯Y10 
+
+max(sg( Bθ ), η )
+
+2
+
+, Bθ = softplus( Gθ (a)) .
+
+Conditioned on the prediction, the denominator is a constant and the stochastic gradient remains centered at the physical solution. The baseline rel L2 objective instead puts the same noisy target in the scale, 
+
+ℓtgt =
+
+ B − ¯Y10 
+
+sg( ¯Y10 ) + η
+
+2
+
+.
+
+For a scalar prediction B, its stationary point is 
+
+B∗ = E ¯Y10 /( ¯Y10 + η)2
+
+E1/( ¯Y10 + η)2 ,
+
+which is an inverse-MC-weighted target rather than E[ ¯Y10 ].The two rel L2 bias corrections try to repair this by keeping the residual render independent from the denominator estimate. They train 
+
+ℓiw = cW (Bθ − Yr )2,
+
+where Yr is one selected 4-SPP residual render and cW is computed from disjoint renders. If cW were a stable low-variance estimate of (E[Y ]+ η)−2, independence would recover the correct fixed point. The second-order bias correction uses K=10 anchor renders with 
+
+¯AK = 1
+
+K
+
+> K
+
+X
+
+> i=1
+
+Ai, ˆμ = max( ¯AK , η ), bσ2 
+
+> A
+
+= 1
+
+K − 1
+
+> K
+
+X
+
+> i=1
+
+(Ai − ¯AK )2.
+
+For the weight w(x) = ( x + η)−2, with μ = E[Ai] and σ2 = Var( Ai), the delta method gives 
+
+E[w( ¯AK )] ≈ w(μ) + 12 w′′ (μ) σ2
+
+K = ( μ + η)−2 + 3σ2
+
+K(μ + η)4 ,
+
+27 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+so the inverse-square analog of the second-moment log correction subtracts this leading plug-in bias: 
+
+cW2 =
+
+
+
+(ˆ μ + η)−2 − 3bσ2
+
+> A
+
+K(ˆ μ + η)4
+
+
+
+> +
+
+.
+
+The Taylor bias correction splits its 10 renders into 5 anchor renders Ai and 5 correction renders A′ 
+
+> j
+
+. The anchors give a stable expansion point ˆμ = max( 15
+
+P 
+
+> i
+
+Ai, η ), and each correction render contributes a mean-zero relative residual 
+
+rj = ( A′ 
+
+> j
+
+− ˆμ)/(ˆ μ + η), which is an unbiased estimator of (μ − ˆμ)/(ˆ μ + η). Expanding the inverse-square weight 
+
+(μ + η)−2 around ˆμ gives 
+
+(μ + η)−2 = (ˆ μ + η)−2 X
+
+> m≥0
+
+(−1) m(m + 1) 
+
+ μ − ˆμ
+
+ˆμ + η
+
+m
+
+.
+
+Because the rj are independent, the product Qmj=1 rj is an unbiased estimator of the m-th power, so plugging products of fresh residuals into successive series terms preserves unbiasedness. We truncate at m=5 (one product per correction render) to obtain the plug-in weight 
+
+cWT = (ˆ μ + η)−2
+
+1 + 
+
+> 5
+
+X
+
+> m=1
+
+(−1) m(m + 1) 
+
+> m
+
+Y
+
+> j=1
+
+rj
+
+ .
+
+Pixels with max j |rj | > 0.95 fall back to the second-order weight; remaining non-finite values are zeroed and the final weights are clamped nonnegative. The raw Taylor–Russian-roulette diagnostic uses the same inverse-power series with 
+
+8 roulette paths and continuation qm = min( |r| m/ (m + 1) , 0.95) , but it produced non-finite weights on the first batch and is therefore not reported as a successful training run. As with the log-target debiasers in the previous section, the K extra renders are amortized over the training set, not the stochastic gradient. The bias corrections reduce the most direct denominator-target coupling, but the corrected rel L2
+
+objectives still concentrate optimization on unstable inverse-scale weights and do not recover the prediction-normalized 
+
+PRel L2 solution. Per-run numbers are tabulated in Table 13. 
+
+## I Stationary Points and Dynamics of PRel L2
+
+PRel L2 has no stationary point other than the population mean of the label wherever the output Jacobian has full row rank, and its expected dynamics decrease a potential monotonically. The minimizer-equivalence argument of section 4 covers only the unweighted squared loss, so we analyze PRel L2, which normalizes each residual by the stop-gradient prediction, directly. Fix an input a and let Bθ = Bθ (a) denote the network prediction, U = Eξ [ ˆUN (a, ξ ) | a] the population mean of the noisy target, J = ∂B θ /∂θ the output Jacobian, and D(Bθ ) the positive diagonal matrix of stop-gradient normalization factors, with entries max( Bθ,i , η )2.
+
+Fixed points. Because the normalization is detached, the expected parameter gradient is, up to a positive constant, 
+
+Eξ [∇θ ℓ | a] = J⊤D(Bθ )−1(Bθ − U ). (26) Any stationary point therefore satisfies J⊤D(Bθ )−1(Bθ − U ) = 0 . Since D(Bθ ) is positive definite, the normalization introduces no additional zero directions; under the standard local assumption that J has full row rank ( JJ ⊤ ≻ 0), stationarity forces Bθ = U . PRel L2 therefore introduces no new biased output-space fixed point. Rank-deficient Jacobians can create parameter-space stationary points, a limitation shared with the ordinary squared loss. 
+
+Dynamics. Define the potential 
+
+Φ( Bθ ) = X
+
+> i
+
+Z Bθ,i 
+
+> Ui
+
+s − Ui
+
+max( s, η )2 ds, 
+
+where max( s, η )2 > 0 is the prediction-dependent normalization factor at voxel i. Its output-space gradient is 
+
+∇B Φ( Bθ ) = D(Bθ )−1(Bθ − U ), which matches the expected PRel L2 gradient with respect to the prediction. The corresponding dynamics are obtained through the network Jacobian, ˙θ = −J⊤∇B Φ, and the potential evolves as 
+
+dΦ dt = −∇ B Φ⊤JJ ⊤∇B Φ ≤ 0.
+
+The expected dynamics therefore decrease Φ monotonically. The prediction-dependent denominator may change the effective learning rate and the convergence speed of different voxels, but it does not reverse the update direction or create an additional output-space minimum. Under JJ ⊤ ≻ 0, the only point at which the dynamics stop is Bθ = U ;when Ui = 0 exactly, softplus approaches this solution as a boundary limit rather than attaining it at a finite latent value. 28 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+> Best scene 44 pred.
+
+GT  
+
+> log L2=0.014
+
+Softplus PRel L2 
+
+> log L2=0.197
+
+Target rel. L2 
+
+> log L2=0.079
+
+2nd-order Taylor  
+
+> log L2=0.065
+
+Taylor              
+
+> resid.
+> ¯b=-0.01 ¯b=-0.09 ¯b=+0.09 ¯b=-0.07
+> Worst scene 59 pred.
+> log L2=0.145 log L2=15.395 log L2=2.491 log L2=1.068
+> resid.
+> ¯b=-0.01 ¯b=-2.98 ¯b=-0.47 ¯b=-0.20
+> −3
+> −2
+> −10
+> log 10  radiance
+> −4
+> −2024
+> log 10  ˆU −  log 10  U
+
+Figure 14: The label-denominator and bias-corrected rel L2 variants stay biased downward on the hard scene, while PRel L2
+
+keeps the residual centered. Best- and worst-case far-field predictions for the rel L2 bias-correction study in Table 13. The best block is the lowest log 10 rel. L2 scene under PTNO + PRel L2, and the worst block is the highest-error scene under baseline rel L2.Prediction rows use one shared log 10 radiance scale; residual rows use one symmetric ±5 orders-of-magnitude scale. The baseline and bias-corrected rel L2 variants remain biased downward on the hard scene, whereas the prediction-normalized PRel L2 keeps the residual centered. 
+
+Scope. Monotonic decrease of the potential alone does not guarantee convergence to Bθ = U . When J is rank-deficient, the normalized residual may lie in the null space of J⊤, so additional stationary points cannot be excluded. This limitation arises from optimizing an output-space objective through a potentially rank-deficient neural-network parameterization rather than from PRel L2 specifically: standard squared-error training has the stationary condition 
+
+J⊤(Bθ − U ) = 0 . The analysis concerns continuous-time, full-batch population-gradient dynamics and does not directly establish convergence for finite-step stochastic optimization or Adam. 
+
+Empirical test across initializations. Five independent initializations of PTNO converge to the same unbiased solution, whereas log MSE converges to a shared biased one (Table 15). We split each seed’s log 10 error field 
+
+ds = log 10 Bs − log 10 U into the part shared by all seeds, ¯d, and the seed-specific remainder, and report the signed mean of ds as a multiplicative offset. Log MSE is the positive control: 99 .9% of its squared error is shared across seeds, and every seed predicts 2.2% of the reference, ≈46 × too low. PTNO recovers the reference to within 0.1% on average. Its remaining error is also mostly shared, but it carries no sign and shrinks with scene coverage: across the label-budget allocations of Table 16, the signed offset stays within ±0.07 orders of magnitude while the RMS log 10 error falls from 
+
+0.77 to 0.13 . A fixed point would not move with M ; approximation error does. The offset also holds across brightness: PTNO stays within a factor of 0.972 –1.034 in every bin of Table 11, while log MSE is 617 × too low in the dimmest bin. 
+
+Table 15: PTNO seeds agree on an unbiased solution; log-MSE seeds agree on a biased one. Far-field radiance, (M, N, K ) = (10 6, 4, 1) , five seeds, 100 held-out scenes against the converged reference. Offset is 10 mean( ds), mean ± standard deviation across seeds. Loss RMS log 10 error Shared RMS Seed-specific RMS Prediction / reference NO + L2 1.1032 0.7982 0.7615 0.525 ± 0.060 
+
+NO + log MSE 2.1337 2.1325 0.0721 0.0215 ± 0.0000 
+
+PTNO + PRel L2 (ours) 0.1518 0.1394 0.0602 0.999 ± 0.005 
+
+29 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## J Controlled Ablations and Label-Budget Allocation 
+
+The five-seed loss comparison on all four datasets is Table 2. On far-field radiance, the linear-L2 loss wins the bright-region-dominated % RMSE ( 15 .27 ± 1.32 against 16 .43 ± 0.55 for PTNO) at the cost of a 0.26 lower log 10 
+
+SSIM, which is lost in the dim regions. 
+
+J.1 Allocating a Fixed Label Budget 
+
+Scene coverage controls accuracy until the training set reaches roughly 5 × 10 5 configurations, consistent with walk-on-spheres operator learning and Monte Carlo surrogate models [14, 20]; Table 18 shows that how much coverage helps depends on the loss. Table 16 fixes the raw label budget at M (N/ 4) K = 10 6 four-SPP render equivalents and the training budget at 10 5 optimizer updates ( 200 epochs of 5,000 samples), and changes only how the renders are allocated. For N ≥ 8, repeated four-SPP renders are averaged into one target; the K > 1 rows cycle those same raw renders across visits.                                                                                            
+
+> Table 16: At a fixed label budget, spreading the renders over more scenes helps until about 5×10 5scenes. Far-field radiance. The first block increases scene coverage while reducing the effective samples per scene. The second block cycles repeated four-SPP renders instead of pre-averaging them. Entries are log 10 SSIM on the 100 held-out scenes at 40 ×80 against the converged reference, mean ±standard deviation over the listed seeds; entries without an uncertainty are single-seed measurements. Scenes MEffective NRenders KSeeds log 10 SSIM ↑
+> 125 32 ,000 130.2716 ±0.0098 1,000 4,000 130.4829 ±0.0043 8,000 500 130.7581 ±0.0019 31 ,250 128 130.8450 ±0.0026 62 ,500 64 130.8716 ±0.0018 125 ,000 32 110.9009 250 ,000 16 130.9191 ±0.0011 500 ,000 8130.9234 ±0.0030
+> 1,000 ,000 4150.9165 ±0.0040 31 ,250 432 30.9096 ±0.0049 125 ,000 4830.9143 ±0.0019 500 ,000 4210.9196
+
+Cycling raises log 10 SSIM by 0.0646 at M = 31 ,250 and by 0.0134 at M = 125 ,000 ; the difference is −0.0038 at 
+
+M = 500 ,000 . Repeated labels help before the coverage plateau and cease to matter once the corpus is broad enough. Broad noisy supervision beats the converged-label control with one twenty-fifth of the particle budget. Training PTNO on 10 6 scenes at four SPP reaches 0.9165 ± 0.0040 with a total budget of 4 × 10 6 samples, while 10 4 scenes at 10 4
+
+SPP reach 0.8893 ± 0.0071 with 10 8 samples, so spreading the particles over more scenes gains 0.0272 in log 10 SSIM. The 10 4-SPP control labels are close to converged: from the sample variance of 32 independent four-SPP renders per scene, a 10 4-SPP label has a relative L2 error of 1.9% (median 1.2% ), against 94% for a single four-SPP label. PTNO also wins on converged labels, so PRel L2 is not only a fix for label noise (Table 17). At M =10 4, replacing linear L2 with PTNO raises log 10 SSIM by 0.26 on 10 4-SPP labels and by 0.20 on four-SPP labels. Converged labels help both losses at this small M ; Table 16 shows that the same particles buy more when spread over more scenes.                                        
+
+> Table 17: PTNO + PRel L2beats linear L2on both near-converged and noisy labels. Loss ×label quality at M=10 4, far-field radiance. The two label columns share the same 10 4scenes. Entries are log 10 SSIM on the 100 held-out scenes, mean ±standard deviation over three seeds. Loss N=10 4labels N=4 labels NO + L20.6257 ±0.0060 0.3468 ±0.0069
+> PTNO + PRel L2(ours) 0.8893 ±0.0071 0.5478 ±0.0043
+
+J.2 More Scenes Cannot Remove a Bias 
+
+PTNO keeps improving with scene count, while the biased losses flatten (Table 18). Holding N =4 and K=1 and growing M from 10 5 to 10 6 raises PTNO by 0.14 in log 10 SSIM, against 0.02 for linear L2 and 0.01 for log MSE. Extra data reduces variance, but the minimizer of a biased objective does not move toward the solution. 30 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT                                              
+
+> Table 18: With more scenes, PTNO keeps improving while the biased losses flatten. Scene scaling at fixed label quality, far-field radiance, (M, N, K ) = ( M, 4,1) . Entries are log 10 SSIM on the 100 held-out scenes, mean ±standard deviation over three seeds (five at M=10 6).
+> MNO + L2NO + log MSE PTNO + PRel L2
+> 10 40.3468 ±0.0069 0.2391 ±0.0034 0.5478 ±0.0043
+> 10 50.6316 ±0.0055 0.4562 ±0.0013 0.7815 ±0.0028
+> 10 60.6524 ±0.0196 0.4699 ±0.0007 0.9165 ±0.0040
+
+J.3 Splitting a Per-Scene Budget between N and K
+
+At a fixed per-scene budget, cycling several cheap labels beats averaging them into one (Table 19). We fix M =31 ,250 
+
+and N K =128 and vary the split: each scene stores K renders of N SPP, and training presents one of them per visit. Moving from one 128 -SPP label to eight 16 -SPP labels raises log 10 SSIM from 0.8450 to 0.9111 . Accuracy saturates around K=8 –16 : K=16 gives the best score, a further gain of 0.0070 , while K=32 falls back to 0.9096 . A pre-averaged label fixes one noise realization that the network can fit, whereas cycling presents a fresh unbiased draw at every visit.                                             
+
+> Table 19: At a fixed per-scene budget, cycling several cheap labels beats one averaged label, up to about K= 8 –16 .Per-scene
+> N–Ksplit at M=31 ,250 and N K =128 , far-field radiance. Entries are log 10 SSIM on the 100 held-out scenes, mean ±standard deviation over three seeds.
+> NKlog 10 SSIM ↑
+> 128 10.8450 ±0.0026 64 20.8683 ±0.0021 32 40.8922 ±0.0024 16 80.9111 ±0.0022 816 0.9181 ±0.0033
+> 432 0.9096 ±0.0049
+
+J.4 Finite-Sample View of the Allocation 
+
+This subsection states which terms scale with M , N , and K, and what is proved for each loss. Scene ai, i = 1 , . . . , M ,carries K independent renders Yi,j = U(ai) + ζi,j , each averaging N Monte Carlo samples, with E[ζi,j | ai] = 0 and per-cell variance σ2/N , where σ2 is the single-sample variance. 
+
+Renders enter through their mean. For any per-cell weight w that does not depend on the labels ( w = 1 for the squared loss, w = S(Bθ (ai)) −2 for PRel L2 with the normalizer detached), 
+
+1
+
+K
+
+> K
+
+X
+
+> j=1
+
+w (B − Yi,j )2 = w (B − ¯Yi)2 + wK
+
+> K
+
+X
+
+> j=1
+
+(Yi,j − ¯Yi)2, ¯Yi = 1
+
+K
+
+> K
+
+X
+
+> j=1
+
+Yi,j ,
+
+and the last term does not depend on the prediction B. The empirical objective and its full-batch gradient therefore see the K renders only through ¯Yi, whose noise has variance σ2/(N K ): K renders of N samples act as one render of N K 
+
+samples. Stochastic training that presents one render per visit is not covered by this identity; Table 19 shows that at small M it beats pre-averaging at equal N K .
+
+Scenes versus Monte Carlo precision. For the unweighted squared loss with these unbiased labels, the risk against the converged solution is the clean objective LC of section 4 up to a constant, and for a realizable class F of effective dimension deff the standard least-squares decomposition gives 
+
+E R(ˆθ) − inf  
+
+> θ∈Θ
+
+R(θ) ≲ EM (F) + σ2 deff 
+
+M N K ,
+
+where EM (F) is the excess risk the same estimator would reach from M converged labels. EM depends on M and F
+
+but not on N or K; the label noise contributes only through 1/(M N K ), so scene coverage reduces the risk at any label precision, and there is no term in 1/N or 1/K alone. 31 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Nonlinear label transforms. If the loss compares the prediction with a transformed label log 10 Y , the population minimizer is E[log 10 Y ], and the delta method gives E[log 10 Y ] = log 10 U − σ2/(2 n U2 ln 10) + O(n−2) per cell, with n = N when each render is transformed and cycled and n = N K when the K renders are averaged first. The fitted prediction is shifted by O(1 /N ) (respectively O(1 /(N K )) ), which adds a floor of order 1/N 2 (respectively 
+
+1/(N K )2) to the risk against log 10 U; no number of scenes removes it, and cycling more renders does not reduce it. The label-denominator relative loss has the analogous shift, and with a point mass of labels at zero its weight has no finite mean (Appendix H). 
+
+What is shown for PRel L2. Appendix I shows that, in expectation over the Monte Carlo noise, the PRel L2 gradient has no output-space stationary point other than the label mean U(a) wherever the output Jacobian has full row rank, so the Jensen shift above does not arise. The averaging identity also holds for PRel L2 at fixed normalizers. The variance bound above is proved only for the unweighted squared loss; because the PRel L2 weights depend on the prediction, we do not claim it for PRel L2.
+
+## K Cost Accounting and Speedup 
+
+The EU-DEMO accuracy crossings below use the final checkpoints. The other tasks retain their historical accuracy crossings and timings pending the corresponding reruns; their checkpoint limitations are recorded in Appendix F. The surrogate repays its offline cost after 12 –197 queries, and at matched accuracy it is 10 3–10 5× cheaper than MC on neutronics, while on radiative transfer MC costs 0.8–11 × the operator. Table 20 summarizes the comparison; the paragraphs below give the offline cost, the same-device comparison against converged MC, and the matched-accuracy measurement. 
+
+Table 20: At matched accuracy, MC costs 10 3–10 5× the operator on neutronics and 0.8–11 × on radiative transfer. Both methods run on the same device (one GPU for radiative transfer, one 24-thread CPU for neutronics). Matched-accuracy entries are per-scene medians of the MC cost needed to reach the operator’s error, divided by the operator’s cost; EU-DEMO MC uses FW-CADIS weight windows with their generation cost included. ∗MC does not reach the operator’s log 10 SSIM within the measured budget on most scenes; the spherical-tokamak entry extrapolates per-scene error curves by at most one order of magnitude, and the EU-DEMO entry is a lower bound. MC cost / operator cost Dataset Converged MC Match log 10 SSIM Match log 10 rel. L2 Break-even queries Far-field radiance 1.8 × 10 5 11 5.5 12 
+
+3D fluence 1.8 × 10 4 2.1 0.8 87 
+
+Sph. tokamak 9.9 × 10 4 6.4 × 10 4 ∗ 9.4 × 10 3 197 
+
+EU-DEMO 1.2 × 10 4 > 1.6 × 10 4 ∗ 1.6 × 10 3 12 
+
+Offline cost and break-even. Converged labels for our training sets would cost 5 × 10 3–10 5× more than the noisy labels we train on (Table 21, “Converged / noisy”). Break-even divides the offline cost, label generation plus training, by the cost of one converged solve minus one inference. For the neutronics tasks, GPU training time is small next to CPU label generation and is listed separately rather than converted to core-hours. Labeling the EU-DEMO training set at converged quality would take ≈6 × 10 8 core-hours. 
+
+Table 21: Offline cost is repaid after tens to a few hundred queries. Label costs were measured on H200 GPUs (radiative transfer), in 8-core tasks on Xeon Gold 6130 CPUs (spherical tokamak), and in 8-core tasks on Xeon Ice Lake and Skylake nodes (EU-DEMO); training costs are historical five-run means for the same recipes on one H200 GPU, retained for cost accounting rather than the runtimes of the replacement runs. The spherical-tokamak converged cost is stated in the 8-core configuration of its training labels; the 10 9-history reference itself ran as 4-core tasks at 305 .5 core-hours per scene. Costs are measured from the scheduler accounting; the EU-DEMO converged cost is the mean over the 24 reference scenes.                                              
+
+> Dataset Noisy-label set Training Converged / scene Converged / noisy Break-even Far-field radiance 3.79 GPU-h ( 10 6)0.75 GPU-h 0.372 GPU-h 9.8×10 412
+> 3D fluence 1.97 GPU-h ( 3×10 5)7.98 GPU-h 0.115 GPU-h 1.75 ×10 487
+> Sph. tokamak 70 ,300 core-h ( 10 6)1.81 GPU-h 356 .8core-h 5.2×10 3197
+> EU-DEMO 71 ,607 core-h ( 10 5)2.88 GPU-h 6,069 core-h 8.5×10 312
+
+32 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Same device, converged MC. Reproducing a converged reference costs MC 1.2 × 10 4–1.8 × 10 5× the operator’s inference when both run on the same device. Figure 4 times the operator on a GPU and MC on a 24-thread CPU, because OpenMC has no GPU implementation, and that ratio folds a hardware factor of 10 –60 × into the comparison; the numbers here remove it. On the same device and the reference’s own output grid, converged MC costs 1.8 × 10 5×
+
+(far-field radiance, 607 s for 220 SPP on the 40 ×80 output grid, which reproduces the reference to log 10 rel. L2 0.0008 ,against 3.4 ms) and 1.8 × 10 4× (3D fluence, 2,636 s against 144 ms) the operator’s inference, both methods timed on one RTX 5070 Laptop GPU. On one 24-thread CPU (Xeon Gold 6130 for the spherical tokamak, Xeon Platinum 8352Y for EU-DEMO), the per-scene median is 9.9 × 10 4× for the spherical tokamak ( 10 9 histories against a 0.47 s forward pass) and 1.2 × 10 4× for EU-DEMO (the full weight-window and transport chain, median 6,130 core-hours, against a 
+
+79 s forward pass on the 700 × 365 × 730 reference grid). 
+
+Matched accuracy. MC reaches the operator’s accuracy cheaply on radiative transfer and only at great cost on neutronics. For every held-out scene we sweep the MC budget on the same device, score each budget against an independent reference with the metric used for the operator, and record the cost at which MC first matches the operator’s error; we report the median over scenes. On far-field radiance ( 100 scenes), MC matches log 10 SSIM at 11 .3× the operator’s cost (interquartile range 4.5–34 ) and log 10 relative L2 at 5.5× (3.4–10 .5). On 3D fluence ( 100 scenes) the factors are 2.1× (1.0–9.6) and 0.8× (0.44 –2.2): MC matches the norm error within the operator’s own inference time on half of the scenes. On the spherical tokamak ( 50 scenes), we split each scene’s 100 independent 10 7-history runs into a 5 × 10 8-history reference and a sequence of MC budgets that grows to 5 × 10 8 histories. MC matches log 10 
+
+relative L2 at a median 9.4 × 10 3× (interquartile range 4.9 × 10 3–2.3 × 10 4); for log 10 SSIM, 32 of 50 scenes remain unmatched at the largest budget ( ≈4.7 × 10 4×), and extrapolating each scene’s error curve by at most one order of magnitude gives a median of 6.4 × 10 4×.On EU-DEMO, MC matches the operator’s norm error only with a weight window, and even with one it misses the operator’s log 10 SSIM on every one of the 24 scenes within the measured budgets (Table 22). We run three MC variants on 24 scenes and count the weight-window generation cost where it applies. Without a window, MC does not match the operator within 10 7 histories on any scene. A cheap FW-CADIS window lets MC match log 10 relative L2 at 1.6 × 10 3×
+
+the operator’s cost, but all 24 scenes still miss its log 10 SSIM. The reference’s own FW-CADIS →MAGIC window also reaches the norm target, but building it takes ≈2,000 core-hours per scene, which lifts the end-to-end factor to 
+
+2.2 × 10 5×. On every task, matching the dim-region structure measured by log 10 SSIM costs MC more than matching the norm. 
+
+Table 22: EU-DEMO matched-accuracy factors depend on the weight window given to MC. Per-scene medians over 24 scenes of MC cost divided by operator cost, both on one Xeon Platinum 8352Y. “Transport” counts transport only; “+ window” adds the window generation cost. > marks a lower bound where MC stays short of the operator. All entries are scored only on cells where the reference is measured ( 45 .4% of the mesh). The MAGIC SSIM factors are extrapolated; the measured end-to-end lower bound is 
+
+2.6 × 10 5.                                              
+
+> Match log 10 rel. L2Match log 10 SSIM MC variant Window / scene Transport + window Transport + window Analog —>1.6×10 3—no crossing —FW-CADIS 10 .2core-h 5.4×10 21.57 ×10 3unmatched >1.6×10 4
+> FW-CADIS →MAGIC 2,009 core-h 6.8×10 22.17 ×10 59.1×10 51.1×10 6
+
+For the MAGIC SSIM estimate, we extrapolate each scene’s error curve through its last two measured budgets by at most 1.5 orders of magnitude in particle count. Twenty scenes cross within this range; the remaining four are counted as lying above this range when computing the median over all 24 scenes. 
+
+## L Scope and In-Distribution Boundary 
+
+Which transport problems suit PTNO. PTNO targets transport problems where low-order models fail and converged MC is expensive. In optically thick media with smooth coefficients, near-isotropic scattering, and clear scale separation, diffusion or low-order moment equations are accurate and a learned surrogate offers little. Our settings violate these conditions in different ways. The radiative-transfer datasets sample the Henyey–Greenstein asymmetry over nearly its whole range together with piecewise or shape-wise varying coefficients, so much of the training distribution is strongly anisotropic and has sharp interfaces. The neutronics settings are deep-shielding problems whose reference flux spans about 10 (spherical tokamak) and 17 (EU-DEMO) orders of magnitude (Table 24), hard enough that the EU-DEMO reference itself needs FW-CADIS and MAGIC weight windows. The cost accounting of Appendix K gives the practical criterion: the surrogate pays off most where the dim tail of the solution is expensive for MC to converge. 33 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+What the training designs vary. Every held-out configuration is a fresh draw from the same design as the training set (Table 23), so all reported accuracy is interpolation within a parameterized family. The axes behave differently at the boundary. Coefficient ranges ( σt, c, g) and source parameters form a soft boundary: the solution depends smoothly on them, so a query just outside the sampled range is a mild extrapolation, which we do not evaluate. Geometry families form a hard boundary: within a family, geometry is parameterized and covered by the design, but a different machine, a new port, or a component absent from training is out of distribution. For EU-DEMO the family is a single fixed geometry. 
+
+Table 23: Each dataset varies coefficients, sources, or geometry within a fixed family ; held-out sets are fresh draws from the same design.                                                 
+
+> Dataset Varied per scene Held fixed Far-field radiance Environment map at infinity ( 1–4Gaussian lobes and 1–4angular boxes, intensities in [0 .1,10] ); piecewise-constant angular σt∈[0 .01 ,10] and c∈[0 .01 ,0.99] ;g∼Unif( −0.99 ,0.99)
+> Unit-ball geometry 3D fluence 2–5axis-aligned boxes with σt∈[0 .01 ,50] and c∈[0 .01 ,0.99] in a near-vacuum background;
+> 1–3point emitters with intensity in [1 ,20] , half with a Perlin angular profile;
+> g∼Unif( −0.95 ,0.95)
+> Cube [−1,1] 3, vacuum boundary Sph. tokamak All 20 axes of Table 8: radial build, D-shape shared by geometry and plasma source, H-mode density and temperature profiles, Shafranov shift, radial source offset Material compositions, tally mesh EU-DEMO The 8plasma-source axes of Table 9 Entire reactor geometry and materials
+
+Physical realism of the radiative-transfer designs. The radiative-transfer designs are broader than any single application; the 3D fluence design carries the high-dynamic-range case on the radiative-transfer side, reproducing the dynamic range of the spherical tokamak. Extinction, albedo, and phase-function ranges are the physically admissible ranges used in participating-media simulation and rendering; cloud albedo, for example, lies close to 1, inside our range. The spatially varying fields combine localized structures, multiple scales, and sharp interfaces rather than one empirical distribution. Table 24 shows that a synthetic 3D fluence reference spans about 10 orders of magnitude, as many as a spherical-tokamak reference and fewer than EU-DEMO (about 17 ), while far-field radiance spans only about 
+
+3. Far-field radiance is therefore not a high-dynamic-range stress test; we use it for the label-noise and allocation studies because it is the one setting where converged references for thousands of training scenes are affordable. 
+
+Table 24: 3D fluence and spherical-tokamak references span about 10 orders of magnitude, EU-DEMO about 17 , and far-field radiance about 3. Per scene, the span is log 10 of the reference maximum over its smallest positive value; “above ϵ” replaces that smallest value by the dataset’s log 10 floor ϵ when it is lower, which is the span the log 10 metrics see (their data range, Appendix F). Mean ± standard deviation over the held-out evaluation scenes, on the field as scored: far-field radiance on the 40 ×80 grid, the spherical tokamak per energy group (over the 350 scene–group pairs), and EU-DEMO only on cells where the reference is measured. Dataset Scenes Span ϵ Span above ϵ Exact zeros Far-field radiance 100 3.16 ± 1.27 10 −6 3.16 ± 1.27 0.0% 
+
+3D fluence 100 10 .48 ± 1.69 10 −10 8.85 ± 0.85 2.3% 
+
+Sph. tokamak 50 10 .16 ± 0.99 10 −10 8.21 ± 0.88 41 .6% 
+
+EU-DEMO 24 16 .97 ± 0.26 10 −17 10 .90 ± 0.04 0.0% 
+
+Measured data. Dense, full-field measurements are not available for either domain. No operating fusion power plant provides energy-resolved neutron fields under reactor conditions, and existing detectors give sparse readings with instrument-specific energy responses. Light-transport datasets provide images or sparse radiometry rather than full transport fields with the geometry, material, and illumination specifications needed for pointwise validation. Our evaluation is therefore simulation-based, as is standard in shielding and reactor design. 
+
+## M Backbone Comparison and Hyperparameter Search 
+
+FNO ranks first under both matched parameter count and matched search budget on the far-field radiance task with four-SPP labels. All checkpoints are evaluated on the 40 ×80 training grid against the same 100 -scene converged reference. 
+
+Matched parameter count. We resize eight backbone families to a 9.4–13 .3 million parameter band and train each family with PTNO + PRel L2 and log MSE for three seeds. The comparison includes FNO, SFNO [45], U-NO [46], CNO [47], U-Net [48], DeepONet [49], Transolver [50], and GNOT [51]. 34 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Table 25: The PTNO objective improves every backbone, and FNO ranks first at matched parameter count. Far-field radiance with four-SPP labels. Accuracy entries are log 10 SSIM on the 100 held-out scenes at 40 ×80 , mean ± sample standard deviation across three seeds, except GNOT with PRel L2 (one completed seed; two diverged). Latency is measured with the same single-sample inference benchmark for every family. The gain is the PTNO + PRel L2 SSIM minus the matched log-MSE SSIM.                                                                             
+
+> Backbone Params (M) Latency (ms) PTNO + PRel L2Log MSE Gain FNO 10.390 3.07 0.9220 ±0.0026 0.4733 ±0.0020 +0 .4487
+> SFNO 9.445 4.38 0.9076 ±0.0002 0.4691 ±0.0007 +0 .4385
+> U-NO 12.633 3.56 0.8498 ±0.0016 0.4525 ±0.0011 +0 .3973
+> U-Net 13.258 1.60 0.8328 ±0.0037 0.4338 ±0.0028 +0 .3990
+> CNO 12.477 3.73 0.7976 ±0.0027 0.4213 ±0.0022 +0 .3763
+> Transolver 11.206 10.54 0.4055 ±0.0058 0.2191 ±0.0032 +0 .1865
+> GNOT 10.940 15.37 0.3724 0.2538 ±0.0024 —DeepONet 12.064 0.49 0.2957 ±0.0058 0.1964 ±0.0032 +0 .0993
+
+The PTNO objective improves mean SSIM in all seven families with three completed seeds in both arms: gains are 
+
+0.3763 –0.4487 for the five grid-based families and 0.0993 –0.1865 for DeepONet and Transolver. GNOT has only one completed PRel L2 seed, so no matched three-seed gain is reported. The objective therefore transfers across backbones, while attainable accuracy remains backbone-limited. 
+
+Transolver and GNOT. Transolver and GNOT trail the grid-based operators under the shared training recipe on this task. Both were built for irregular meshes and general geometries, whereas this task maps fields on a regular 40 ×80 
+
+angular grid, where spectral and convolutional operators carry the matching inductive bias; we train both from the authors’ reference implementations. Their deficit is the same under log MSE, 0.2191 and 0.2538 against 0.4213 –0.4733 
+
+for the five grid-based families, so it is not caused by PRel L2. Transolver has a seed standard deviation of 0.0058 ,compared with at most 0.0037 for the grid-based families. Two of the three GNOT runs with PRel L2 diverge before the schedule ends; the sole completed seed scores 0.3724 and cannot establish seed stability. Neither family entered the matched search of Table 26, so their configurations are untuned. The comparison therefore ranks backbones for regular-grid transport fields under one training recipe and does not test these two architectures on the irregular meshes they target. 
+
+Matched search budget. Each of six families receives six 40 -epoch candidates. We promote the top two candidates per family to 200 epochs and retrain the selected configurations and evaluate their final checkpoints for three seeds. Candidate selection and promotion used these same evaluation scenes; an independent selection set was not available. Table 26 reports the stronger promoted configuration from each family. 
+
+Table 26: Under a matched search budget, FNO still ranks first. Far-field radiance with four-SPP labels. Every family receives the same candidate and promotion budget; the configuration gives the Fourier modes per axis, the channel width, and the number of layers. Entries are mean ± sample standard deviation across three seeds after 200 epochs, on the 100 held-out scenes at 40 ×80 .Backbone Selected configuration log 10 rel. L2 ↓ log 10 SSIM ↑
+
+FNO 10 modes, width 128 , 6 layers 0.0750 ± 0.0021 0.9277 ± 0.0042 
+
+SFNO 16 modes, width 128 , 6 layers 0.1100 ± 0.0003 0.9037 ± 0.0005 
+
+U-NO 16 modes, width 32 , 6 layers 0.1233 ± 0.0007 0.8482 ± 0.0017 
+
+U-Net width 96 , 4 layers 0.1326 ± 0.0015 0.8439 ± 0.0018 
+
+CNO width 64 , 5 layers 0.1395 ± 0.0007 0.8265 ± 0.0005 
+
+DeepONet branch 256 , trunk 128 , basis 128 0.5526 ± 0.0104 0.3229 ± 0.0062 
+
+The two comparisons produce the same ordering among their six shared families: FNO, SFNO, U-NO, U-Net, CNO, then DeepONet. Capacity explains little of the objective’s advantage: increasing the FNO from 2.77 million to 10 .39 
+
+million parameters raises SSIM from 0.9165 ± 0.0040 to 0.9220 ± 0.0026 , a gain of 0.0055 , against the matched FNO loss gain of 0.4487 in Table 25. 35 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## N Cross-Resolution Evaluation and Multi-Resolution Training 
+
+Single-resolution training supports native FNO inference on nearby meshes. On EU-DEMO, accuracy holds from 0.5×
+
+to 1× the training resolution and degrades moderately at 2×; on far-field radiance, a native forward at 2× outperforms low-resolution prediction followed by upsampling. 
+
+Far-field radiance. We train at 40 ×80 and evaluate one earlier single-seed checkpoint, trained on 128 -SPP labels, on 100 held-out scenes. At 80 ×160 , native inference reaches log 10 SSIM 0.931 , compared with 0.901 for block-replicating the 40 ×80 prediction. The native forward also lowers linear rel. L2 from 0.165 to 0.139 . The five-seed checkpoints of Table 2 reach log 10 SSIM 0.8969 ± 0.0030 at 120 ×240 , three times the training resolution per axis, against 0.9165 ± 0.0040 on the training grid. 
+
+EU-DEMO. We train at 140 ×73 ×146 and evaluate the five main-table seeds at 0.5×, 1×, and 2× resolution, scoring only cells where the reference is measured ( 42 .6% , 45 .4% , and 46 .6% of the mesh). log 10 SSIM is 0.7895 ± 0.0040 at 
+
+0.5×, 0.7923 ± 0.0016 at the training mesh, and 0.7181 ± 0.0016 at 2×; the supports differ slightly between grids. At 
+
+5× (700 ×365 ×730 , the reference’s native mesh, 49 .1% measured) log 10 rel. L2 stays at 0.0844 ± 0.0004 , while log 10 
+
+SSIM falls to 0.5441 ± 0.0006 : its 11 -cell window spans one fifth of the physical extent per axis that it spans at the training mesh, so the two SSIM values measure structure at different physical scales. 
+
+Table 27: Without retraining, accuracy holds on nearby meshes and degrades with larger resolution steps. Cross-resolution evaluation. The far-field block compares a native forward with block upsampling for one earlier single-seed checkpoint trained on 
+
+128 -SPP labels, not comparable to Table 2. EU-DEMO entries are mean ± sample standard deviation over the five main-table seeds on the 24 held-out configurations, scored only on cells where the reference is measured. Mesh and inference path rel. L2 ↓ log 10 rel. L2 ↓ log 10 SSIM ↑
+
+Far-field radiance 
+
+40 ×80 (training mesh) 0.120 0.056 0.952 
+
+80 ×160 (native forward) 0.139 0.069 0.931 80 ×160 (40 ×80 then upsample) 0.165 0.094 0.901 
+
+EU-DEMO 
+
+70 ×37 ×73 (0.5× native) 0.1203 ± 0.0088 0.0854 ± 0.0007 0.7895 ± 0.0040 140 ×73 ×146 (training mesh) 0.1085 ± 0.0068 0.0839 ± 0.0006 0.7923 ± 0.0016 
+
+280 ×146 ×292 (2× native) 0.1216 ± 0.0057 0.0836 ± 0.0005 0.7181 ± 0.0016 700 ×365 ×730 (5× native) 0.1259 ± 0.0058 0.0844 ± 0.0004 0.5441 ± 0.0006 
+
+Mixed-resolution training at a tenfold grid step. Adding 100 high-resolution training scenes reduces the active-voxel log MAE (the mean absolute log 10 error over voxels whose reference flux is above the floor) of a direct forward pass on the 700 ×550 ×800 native mesh from 5.36 to 2.36 . Linear rel. L2 remains near one, so the added data reduces the severity of the native-scale collapse without establishing tenfold resolution invariance. 
+
+Table 28: Adding a few high-resolution scenes reduces, but does not remove, the collapse of a direct forward pass at a tenfold grid step. Mixed-resolution diagnostic on an earlier EU-DEMO setup, one run per row. The baseline uses 50 ,000 scenes at 
+
+70 ×55 ×80 ; the mixed run adds 100 scenes at 350 ×275 ×400 . Native-direct metrics use three paired scenes, and low-resolution prediction followed by upsampling uses ten. Training corpus Train-grid rel. L2 Native-direct rel. L2 Active log MAE Lowres-up rel. L2
+
+Low mesh only 0.0173 1.0000 5.36 0.1627 
+
+Low + high meshes 0.0207 0.9998 2.36 0.1617 
+
+The mixed run reached epoch 16 of 20 under a six-hour limit. Its low-resolution accuracy matches the single-resolution baseline, and its direct native-scale prediction remains outside the training amplitude range. Nearby-mesh inference is reliable; a tenfold grid step requires an explicitly resolution-consistent representation. 36 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+## O Source Superposition, Tetrahedral Transport, and Label Validation 
+
+O.1 Source Superposition and Geometry Generalization 
+
+Fixed-geometry transport is linear in the source, so a nonlinear surrogate must be compared with source-superposition baselines. On EU-DEMO, a nonnegative rank-64 Green operator reaches log relative L2 0.0703 and log SSIM 0.7958 ,against 0.0840 and 0.7920 for the main-table PTNO recipe on the same three seeds. Both use final checkpoints, the same code, H200 hardware, labels, loss, and 50 ,000 updates; their source representations differ (a voxelized field versus eight parameters). The Green operator’s linear relative L2 is worse, 0.2529 against 0.1085 , and its linear PSNR is 28 .27 
+
+versus 33 .83 dB. Thus fixed-geometry DEMO does not establish that a nonlinear operator outperforms a source-linear model in every metric. A separate spherical-tokamak experiment trains from scratch on 51 ,200 configurations ( 1,600 geometries, 32 sources each, 10 5 histories per label). It evaluates 50 unseen geometries against 10 9-history references and 16 held-out sources on training geometries against 4 × 10 8-history references. With two seeds and final checkpoints, PTNO reaches log relative L2 0.0474 on unseen geometries, compared with 0.3160 for the strongest tested geometry-interpolation baseline, and 0.0570 on held-out sources, compared with 0.2974 for same-geometry nonnegative least-squares superposition. These are 6.7× and 5.2× lower errors, respectively, under the stated noisy-label budget. The superposition baseline combines only a few noisy training labels, whereas the learned operator pools information across the corpus. The advantage is consistent with cross-sample denoising under this label budget; it does not establish nonlinear source response within a fixed geometry. On seen geometries, superposition has higher linear PSNR ( 33 .98 versus 29 .93 dB). 
+
+Table 29: The spherical-tokamak surrogate improves log-space accuracy over noisy-label superposition. Six volume-weighted metrics, averaged over energy groups and scenes; PTNO is the mean of two final-checkpoint seeds. G denotes unseen geometries and S held-out sources on training geometries. This 51 ,200 -scene corpus is separate from the historical main-table experiment.                                      
+
+> Split Method Log rel. L2Log SSIM Log PSNR Rel. L2SSIM PSNR GPTNO .0474 .8550 29 .57 .2202 .9740 30 .68
+> GInterpolation .3160 .4312 12 .10 .3908 .9275 26 .34
+> SPTNO .0570 .8429 28 .32 .2581 .9680 29 .93
+> SNNLS superposition .2974 .4752 13 .20 .3324 .9616 33 .98
+
+Source-superposition augmentation is neutral within the two-seed spread on this corpus and was removed from the spherical-tokamak recipe. A geometry-conditioned rank-64 Green head, which remains linear in the source, improves log relative L2 by approximately 2% on unseen geometries and 5% on held-out sources against its matched L40S control, but increases linear relative L2 from 0.21 –0.25 to 0.62 –0.68 . It remains an experimental alternative and does not replace the main recipe. 
+
+Table 30: A learned source-linear Green operator improves log-space accuracy at a cost in linear-space error. Final-checkpoint means; three seeds for DEMO on H200, two for each spherical-tokamak split on L40S. Each Green row is compared only with its paired control. DEMO uses measured support and floor 10 −17 ; spherical tokamak uses floor 10 −10 .                                                   
+
+> Task Model Log rel. L2Log SSIM Log PSNR Rel. L2SSIM PSNR DEMO PTNO .0840 .7920 19 .78 .1085 .9834 33 .83
+> DEMO Green .0703 .7958 21 .32 .2529 .9900 28 .27
+> Sptok G PTNO .0473 .8551 29 .60 .2100 .9742 30 .89
+> Sptok G Green .0463 .8600 29 .94 .6212 .9642 25 .27
+> Sptok S PTNO .0570 .8428 28 .35 .2454 .9684 30 .15
+> Sptok S Green .0542 .8491 29 .14 .6832 .9563 24 .87
+
+O.2 EU-DEMO on an Unstructured Mesh 
+
+A tetrahedral extension predicts cell-average neutron flux on a fixed EU-DEMO mesh with 42 ,729 cells. OpenMC scores track-length flux directly on an unstructured MOAB mesh; dividing the cell-integrated tally by cell volume gives the training target. The model is a GINO with volume-integral encoders and decoders around a 24 ×8×32 latent FNO, width 16 , four layers, and modes (8 , 4, 8) . Its 13 inputs are one source-density field transformed by asinh( q/ 10 −7),eight source parameters, and the three cell coordinates plus cell volume in fixed length units. Training uses a softplus head of scale 10 −8 and PRel L2 with η = 10 −17 , batch size 2, learning rate 10 −3, and a fixed 20 -epoch, 10 5-update cosine schedule. Every reported tetrahedral model is its final checkpoint; no checkpoint is selected on a validation or reference set. 37 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Two training-label corpora each contain 10 4 source configurations: analog transport uses 5 × 10 4 histories per source, whereas weight-window transport uses 2 × 10 5. The reference contains 128 held-out sources, each pooling 16 
+
+independent runs of 3.6 × 10 7 histories ( 5.76 × 10 8 total). The weight-window-trained model has substantially higher log-space accuracy (Table 31), but the fourfold history difference means that this comparison does not isolate variance reduction at equal simulation budget. All six metrics use cell-volume weights; SSIM uses a physical neighborhood scale of 100 cm and the reference’s own data range.                                
+
+> Table 31: Weight-window labels improve the tetrahedral surrogate under the recorded, unequal history budgets. Per-seed values for seeds 42 /43 , averaged over 128 held-out sources; final checkpoints. Log-space metrics use floor 10 −20 .Metric Weight-window labels Analog labels
+> log 10 rel. L2↓0.0400 /0.0396 0.2976 /0.2982 log 10 SSIM ↑0.7750 /0.7780 0.4408 /0.4416 log 10 PSNR (dB) ↑26 .93 /27 .01 9.24 /9.22
+> Linear rel. L2↓0.2620 /0.2582 0.3075 /0.2872
+> Linear SSIM ↑0.9890 /0.9892 0.9881 /0.9889
+> Linear PSNR (dB) ↑30 .26 /30 .41 28 .90 /29 .57
+
+At the structured DEMO floor of 10 −17 , the same weight-window checkpoints reach log-space SSIM 0.8683 /0.8711 
+
+and relative L2 0.0230 /0.0228 . The floor materially changes the apparent accuracy, so results from different floors must not be compared as if they used one evaluation protocol. 
+
+O.3 FNG Shutdown-Dose Benchmark 
+
+An independent experimental check tests the neutron-transport, activation, and delayed-photon stages of our shutdown-dose label generator. We reproduce the first FNG shutdown-dose campaign using the openly archived geometry, source, irradiation history, and measurements of Peterson et al. [52]. This is a check of the Monte Carlo label pipeline, not a measurement-based evaluation of a trained neural operator. The calculation uses OpenMC’s cell-based rigorous two-step workflow with 65 activation cells, TENDL-2019 neutron data, an activation chain based on TENDL-2019/ENDF/B-VIII.0, and ENDF/B-VIII.0 photon data. Each neutron calculation and each cooling-time photon calculation uses 
+
+2 × 10 7 histories.                          
+
+> Table 32: The label pipeline reproduces the measured FNG dose rate within 20% at the five reference cooling times. C/E is calculated over measured dose rate. Uncertainties shown are photon Monte Carlo standard errors conditional on the sampled neutron reaction rates; they exclude neutron-sampling and measurement uncertainty. Cooling time (days) Measured dose rate ( μSv/h) C/E
+> 12.46 0.850 ±0.021 70.699 1.061 ±0.026 15 0.495 1.185 ±0.029 30 0.416 1.180 ±0.029 60 0.316 1.200 ±0.031
+
+The six nickel-foil 58 Ni (n, p ) reaction-rate ratios range from 0.97 to 1.12 ; the (n, 2n) ratios are lower, 0.76 –0.93 .A preregistered requirement to reproduce the archived calculation within 5% fails at 7–30 days, with differences of 
+
+14 –16% . Replaying the archived nuclide inventories through our photon stage reproduces its dose rates within 2.3% ; the remaining discrepancy is localized to short-lived activation products introduced by numerical roundoff in the archived inventory, which our reachable-subspace decay solve excludes. We report this deviation rather than counting the original replication threshold as met. The benchmark uses cell-based activation and an earlier nuclear-data registry, whereas the current production corpus uses mesh-based activation and updated steel compositions. It therefore does not establish the accuracy of the production mesh discretization or of a neural operator on the FNG geometry. 
+
+## P Radiative Transfer with Refractive and Reflective Interfaces 
+
+A fifth dataset adds glass, mirror, and matte objects to the 3D fluence task of Appendix E.2. Light that hits a glass object is bent into the geometric shadow behind it and partly reflected, a mirror folds the light field back on itself, and a matte object casts a soft shadow, so the target field is no longer a smooth function of the medium alone (Figure 15). The PTNO recipe still learns this task from labels traced with 64 Monte Carlo samples per voxel (SPP). We score a 38 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+model by the SSIM between the log 10 of its predicted 3D fluence volume and the log 10 of a high-SPP Monte Carlo reference, computed on the volume itself, not on rendered images. On a held-out test set of 224 scenes, scored only once after every design choice had been fixed, the final model reaches a log 10 SSIM of 0.961 . For scale, two independent Monte Carlo solutions of a different 224 -scene set from the same generator score 0.997 against each other; this gives an empirical scale for reference noise, rather than a strict upper bound on model accuracy. (a) comparison set, scene 7 3 emitters, 2 medium boxes, g = −0.10 no interface                                                                    
+
+> (b) validation set, scene 19 2 emitters, 4 medium boxes, g= +0 .11 box, n= 1 .81
+> (c) comparison set, scene 168 1 emitter, 4 medium boxes, g=−0.56 box, n= 2 .04; sphere, n= 2 .50
+> (d) validation set, scene 21 1 emitter, 3 medium boxes, g=−0.54 sphere, n= 1 .63; box, mirror; box, cm= 0 .38
+> (e) interface sampling ranges, half-width H= 1
+> objects 0 0.15 1 0.35 2 0.30 3 0.20
+> material dielectric 0.50 mirror 0.25 diffuse 0.25
+> shape sphere 0.50 box 0.50
+> geometry, in units of H
+> sphere radius
+> 0.12 0.50
+> 01
+> box half-extent
+> 0.10 0.50
+> 01
+> center, per axis
+> -0.60 0.60
+> -1 1
+> optics
+> n(dielectric)
+> 1.10 2.50
+> 12.6
+> cm(diffuse)
+> 0.20 0.90
+> 01
+> interior σt=σa= 0 .05, c= 0; separation ≥0.05 H; objects fit inside ±0.95 H
+> medium and emitters (3D fluence design)
+> medium: 2–5 boxes, σt∈[0 .01 ,50], c∈[0 .01 ,0.99], g∈[−0.95 ,0.95] emitters: 1–3 points, power [1 ,20], isotropic or Perlin angular profile
+
+Figure 15: The interface dataset adds dielectric, mirror, and matte objects to the 3D fluence scenes. (a–d) Four evaluation scenes rendered from their sampled scene parameters: the ±H domain as a wire cage, contrast boxes of the participating medium as haze, point emitters as bright spheres, dielectric objects as glass with the sampled refractive index n, the ideal mirror as polished metal, and the Lambertian object as matte clay whose value carries the albedo cm. Scene (a) has no interface and scores best of the 
+
+224 -scene stratified comparison set; (c) stacks a dielectric box and a dielectric sphere between the emitter and the far corner and scores worst; (d) carries all three materials at once. A dielectric bends the emitter’s light into the geometric shadow behind it and reflects part of it by Fresnel’s law, the mirror folds the field back onto itself, and the diffuse face casts a soft shadow, so the target field is no longer a smooth function of the medium alone. (e) The interface sampling ranges: the count and material of the objects are categorical, size, position, n, and cm are uniform on the bars shown against their natural full scale, object interiors are absorbing vacuum, and the medium and emitters follow the 3D fluence design. Renders: Blender Cycles; the medium haze is compressed for legibility and is not a radiometric picture. 
+
+P.1 Scenes, Labels, and Reference 
+
+Each scene is a 3D fluence scene (background σt and c with 2–5 contrast solids, 1–3 point emitters, one Henyey– Greenstein g) plus zero to three solid objects: spheres or axis-aligned boxes made of a dielectric with refractive index 
+
+n ∈ [1 .1, 2.5] , an ideal mirror, or a Lambertian (matte) surface with albedo cm ∈ [0 .2, 0.9] (Table 33). Objects are opaque to the medium: the participating medium exists only outside them, and their interiors are a weak absorber (absorption coefficient σa = 0 .05 , no scattering), because a lossless glass box traps most interior directions and its interior fluence has no converged value. At an interface a photon is reflected or transmitted with the polarized Fresnel probability and refracted by Snell’s law, including total internal reflection; mirrors reflect with unit probability, and matte surfaces absorb a fraction 1 − cm and re-emit the rest in a cosine-weighted direction. Labels come from the Monte Carlo collision estimator of Appendix E.2 extended with analytic ray–sphere and ray–box intersections; the target is the per-voxel track-length fluence (the summed path length of photons inside a voxel, an unbiased estimate of fluence) on a 64 3 grid, divided by voxel volume and by total emitted power. The estimator was checked against Geant4 [53, 54] optical photons on the same analytic scenes: the two codes share neither the estimator nor the interface code, their difference falls as N −0.45 over 2.5 × 10 5–2 × 10 6 Geant4 photons with no plateau, and seven physics components isolated one at a time agree to 0.04 –0.21% . Training uses the first 10 5 scenes of a 10 6-scene training set, each traced once at 64 SPP, that is, 64 photon paths per voxel of the 64 3 grid. Four held-out sets are used, all drawn from the same scene generator and disjoint from training and from each other: a 50 -scene set traced to 786 ,432 SPP for monitoring during training; a 224 -scene stratified comparison set (7 interface compositions × 32 
+
+39 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+Table 33: Each interface scene adds up to three dielectric, mirror, or matte spheres or boxes. The medium, emitters, and g
+
+follow the 3D fluence design of Table 23; H = 1 is the half-width of the cube. Realized values are counted over the 10 5 training scenes; the shape and center rows give the proposal. n spans water ( 1.33 ) to diamond ( 2.42 ).                                                                               
+
+> Quantity Distribution Range Note Number of objects categorical P(0 ,1,2,3) = (0 .15 ,0.35 ,0.30 ,0.20) realized (0 .152 ,0.351 ,0.298 ,0.199)
+> Shape uniform sphere 0.5/ box 0.5box faces are axis-aligned Sphere radius uniform [0 .12 ,0.50] H
+> Box half-extent (per axis) uniform [0 .10 ,0.50] H
+> Center (per axis) uniform [−0.6,0.6] Hmust fit inside ±0.95 H
+> Material categorical dielectric 0.50 / mirror 0.25 / matte 0.25 realized 0.499 /0.250 /0.251 of 154 ,412 objects Refractive index nuniform [1 .1,2.5] dielectric only; each 0.1-wide bin holds 6.9–7.3% of draws Matte albedo cmuniform [0 .2,0.9] matte only (mirror reflectivity is 1); each 0.05 -wide bin holds 6.9–7.4% of draws Interior fixed σt=σa= 0 .05 ,c= 0 no medium inside objects Separation constraint ≥0.05 Hobject–object and object–emitter
+
+scenes: no object, one matte, one mirror, one dielectric with n < 1.5, one with n ≥ 2.0, two dielectrics, three dielectrics) traced to 32 ,768 SPP, on which we rank the variants; and two further 224 -scene sets with the same compositions and SPP but fresh random seeds, a selection set that scores each candidate once and is used only to choose among the final candidates, and a test set that scores each model once, after that choice. The label ceiling is one independent Monte Carlo solution of the stratified comparison set scored against another with the same metrics: log 10 SSIM 0.9968 
+
+and log 10 rel. L2 0.0113 . The final model remains about 0.03 below this empirical ceiling; this gap is larger than the reference-noise scale, although it does not certify every small difference between models. 
+
+P.2 Inputs, Model, and Protocol 
+
+The operator sees 23 input channels, all computed from the scene parameters at the target resolution. The first 21 
+
+channels comprise one emission grid, nine degree-0–2 source spherical-harmonic fields, extinction and albedo, four surface fields (refractive index, mirror mask, matte albedo, and signed distance), four polynomial embeddings of g, and one asinh-encoded occluded direct-flux field. The remaining two tell the operator where the interfaces send light before any scattering: D0, the direct flux with every interface treated as opaque, and RK6, the extra energy delivered by up to six reflections or refractions; both are computed by a cheap deterministic ray tracer, encoded on a fixed log 10 scale, and also fed directly to the readout layer. Writing d = log 10 max( D0, 10 −8), the final two channels are (d + 4) /4
+
+and [log 10 max( D0 + RK6, 10 −8) − d]/4, without fitted normalization. These channels are inputs computed from the scene, not labels: they contain no volume scattering or diffuse-surface bounce. The backbone is a 3D FNO (modes 32 3,
+
+8 layers, width 64 for the final model) with a softplus head and PRel L2 with η = 2 × 10 −6 on the detached prediction. Every variant follows one protocol: the first 10 5 scenes seen once, 25 ,000 AdamW updates at batch 4 with cosine decay from 3 × 10 −3 to 10 −7, weight decay 10 −3, gradient clipping at 1, seeds 42 and 43 , and the checkpoint at the end of training with no validation-based selection. The longer runs repeat the same 10 5 scenes two or four times with the schedule stretched accordingly, so they are compared only with each other. Metrics follow Appendix F, with floor 
+
+ϵ = 3 .28 × 10 −7 in the log 10 metrics. Linear relative L2 is not reported for this dataset: for a point source the cell average in the voxel that contains the emitter scales as h−2 with the voxel width h and has no continuum limit, and that single voxel carries 98 –100% of every model’s squared error. We therefore rank in log 10 space and use the peak ratio, the predicted maximum over the reference maximum in each scene, to check that the source core is reproduced. 
+
+P.3 Results 
+
+PTNO learns this task from 64 -SPP labels to within 0.035 of the label ceiling in log 10 SSIM (Table 34). The final model (width 64 , 8 layers, 10 5 updates) scores log 10 SSIM 0.9647 /0.9652 on the stratified comparison set for seeds 
+
+42 /43 . We chose its seed-43 checkpoint on the selection set; on the test set, scored once after that choice, it reaches 
+
+log 10 SSIM 0.9611 (median over scenes 0.9762 , 5th percentile 0.8760 ), log 10 rel. L2 0.0720 , and log 10 PSNR 38 .1 dB. Across the seven interface compositions of the stratified comparison set, log 10 SSIM ranges from 0.954 /0.955 (two dielectrics) to 0.974 /0.974 (no object), and the worst single scene in every composition stays above 0.82 . The source core is reproduced: the median over scenes of the peak ratio is 1.00 /1.04 . The remaining error sits in the dim regions behind glass objects, where the model over-predicts by 0.05 –0.07 orders of magnitude at the median. Training in the physical space matters here as on the other four datasets. With everything else fixed (same inputs, corpus, schedule, and seeds, at the 25 ,000 -update budget), replacing PTNO’s softplus head and PRel L2 with a log 10 output trained by MSE lowers log 10 SSIM from 0.9503 /0.9490 to 0.9391 /0.9364 . Table 35 repeats this comparison at the final model’s budget of 10 5 updates, again changing only the output head and the loss. The log 10 -output MSE model 40 PTNO : Neural Operators from Noisy Monte Carlo Labels A P REPRINT 
+
+scores 0.018 /0.019 below PTNO in log 10 SSIM on the stratified comparison set and 0.017 /0.018 below on the test set, and an identity head trained with linear L2 collapses to a near-zero field. In the linear source core the log 10 -output model is closer to the reference than PTNO: its mean peak ratio is 0.985 /1.016 against 1.799 /1.627 , and its core error is lower. These means keep every scene, and the PTNO seed-42 core error of 1.155 is carried by one three-dielectric scene (median over scenes 0.068 ); the two seeds do not settle whether PTNO systematically overshoots the peak. Neither component works alone at this budget. With PRel L2 but an identity head the model collapses to a near-zero field like the linear-L2 model, and with a softplus head but a per-sample relative L2 loss it outputs, in every scene, a constant at the head’s lower bound. 
+
+Table 34: PTNO reaches within 0.035 of the label ceiling on the interface dataset. log 10 metrics, mean over the 224 scenes of the stratified comparison set, for seeds 42 /43 with end-of-training checkpoints. The selection-set column scores each model once on a separate 224 -scene held-out set (the 25 ,000 -update rows on an earlier, identically generated selection set). Peak ratio is the median over scenes of the predicted over the reference maximum. The label ceiling scores one independent Monte Carlo solution of the stratified comparison set against another. The last two rows share one input construction, corpus, and schedule at 25 ,000 updates and differ only in the output head and loss. Model log 10 SSIM ↑ log 10 rel. L2 ↓ Selection-set log 10 SSIM ↑ Peak ratio PTNO, final ( 10 5 updates, width 64 ) 0.9647 / 0.9652 0.0699 / 0.0682 0.9613 / 0.9624 1.00 / 1.04 
+
+Label ceiling (second MC solution) 0.9968 0.0113 1.00 
+
+PTNO (softplus + PRel L2), 25 ,000 
+
+updates 
+
+0.9503 / 0.9490 0.0928 / 0.0942 0.9479 / 0.9471 1.47 / 1.36 
+
+NO, log 10 output + MSE, 25 ,000 
+
+updates 
+
+0.9391 / 0.9364 
+
+Table 35: At equal budget, the softplus head with PRel L2 outperforms plain losses on the interface dataset. Every row uses the final model’s construction, corpus, schedule, and 10 5 updates and changes only the output head and loss; seeds 42 /43 , end-of-training checkpoints, means over 224 scenes. The PTNO row rescores the final model of Table 34 with the evaluator used for the other rows (differences below 10 −4). Core rel. L2 is the linear relative L2 with each emitter voxel and its 26 neighbors removed; peak ratio is the mean over scenes of the predicted over the reference maximum.                                                                                                                     
+
+> Stratified comparison set Test set Linear, comparison set Output head + loss log 10 SSIM ↑log 10 rel. L2↓log 10 SSIM ↑log 10 rel. L2↓Core rel. L2↓Peak ratio PTNO (softplus + PRel L2)0.9647 /0.9652 0.0699 /0.0682 0.9598 /0.9611 0.0735 /0.0720 1.155 /0.086 1.799 /1.627
+> NO, log 10 output + MSE 0.9467 /0.9462 0.1289 /0.1289 0.9430 /0.9430 0.1286 /0.1287 0.078 /0.084 0.985 /1.016
+> NO, identity head + linear L20.2251 /0.2354 0.8929 /0.8957 0.2101 /0.2198 0.9458 /0.9502 0.964 /0.962 0.001 /0.001
+> Identity head + PRel L20.2919 /0.2726 0.7056 /0.7952 0.2653 /0.2454 0.7203 /0.8271 0.950 /0.950 0.001 /0.001
+> Softplus + per-sample rel. L20.1620 /0.1620 3.6552 /3.6552 0.1658 /0.1658 3.7943 /3.7943 1.000 /1.000 0.000 /0.000
+
+P.4 Limitations 
+
+All numbers in this section are two seeds of one from-scratch recipe with end-of-training checkpoints, not the five seeds of Table 2. The loss comparison of Table 34 was run at the 25 ,000 -update budget; Table 35 repeats it at 10 5
+
+updates. The training corpus is fixed at 10 5 scenes because the two interface input channels are precomputed and stored for each training scene, so the dim-region bias reported here is the current state, not a floor. Linear relative L2 and cross-resolution evaluation are not reported, because the cell average in the voxel that contains a point emitter scales as 
+
+h−2 and has no continuum limit. The estimator and Geant4 share the same simplification of total internal reflection, so their agreement does not test that approximation. 41

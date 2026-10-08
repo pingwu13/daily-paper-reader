@@ -1,0 +1,583 @@
+Title: Physics-Informed Self-Supervised Learning for Joint Wire Calibration and Interaction Position Reconstruction in Multi-Wire Parallel Plate Avalanche Counters
+
+URL Source: https://arxiv.org/pdf/2609.28604v1
+
+Published Time: Fri, 25 Sep 2026 00:06:37 GMT
+
+Number of Pages: 24
+
+Markdown Content:
+# Physics-Informed Self-Supervised Learning for Joint Wire Calibration and Interaction Position Reconstruction in Multi-Wire Parallel Plate Avalanche Counters 
+
+## Antoine Lemasson  1 and Maurycy Rejmund  1
+
+1GANIL, CEA/DRF - CNRS/IN2P3, Bd Henri Becquerel, BP 55027, F-14076 Caen Cedex 5, France. Contributing authors: lemasson@ganil.fr; mrejmund@ganil.fr; 
+
+Abstract 
+
+Scientific instruments require accurate calibration to convert detector signals into reliable physical observables. Conventional calibration procedures typically rely on dedicated calibration measurements, analytical response models, or labelled reference data, limiting their ability to adapt to changing operating conditions and detector aging. We present a physics-informed self-supervised learning framework that jointly performs wire calibration and interaction position reconstruction in Multi-Wire Parallel Plate Avalanche Counters (MWPPACs) without requiring labelled position measurements or dedicated calibration runs. The proposed method for-mulates detector calibration as a latent optimization problem in which global wire gains and event-wise interaction positions are estimated simultaneously using supervision derived exclusively from detector geometry and charge-energy consistency constraints. A detector-independent neural network reconstructs sub-wire interaction positions from local charge distributions, eliminating the need to assume analytical induction profiles by learning the detector response directly from experimental data. The resulting end-to-end differentiable frame-work enables continuous detector self-calibration while improving the uniformity and accuracy of position reconstruction. Experimental evaluation on the entrance MWPPAC tracking detectors of the VAMOS++ magnetic spectrometer demon-strates stable convergence, improved spatial homogeneity, and enhanced position resolution. Beyond the specific detector studied, the proposed methodology establishes a general framework for physics-informed self-supervised calibration of scientific 
+
+1arXiv:2609.28604v1 [cs.LG] 23 Sep 2026 instruments and represents a significant step toward autonomous intelligent instrumentation capable of continuous adaptation during operation. In this paradigm, detector calibration is no longer a prerequisite for an experiment but an integral part of the measurement process itself.  
+
+> Keywords: Self-supervised learning, Physics-informed machine learning, Scientific instrument calibration, Latent-variable reconstruction, Detector response modeling, Intelligent instrumentation
+
+# 1 Introduction 
+
+Scientific instruments rely on accurate calibration to convert raw sensor responses into physically meaningful observables. Traditionally, detector calibration is per-formed through dedicated calibration measurements, analytical parameter estimation, or supervised regression using labelled reference data. Although these approaches have proven effective for many instrumentation systems, they present important practical limitations. Calibration procedures are often experiment specific, require interruptions of normal operation, depend on dedicated reference measurements, and may become invalid as detector characteristics evolve due to changes in operating conditions, electronic response, mechanical deformation, or detector aging. As a conse-quence, maintaining optimal detector performance throughout extended experimental campaigns remains a significant challenge. Recent advances in machine learning have enabled data-driven approaches to sci-entific instrumentation, allowing complex nonlinear detector responses to be modeled directly from experimental data. Most existing methods, however, remain funda-mentally supervised and therefore depend on the availability of accurately labelled calibration data. For many scientific instruments, obtaining such labels is difficult, expensive, or even impossible. This has motivated increasing interest in self-supervised learning, where the supervisory signal is derived from intrinsic physical relationships rather than externally provided annotations. In our recent work (Rejmund and Lemasson (2026)), we introduced a general framework for the self-supervised calibration of scientific instruments using physical consistency constraints. Instead of relying on labelled calibration samples, unknown detector calibration parameters were optimized jointly with the desired physical observables by minimizing objective functions derived exclusively from known phys-ical laws. The resulting formulation naturally integrates domain knowledge into the learning process while enabling continuous calibration during normal detector operation. In the present work, we extend this paradigm to one of the most challenging subsys-tems of the VAMOS++ magnetic spectrometer (Pullanhiotan et al. (2008); Rejmund et al. (2011)), namely the Dual Position Sensitive MWPPAC tracking detector (Van-debrouck et al. (2016)). Unlike conventional calibration procedures, which typically estimate detector gains independently from position reconstruction and often assume an analytical shape for the induced charge distribution, the proposed framework treats 2both problems simultaneously. Wire calibration and event-wise interaction position reconstruction are formulated as a single self-supervised optimization problem in which neither the wire gains nor the interaction positions are directly observed. Instead, both quantities are inferred jointly by minimizing losses derived from detector geometry and charge-energy consistency. A key feature of the proposed approach is the separation between global and local latent variables. Wire calibration coefficients represent global detector parameters that are shared by all events, whereas interaction positions constitute event-specific latent variables. These two sets of unknown quantities are coupled through differentiable physical constraints, allowing both detector calibration and position reconstruction to be optimized simultaneously using gradient-based learning without requiring labelled position measurements or dedicated calibration runs. Another important aspect of the proposed framework is that the position recon-struction network is independent of detector geometry. Instead of learning absolute detector coordinates, the network estimates only the sub-wire interaction offset from the calibrated charge distribution observed on a small neighborhood of adjacent wires. Consequently, the learned mapping depends solely on the local induction profile and can therefore be transferred to detectors with different dimensions or numbers of sensing wires. Moreover, no analytical assumption regarding the induced charge dis-tribution is required, allowing the underlying detector induction profile to emerge directly from experimental data without prescribing any analytical functional form. The proposed methodology provides several practical advantages. It enables con-tinuous detector self-calibration during normal operation, eliminates the need for dedicated calibration measurements, avoids assumptions regarding analytical charge distributions, and naturally adapts to slow detector evolution arising from ageing, elec-tronic drifts, or changing experimental conditions. Although demonstrated here using the MWPPAC tracking detectors of VAMOS++, the proposed framework is appli-cable to a broad class of position-sensitive detectors whose operation is governed by known physical consistency relations. The principal contributions of this work are summarized as follows: 
+
+• formulation of MWPPAC wire calibration and interaction position reconstruction as a unified self-supervised latent optimization problem; 
+
+• development of a physics-informed learning framework that jointly estimates global wire calibration coefficients and event-wise interaction positions; 
+
+• introduction of a detector-independent position reconstruction network that learns the local induction profile directly from experimental data without assuming an analytical charge distribution; 
+
+• demonstration that detector geometry and charge-energy consistency provide sufficient supervisory information to achieve accurate calibration and position reconstruction without labelled data. 
+
+# 2 Related Work 
+
+Machine learning has become an increasingly important tool for scientific instrumen-tation, enabling nonlinear detector responses to be reconstructed with significantly 3higher accuracy than conventional analytical methods. Within nuclear physics, neu-ral networks have been successfully employed for particle identification, trajectory reconstruction, detector calibration, signal denoising, and event classification. For the VAMOS++ magnetic spectrometer, deep neural networks have previously been applied to multidimensional trajectory reconstruction, substantially improving the determination of particle trajectories within the spectrometer (Rejmund and Lemasson (2025b)). Subsequent work introduced fractionally labelled learning for the simultaneous determination of ionic charge states and atomic numbers from ionization chamber signals, demonstrating that machine learning can efficiently exploit com-plex correlations present in detector responses while reducing the dependence on fully labelled experimental data (Rejmund and Lemasson (2025a)). More recently, self-supervised learning has emerged as an attractive alternative for scientific applications where labelled calibration data are unavailable. Instead of rely-ing on externally provided targets, these methods derive supervision from physical laws, conservation principles, or internal consistency constraints inherent to the mea-surement process (Rejmund and Lemasson (2026)). Such approaches belong to the broader field of scientific machine learning, where physical knowledge is incorporated directly into optimization. The present work builds upon our recently proposed framework for self-supervised calibration of scientific instruments using physical consistency constraints. While the previous formulation addressed the calibration of ionization chamber responses for ionic charge-state reconstruction, the problem considered here is fundamentally different. The unknown detector calibration now consists of individual wire gains, whereas the desired observables correspond to interaction positions that are themselves unknown. Consequently, calibration and reconstruction become mutually dependent and must be optimized simultaneously. Existing position reconstruction methods for multi-wire detectors generally assume a predefined analytical model of the induced charge distribution, such as Gaussian or related parametric profiles, before estimating the interaction position through analyti-cal fitting. The validity of these assumptions depends on detector geometry, operating conditions, and electronic response, and may degrade over time. In contrast, the pro-posed method makes no explicit assumption regarding the functional form of the induction profile. Instead, the relationship between neighboring wire charges and sub-wire interaction position is learned directly from experimental observations while remaining constrained by detector geometry and charge-energy consistency. To the best of our knowledge, this is the first self-supervised framework that jointly optimizes wire calibration and interaction position reconstruction in MWPPAC track-ing detectors using only physically derived consistency constraints, without requiring labelled interaction positions or dedicated calibration data. 
+
+# 3 Physics-Informed Self-Supervised Formulation 
+
+The objective of the proposed framework is to simultaneously estimate the calibra-tion of individual MWPPAC sensing wires and reconstruct the interaction position 4of every detected particle without requiring labelled position measurements or dedi-cated calibration data. Unlike conventional supervised learning, neither the calibration coefficients nor the interaction positions are known during training. Both quantities therefore constitute latent variables that must be inferred jointly from the measured detector responses under physically motivated consistency constraints. Throughout this work, the dual MWPPAC detector is regarded as a redundant measurement system. Each detector independently measures the horizontal and ver-tical interaction coordinates of the same charged particle while the known detector geometry provides deterministic relationships between the corresponding interaction positions. These geometric relationships, together with charge-energy consistency constraints, provide the supervisory signal required for self-supervised optimization. zxTarget 
+
+X C
+
+> 1
+
+X P
+
+> 1
+
+X C
+
+> 2
+
+X P
+
+> 2
+
+θ                         
+
+> XC: calculated XP: projected
+> 
+> XP
+> 1=XC
+> 2
+> D1
+> D2
+> XP
+> 2=XC
+> 1
+> D2
+> D1
+> {∆X1=XP
+> 1−XC
+> 1
+> ∆X2=XP
+> 2−XC
+> 2
+
+D1
+
+D2
+
+wire # 
+
+QX 1 (d) 
+
+X C
+
+> 1
+
+Plane 1: ˆQX 1
+
+wire # 
+
+QX 2 (e) 
+
+X C
+
+> 2
+
+Plane 2: ˆQX 2
+
+∆X1
+
+(a) 
+
+00.5 10 -0.5 0 0.5 1
+
+σ = 0.16 
+
+σ = 0.18 
+
+σ = 0.19 ∆X2
+
+(b) 
+
+00.5 10 -0.5 0 0.5 1
+
+σ = 0.27 
+
+σ = 0.30 
+
+σ = 0.32 
+
+Xtarget 
+
+(c) 
+
+00.5 10 -0.5 0 0.5 1
+
+σ = 0.40 
+
+σ = 0.44 
+
+σ = 0.48 
+
+Fig. 1 Detector Geometry: A particle emitted from the target traverses the two position-sensitive MWPC planes at distances D1 and D2. For each plane, the interaction position XCk is determined from the charge distribution ˆQk as illustrated panels (d) and (f). The geometrically projected interaction position XPk is derived from the interaction position on the complementary plane. The residuals ∆Xk = XPk − XCk , which ideally should be zero, contribute to the training target. The right-side insets depict the simulated distributions of residuals ∆ X1 (a) and ∆ X2 (b) and the reconstructed distribution of the beam on the target Xtarget (c), assuming a true beam width σXbeam = 0 .40 mm under different conditions: (black) detector resolution σXdet = 0 mm, (red) σXdet = 0 .06 mm, and (blue) σXdet = 0 .09 mm. The resulting widths ( σ) are indicated in mm. 
+
+53.1 Detector Geometry 
+
+The tracking detector consists of two position-sensitive MWPPAC detectors located upstream of the VAMOS++ magnetic spectrometer. Each detector independently measures the horizontal ( X) and vertical ( Y ) interaction coordinates together with the timing information required for trajectory reconstruction. The detector geometry is depicted in Figure 1. The first detector is located at a distance D1 from the reaction target, whereas the second detector is positioned at distance D2. Assuming that the outgoing reaction products originate from the target region and propagate along straight trajectories over the distance between both MWPPAC detectors, the interaction position measured on one detector uniquely predicts the corresponding interaction position on the other detector. Denoting the reconstructed interaction positions by XC 
+
+> 1
+
+, XC 
+
+> 2
+
+, Y C 
+
+> 1
+
+, and Y C 
+
+> 2
+
+, the corresponding predicted positions are 
+
+XP 
+
+> 2
+
+= XC
+
+> 1
+
+D2
+
+D1
+
+, (1) 
+
+XP 
+
+> 1
+
+= XC
+
+> 2
+
+D1
+
+D2
+
+, (2) with analogous expressions for the vertical coordinate. Perfect detector calibration and position reconstruction imply that the predicted and reconstructed interaction positions coincide. Therefore, the geometric residuals ∆X1 = XP 
+
+> 1
+
+− XC 
+
+> 1
+
+, (3) ∆X2 = XP 
+
+> 2
+
+− XC 
+
+> 2
+
+, (4) and similarly ∆ Y1 and ∆ Y2, should ideally vanish for every event. 
+
+## 3.2 Latent Variables 
+
+The proposed framework jointly estimates two fundamentally different categories of unknown quantities. The first category comprises the calibration coefficients of every sensing wire. These coefficients represent global detector parameters that remain constant through-out a given calibration period and are shared by all recorded events. Each detector plane possesses its own independent calibration vector owing to differences in detec-tor construction, electronic response, operating voltages, mechanical tolerances, and detector aging. No assumptions regarding spatial smoothness or correlations between neighboring wires are imposed, allowing every sensing wire to evolve independently. The second category consists of the interaction positions of individual particles. Unlike the calibration coefficients, interaction positions are event-specific latent vari-ables that differ for every detected particle. The optimization problem therefore simultaneously involves global detector parameters shared by the entire dataset and local event parameters unique to every observation. 6The interaction position within a detector plane is represented as 
+
+XCk = nmax  
+
+> Xk
+
++ δx k, (5) where nmax  
+
+> Xk
+
+denotes the wire collecting the maximum induced charge and δx k rep-resents the corresponding sub-wire interaction offset. An analogous representation is adopted for the vertical detector planes. Only the local neighborhood of sensing wires surrounding nmax  
+
+> Xk
+
+is used for posi-tion reconstruction. Consequently, the estimation of δx k depends exclusively on the local charge distribution and remains independent of detector dimensions or absolute interaction position. 
+
+## 3.3 Physical Consistency Constraints 
+
+Since neither detector calibration nor interaction positions are directly observed, the optimization is driven entirely by physical consistency constraints. The first constraint originates from detector geometry. Because both MWPPAC detectors observe the same particle trajectory, the reconstructed interaction positions must satisfy the geometric relationships defined by Eqs. 1 and 2. The second constraint exploits the proportionality between the total induced charge collected by each detector plane and the corresponding energy loss measured in the ionization chamber. For every detector plane, the calibrated wire charges satisfy 
+
+X
+
+> i
+
+Qcal  
+
+> i
+
+= f E IC , (6) where EIC denotes the ionization chamber segment energy signal and f is a fixed scaling coefficient selected such that the resulting wire calibration coefficients remain within a prescribed dynamic range. Since interaction position depends only on the relative calibration of neighboring wires, the absolute value of f is not physically relevant. Together, detector geometry and charge-energy consistency provide sufficient supervisory information to jointly estimate detector calibration and interaction positions without requiring labelled experimental data. 
+
+## 3.4 Joint Optimization Problem 
+
+The objective of the proposed framework is to identify the detector calibration param-eters and event-wise interaction positions that simultaneously satisfy all physical consistency constraints. Formally, let Θ = {C X1 , CY1 , CX2 , CY2 , P} (7) denote the complete set of unknown latent variables, where C represents the calibration vectors of the individual detector planes and P denotes the mapping that reconstructs sub-wire interaction positions from locally calibrated charge distributions. 7The optimization problem can then be expressed as Θ⋆ = arg min  
+
+> Θ
+
+L(Θ) , (8) where the objective function L is constructed exclusively from physics-derived consis-tency constraints. No labelled interaction positions, reference trajectories, or externally measured calibration coefficients are required during optimization. In the following section, the proposed neural architecture is introduced as a differentiable parameterization of the latent variables, enabling efficient end-to-end optimization using standard gradient-based learning algorithms. 
+
+# 4 Joint Neural Parameterization 
+
+The optimization problem formulated in the previous section involves two distinct cat-egories of latent variables: global detector calibration parameters shared by all events and local interaction positions that are estimated independently for every detected particle. To enable efficient gradient-based optimization, both categories are param-eterized by differentiable neural networks and optimized jointly in an end-to-end fashion. The proposed framework consists of two types of neural models. Four indepen-dent calibration subnetworks estimate the gain coefficients of the individual detector planes, whereas a single shared position reconstruction network estimates the sub-wire interaction position from locally calibrated charge distributions. The complete architecture is illustrated in Fig. 2. 
+
+## 4.1 Calibration Networks 
+
+Each detector plane possesses an independent calibration model responsible for esti-mating the gain coefficients of all sensing wires within that plane. Separate models are employed because every detector plane constitutes an independent physical system with its own electronic response, operating voltage, mechanical tolerances, and aging characteristics. Accordingly, no assumptions regarding shared calibration parameters are imposed between different detector planes. For a detector plane containing M sensing wires, the corresponding calibration network predicts the complete calibration vector 
+
+C = ( c1, c 2, . . . , c M ), (9) where ci denotes the multiplicative gain correction associated with the i-th sensing wire. Unlike conventional neural networks, the calibration coefficients represent global detector properties rather than event-dependent quantities. Consequently, the network output should remain independent of the measured signals from individual events. To preserve compatibility with standard deep-learning frameworks while allowing the calibration coefficients to be optimized by back-propagation, the network receives a 8Raw Charges 
+
+(QX1 , Q X2 , Q Y1 , Q Y2 )
+
+Calibration Networks 
+
+CX1
+
+Ar: 1 × 1 + 39 
+
+CY1
+
+Ar: 1 × 1 + 64 
+
+CX2
+
+Ar: 1 × 1 + 60 
+
+CY2
+
+Ar: 1 × 1 + 92 
+
+Calibrated Charges 
+
+(Qcal 
+
+X1 , Q cal 
+
+X2 , Q cal 
+
+Y1 , Q cal 
+
+Y2 )
+
+Shared Position Network P
+
+Ar: 2 × 16 + 1 
+
+Individual Positions 
+
+(XC1 , X C2 , Y C1 , Y C2 )
+
+Residuals 
+
+(∆ X1, ∆X2, ∆Y1, ∆Y2)
+
+Loss 
+
+L = Lgeom + Lcharge 
+
+Back Propagation 
+
+Calibration Networks ( CX1 , CX2 , CY1 , CY2 )Position Network ( P)Fig. 2 Network Architecture: A schematic representation of the network architecture utilized in the current work. The architecture of each neural network sub-model is presented in the following format: Ar: Nl × Nu + Nou comprising Nl layers and Nu units (neurons) per layer, followed by Nou 
+
+output units. 
+
+9dummy scalar input sampled from a uniform distribution, 
+
+x ∼ U (0 , 1000) . (10) The input carries no physical information and serves exclusively to instantiate a differentiable computational graph. Because the desired outputs are constant detector parameters, the calibration network naturally converges towards an input-independent mapping whose outputs represent the optimized wire gain coefficients. Finally, the network outputs are mapped through a sigmoid activation and linearly rescaled to the admissible calibration interval 
+
+ci ∈ [cmin , c max ], (11) where in the present work 
+
+cmin = 0 .5, cmax = 2 .0.
+
+The calibrated wire charges are therefore obtained as 
+
+Qcal  
+
+> i
+
+= ciQi. (12) Since detector pedestals are determined independently during the standard elec-tronic calibration procedure, only multiplicative gain corrections are estimated by the proposed framework. 
+
+## 4.2 Universal Position Reconstruction Network 
+
+In contrast to the calibration networks, the position reconstruction model operates on an event-by-event basis. A single neural network is shared by all detector planes, allowing the learned mapping to remain independent of detector dimensions, wire numbering, and absolute interaction position. For every detected event, the sensing wire collecting the largest calibrated charge is identified. A local neighborhood containing N adjacent sensing wires centered on this maximum is then extracted, ˆQ = ( Q−k, . . . , Q 0, . . . , Q +k), (13) where 
+
+N = 2 k + 1 .
+
+Only odd values of N are considered to preserve symmetry around the central wire. Throughout this work, values ranging from N = 3 to N = 11 were investigated. The position network receives only the locally calibrated charge vector ˆQ as input. Neither detector identity, wire number, nor absolute detector coordinates are provided. Instead, the network estimates the sub-wire interaction offset 
+
+δx ∈ [−2.0, 2.0] ,
+
+10 which is subsequently combined with the index of the maximum-charge wire (see Eq. (5)), 
+
+XC = nmax + δx. (14) An analogous procedure is performed independently for the vertical detector planes. Because the network observes only local charge distributions, it effectively learns the relationship between the induced charge profile and the corresponding sub-wire interaction position. Consequently, no analytical assumptions regarding the functional form of the induction profile are required. Instead, the induction profile is learned directly from experimental data during self-supervised optimization. Moreover, since the mapping depends exclusively on local charge distributions, the learned model can be directly transferred to detectors possessing different numbers of sensing wires or different active areas without modification of the network architecture. 
+
+## 4.3 Event Processing Pipeline 
+
+For every recorded event, the four detector planes are processed independently by their respective calibration subnetworks. The calibrated charge distributions are sub-sequently used to extract the local wire neighborhoods centered on the maximum induced charge. Each extracted neighborhood is passed through the shared position reconstruction network, producing the corresponding sub-wire interaction offsets. These offsets are combined with the indices of the maximum-charge wires to obtain the reconstructed interaction positions for all detector planes. Finally, the reconstructed interaction positions and calibrated charge sums are combined through the physical consistency constraints introduced in the previous section to evaluate the self-supervised objective function. 
+
+## 4.4 End-to-End Optimization 
+
+The proposed framework is optimized jointly using standard back-propagation. Gradients originating from the physics-informed objective function propagate simulta-neously through the position reconstruction network and the calibration subnetworks. An important consequence of this joint optimization is the mutual coupling between detector calibration and position reconstruction. Improved wire calibration produces more accurate local charge distributions, which in turn facilitate more pre-cise interaction position estimates. Conversely, improved position reconstruction yields stronger geometric consistency, providing more informative supervisory signals for cal-ibration. Both components therefore evolve simultaneously throughout training until a globally consistent solution satisfying the physical constraints is obtained. Unlike conventional sequential calibration procedures, no intermediate calibration stages or iterative alternation between calibration and position reconstruction are required. Instead, the complete detector model is optimized end-to-end within a single differentiable learning framework. 11 5 Physics-Informed Objective Function 
+
+The proposed framework is trained exclusively through physically derived consistency constraints. No labelled interaction positions, calibration coefficients, or reference tra-jectories are required. Instead, supervision emerges from the requirement that the reconstructed interaction positions and calibrated charge distributions simultaneously satisfy the known physical relationships governing detector operation. The objective function consists of two complementary components. The first enforces geometric consistency between the interaction positions reconstructed by the two MWPPAC detectors, whereas the second constrains the calibrated charge distri-butions through their proportionality to the energy loss measured in the ionization chamber. 
+
+## 5.1 Geometric Consistency Loss 
+
+For a given event, the reconstructed interaction positions XC 
+
+> 1
+
+, XC 
+
+> 2
+
+, Y C 
+
+> 1
+
+, and Y C 
+
+> 2
+
+must satisfy the geometric relationships imposed by the detector layout. The predicted interaction positions are obtained using Eqs. (1) and (2). The geometric residuals, using Eqs. (3) and (4), are therefore ∆X1 = XP 
+
+> 1
+
+− XC 
+
+> 1
+
+, (15) ∆X2 = XP 
+
+> 2
+
+− XC 
+
+> 2
+
+, (16) ∆Y1 = Y P 
+
+> 1
+
+− Y C 
+
+> 1
+
+, (17) ∆Y2 = Y P 
+
+> 2
+
+− Y C 
+
+> 2
+
+. (18) The geometric consistency loss is defined as 
+
+LXgeom = 12
+
+ ∆X21 + ∆ X22
+
+ , (19) and 
+
+LYgeom = 12
+
+ ∆Y 21 + ∆ Y 22
+
+ , (20) since the vertical and horizontal planes are independent. Minimizing this term encourages the reconstructed interaction positions to remain compatible with the known detector geometry and the assumption that the particle trajectory originates from the target region. 
+
+## 5.2 Charge-Energy Consistency Loss 
+
+Position reconstruction depends only on the relative calibration of neighboring wires. Consequently, geometric consistency alone cannot uniquely determine the overall normalization of the calibration coefficients. To remove this ambiguity, an additional charge-energy consistency constraint is introduced. For each detector plane, the sum of calibrated wire charges is required to 12 be proportional to the energy deposited in one segment of the ionization chamber, 
+
+X
+
+> i
+
+Qcal  
+
+> i
+
+= f E IC , (21) where EIC denotes the ionization chamber signal and f is a fixed scaling factor. The corresponding charge-energy consistency loss is 
+
+LXcharge = 12
+
+X
+
+> k
+
+X
+
+> i
+
+Qcal  
+
+> Xk,i
+
+− fXk EIC 
+
+!2
+
+, (22) and 
+
+LYcharge = 12
+
+X
+
+> k
+
+X
+
+> i
+
+Qcal  
+
+> Yk,i
+
+− fYk EIC 
+
+!2
+
+, (23) where the index k runs over the two detectors. The scaling factors fXk and fYk are selected such that the resulting calibration coefficients remain within the prescribed interval [0 .5, 2.0]. Since only relative wire calibration influences position reconstruction, the precise numerical values of fXk and 
+
+fYk are otherwise not physically significant. 
+
+## 5.3 Joint Self-Supervised Objective 
+
+The complete optimization objective is defined as 
+
+LX = λXgeom LXgeom + λXcharge LXcharge , (24) and 
+
+LY = λYgeom LYgeom + λYcharge LYcharge , (25) where λgeom and λcharge control the relative importance of the two physical constraints. The first term constrains the reconstructed interaction positions through the known detector geometry, whereas the second term constrains the calibration coeffi-cients through charge-energy consistency constraint. Together, these complementary constraints transform detector calibration and position reconstruction into a fully self-supervised learning problem. The optimization therefore seeks the calibration coefficients and interaction positions that simultaneously satisfy all available physical consistency relations. Importantly, neither component of the objective function requires labelled training data. All supervisory information is derived directly from detector physics. 
+
+## 5.4 Why the Problem is Self-Supervised ? 
+
+The proposed framework differs fundamentally from conventional supervised learning. No experimentally measured interaction positions are available during training, and no reference calibration coefficients are provided. 13 Instead, supervision originates entirely from physically derived consistency con-straints. The detector geometry supplies relationships between measurements obtained from independent detector planes, while the ionization chamber provides an external physical constraint on the total induced charge. Consequently, the target values required for optimization are generated implicitly from the measurement process itself rather than from human annotations or dedicated calibration measurements. This places the proposed method within the class of self-supervised scientific machine learning approaches. 
+
+# 6 Experimental Setup 
+
+The proposed framework is evaluated using experimental data obtained with the VAMOS++ magnetic spectrometer. The objectives of the evaluation are to assess the convergence of the self-supervised optimization problem and quantify the quality of the reconstructed interaction position. 
+
+## 6.1 VAMOS++ MWPPAC Detector 
+
+The present study employs the dual position-sensitive multi-wire proportional counter (DPS-MWPC) configuration developed for reaction-product tracking at VAMOS++ (Vandebrouck et al. (2016)). The setup comprises two low-pressure, position-sensitive MWPCs installed within a shared gas volume between the target and the spectrometer entrance. The active areas of the front and back MWPCs are 40 × 61 mm 2 and 65 × 93 mm 2,respectively, aligning with the angular acceptance of VAMOS++. The two cathode planes are separated by 105 mm, and the detector assembly is positioned 156 mm downstream from the target. Each MWPC comprises a central timing cathode and two orthogonal anode planes ( X and Y ) for two-dimensional position readout. All sensing planes utilize gold-plated tungsten wires. Cathode wires have a diameter of 20 μm and a pitch of 0 .5 mm; anode wires have a diameter of 20 μm and a pitch of 1.0 mm. The cathode wires provide timing information, while the anode wires provide position information. There are 39, 64, 60, and 92 anode wires for X1, X2, Y1, and 
+
+Y2 planes, respectively. The cathode-to-anode gap is 2.4 mm. The detector gas is isobutane (i-C 4H10 ), typically operated at 6 mbar pressure, with thin 0 .5 μm Mylar entrance/exit windows to minimize energy loss and angular straggling. 
+
+## 6.2 Experimental Data 
+
+The experimental data utilized in this study were obtained during the E850 GANIL experiment E850-21 Collaboration (2024). This experiment was designed to detect, identify, and track light nuclei in coincidence with fission fragments produced in multi-nucleon transfer reactions in inverse kinematics. The reactions were induced by a 238 Ubeam with an energy of 5 .95 MeV/u on a 100 μg/cm 2 thick 12 C target. The fission fragments were detected and isotopically identified in the VAMOS++ spectrometer. Light nuclei were detected in the PISTA array B´ egu´ e–Guillou et al. (2026). 14 Fig. 3 Training Convergence of Residuals: The evolution of the training and validation RMSD of the residuals ∆ X1, ∆ X2, ∆ Y1, ∆ Y2 obtained for the number N of adjacent sensing wires, see Eq. (13), (a) N = 3, and (b) N = 5.             
+
+> Fig. 4 Training Convergence of Coefficients and Values of Coefficients: (a) The evolution of the mean value of the coefficients cX1,cY1,cX2,cY2as a function of the epoch number. (b) Individual values of the coefficients cX1as function of wire number.
+
+## 6.3 Implementation Details 
+
+The datasets utilized for training the model consisted of 4 × 10 6 events. At the begin-ning of the training process, the dataset was randomly partitioned into the training set (80 %) and the validation set (20 %). For each epoch a random rearrangement of the training dataset was performed. The training was performed in batches of 1 × 10 3
+
+events. The training convergence of the neural network was assessed in terms of the RMSD. The duration of a single training epoch was approximately 6 s. The training was stopped when RMSD(∆ Xk), RMSD(∆ Yk) as well as the mean values of the cali-bration coefficients cX1 , cY1 , cX2 , cY2 , reached the plateau. Remarkably, the training convergence was typically achieved within approximately 0 .5 minute, indicating that the neural network swiftly and efficiently identifies the system characteristics. 15 Fig. 5 Spatial Distribution of Residuals: Two-dimensional correlation of the residuals ∆ X1 (a) and (b) and ∆ X2 (c) and (d) as a function of the interaction position in the X1 and X2 planes, respectively. Panels (a) and (c) illustrate the results obtained using the conventional method (Vande-brouck et al. (2016)) using hyperbolic secant function (Lau and Pyrlik (1995)), while panels (b) and (d) illustrate the results obtained in the presented framework. Both approaches used N = 3 adjacent sensing wires. 
+
+# 7 Results 
+
+## 7.1 Optimization Behavior 
+
+The proposed self-supervised optimization is driven exclusively by physical consis-tency constraints. Consequently, the optimization converges toward detector states that simultaneously satisfy the geometric relationships between the MWPPAC detec-tors and the charge-energy consistency constraints imposed by the ionization chamber. Understanding the expected behavior of the optimization therefore provides insight into the identifiability of both the wire calibration coefficients and the reconstructed interaction positions. Figure 1(a) and (b) depict the simulated distributions of residuals ∆ X1 and ∆ X2
+
+under varying conditions, assuming a true beam width of σXbeam = 0 .40 mm. The distributions are shown for different detector resolutions: (black) σXdet = 0 mm, (red) 
+
+σXdet = 0 .06 mm, and (blue) σXdet = 0 .09 mm. The typical true beam width on the target is σXbeam = 0 .40 mm and σYbeam = 0 .50 mm. When the detector res-olution is σXdet = 0 mm, the widths of the residuals are σ∆X1 = 0 .16 mm and 16 σ∆X2 = 0 .27 mm, respectively. As observed in the figure, since the detector resolution is much smaller than the true beam width, the widths of the residuals are primarily influenced by the width of the beam profile on the target. When the detector res-olution is σXdet = 0 .06 mm, the widths of the residuals are σ∆X1 = 0 .18 mm and 
+
+σ∆X2 = 0 .30 mm, respectively, while for σXdet = 0 .09 mm they are σ∆X1 = 0 .19 mm and σ∆X2 = 0 .32 mm, respectively. The improvement of the detector resolution by 
+
+∼ 30 % results in a decrease of the overall width of the residuals by several per-cent. Figure 1(c) depicts the corresponding reconstructed distribution of the beam on the target Xtarget . The anticipated widths for the detector resolution is σXdet =0, 0.06 , 0.09 mm are σXtarget = 0 .40 , 0.44 , 0.48 mm, respectively. The improvement of the detector resolution by ∼ 30 % results in a decrease of the overall width of the beam profile by ∼ 9 %. 
+
+## 7.2 Optimization Convergence 
+
+The first question concerns whether the proposed self-supervised optimization con-verges towards a stable detector calibration. Figure 3 depicts the evolution of the training and validation Root Mean Square Deviation (RMSD) of the residuals ∆ X1, ∆ X2, ∆ Y1, and ∆ Y2. In panel (a), the results obtained for the number of adjacent sensing wires N = 3, and in panel (b), N = 5, are shown. It is evident from the figure that convergence is achieved within a few epochs for both models. The validation curves follow closely the training curves and no overfitting occurs. Notably, for the model employing N = 5 adjacent sensing wires, there is no signif-icant improvement observed as compared to the model with N = 3. In this study, also models utilizing N = 7 , 9, 11 adjacent sensing wires were tested, resulting in equiva-lent outcomes to those obtained with the model employing N = 3 adjacent sensing wires. Similarly, the augmentation of the complexity of the position reconstruction model did not yield a substantial improvement. The RMSD values obtained for the residuals ∆ X1, ∆ X2, ∆ Y1, and ∆ Y2 are 0.179(1) mm, 0 .293(1) mm, 0 .242(1) mm, and 0 .401(2) mm, respectively. The val-ues obtained employing N = 3 and N = 5 agree within 0 .5 % The expectation ∆X1 < ∆X2 and ∆ Y1 < ∆Y2 is corroborated by the results presented in Figure 3. Figure 4(a) depicts the progression of the mean value of the coefficients cX1 , cY1 ,
+
+cX2 , and cY2 as a function of the epoch number obtained from the model employing 
+
+N = 3 adjacent sensing wires. It is evident from the figure that the values of the coefficients jointly stabilize as the optimization process converges. Figure 4(a) illustrate the corresponding 39 individual converged coefficients for the X1 plane. 
+
+## 7.3 Spatial distribution of Residuals 
+
+Figure 5 illustrates the two-dimensional correlation of the residuals ∆ X1 and ∆ X2
+
+as a function of the interaction position in the X1 and X2 planes, respectively. The results obtained using the conventional method (Vandebrouck et al. (2016)) employing the hyperbolic secant function (Lau and Pyrlik (1995)) are presented in Figure 5(a) 17 Table 1 Summary of the widths of the residuals, the reconstructed position on the target and the position resolution, inferred using the reference wires, obtained employing the conventional method and the presented framework. this work (mm) Conventional (mm) 
+
+σ∆X1 0.179(1) 0.193(1) 
+
+σ∆X2 0.293(1) 0.317(1) 
+
+σ∆Y1 0.242(1) 0.252(1) 
+
+σ∆Y2 0.401(2) 0.418(1) 
+
+σXtarget 0.433(2) 0.468(2) 
+
+σYtarget 0.572(2) 0.592(2) 
+
+σW1 0.06(1) 0.09(2) 
+
+σW2 0.05(1) 0.09(2) 
+
+and (c), while the results obtained using the proposed framework are depicted in Figure 5(b) and (d). Both approaches utilized N = 3 adjacent sensing wires. The conventional method’s results exhibit pronounced local discontinuities, with the interaction positions clustering near the wires because the assumed analytical induction profile cannot perfectly represent the true detector response. In contrast, the proposed framework removes these artifacts because the induction profile is learned implicitly during optimization rather than prescribed a priori. The framework there-fore not only improves the global width of the residuals but also handles the local discontinuities related to the form of the induction profile. The widths obtained using the presented framework are summarized and compared to those obtained by the con-ventional method in Table 1. A mean improvement of the widths of δσ = 0 .017 mm can be deduced from the table. 
+
+Fig. 6 Reconstructed Beam Profile: Reconstructed beam profile on the target (a) Xtarget and (b) Ytarget . The results obtained using the conventional method (Vandebrouck et al. (2016)) using hyperbolic secant function (Lau and Pyrlik (1995)) are indicated in black, while the results obtained in the presented framework are indicated in red. Both approaches used N = 3 adjacent sensing wires. 
+
+18 7.4 Reconstructed Beam Profile on the Target 
+
+Figure 6 depicts the reconstructed beam profile on the target, specifically in the Xtarget 
+
+and Ytarget planes. The results obtained using the conventional method are represented in black, while the results obtained using the presented framework are depicted in red. A notable improvement is evident in the figure when comparing the results obtained using the presented framework to those obtained using the conventional method since a systematic reconstruction bias has been removed. The resulting widths for the con-ventional approach are σXtarget = 0 .468(2) mm and σYtarget = 0 .592(2) mm, whereas the resulting widths for the presented framework are σXtarget = 0 .433(2) mm and 
+
+σYtarget = 0 .572(2) mm. 
+
+## 7.5 Position Resolution    
+
+> Fig. 7 Position Resolution (a) Two-dimensional projection of the events on the plane in front of the detector, where the 100 μm reference wire is located. The projection was obtained using the current framework. (b) One-dimensional projection on a plane perpendicular to the reference wire. The results obtained the conventional method are indicated in black and the results obtained the proposed framework are indicated in red.
+
+Two gold-plated tungsten wires with a diameter of 100 μm are positioned diago-nally 10 mm upstream and downstream of the front and back MWPC, respectively. Figure 7(a) depicts the two-dimensional projection of the events onto the plane in front of the detector, where the 100 μm reference wire is located. The shadow of the diagonally placed front reference wire is distinctly visible. Despite the events being projected onto the plane in front of the detector, the perpendicularly placed back reference wire can also be discerned. Figure 7(b) depicts the one-dimensional projection on a plane perpendicular to the reference wire. The improvement in the reference wire width definition using the presented framework, as compared to the conventional method, is clearly visible in the figure. This spectrum can be used to obtain the position resolution (Vandebrouck et al. (2016)), assuming the shadowing of a wire with 100 μm diameter leading to 
+
+σW1 = 0 .09(2) mm for the conventional method and σW1 = 0 .06(1) mm for the presented method. The same procedure was applied for the reference wire placed at the back of the detector leading to σW2 = 0 .09(2) mm for the conventional method and 19 σW2 = 0 .05(1) mm. The position resolution achieved using the presented framework demonstrates a substantial enhancement of 33 % and 44 % for front and rear reference wires, respectively. Unlike the previous results presented above, which are derived from the self-supervised optimization itself, the reference-wire measurement constitutes an entirely independent validation of the reconstructed positions. 
+
+## 7.6 Implicit Learning of the Induction Profile 
+
+Conventional interaction position reconstruction algorithms rely on an explicit ana-lytical model describing the charge induced on neighboring sensing wires. Typical assumptions include Gaussian, hyperbolic secant, or related parametric profiles whose parameters are determined through analytical fitting. The accuracy of the recon-structed interaction position therefore depends directly on the validity of the assumed induction model. The proposed framework follows a fundamentally different strategy. No analytical expression describing the induction profile is introduced during training. Instead, the shared position reconstruction network learns the mapping between local calibrated charge distributions and sub-wire interaction positions solely through the physics-informed self-supervised objective. The absence of local discontinuities in Fig. 5 provides strong evidence that the learned representation accurately captures the true detector response. Rather than approximating the induction profile using a predefined functional form, the network implicitly reconstructs the detector response directly from experimental observa-tions. This considerably reduces modeling bias while simultaneously improving the uniformity of the reconstructed interaction positions across the detector surface. 
+
+## 7.7 Transferability and Generalization 
+
+An important property of the proposed framework is that the position reconstruction network operates exclusively on local calibrated charge distributions and therefore remains independent of the detector geometry, absolute wire numbering, and active detector area. Consequently, the same reconstruction model can be applied to MWPPAC detec-tors with different dimensions without modification of the network architecture. Only the detector-specific calibration subnetworks need to be re-optimized, whereas the learned local relationship between neighboring wire charges and sub-wire interaction position remains unchanged. This property is particularly relevant for the VAMOS++ focal-plane tracking detectors, which employ substantially larger active areas than the entrance MWPPAC system investigated in the present work. The proposed formulation therefore provides a generic reconstruction framework whose applicability extends beyond the detector configuration considered here. 20 8 Discussion 
+
+The results presented in this work demonstrate that accurate wire calibration and interaction position reconstruction can be achieved without labelled training data or dedicated detector calibration measurements. Rather than learning from externally provided target values, the proposed framework exploits the intrinsic redundancy of the detector system together with known physical relationships governing particle transport and detector response. This transforms detector calibration from a super-vised parameter estimation problem into a self-supervised optimization problem in which the supervisory signal is generated directly by the measurement process itself. A central aspect of the proposed formulation is the simultaneous optimization of two fundamentally different categories of latent variables. The wire calibration coefficients represent global detector parameters that are shared by all recorded events, whereas the interaction positions correspond to local event-specific variables. Although these quantities are conceptually distinct, they become strongly coupled through the physical consistency constraints introduced in the optimization objective. Improved wire calibration produces more accurate local charge distributions, which facilitate more precise position reconstruction. Conversely, improved interaction posi-tions increase the geometric consistency between the two MWPPAC detectors, thereby providing a stronger supervisory signal for calibration. The two optimization processes therefore reinforce each other throughout training until a physically consistent solution is reached. Another important characteristic of the proposed framework is its robustness to imperfect detector signals. Since the position reconstruction network operates on the complete local charge distribution rather than relying on a single measurement, the interaction position is inferred from the collective response of neighboring sensing wires. Consequently, the reconstruction remains possible even when individual charge measurements become unreliable or unavailable. This property is particularly relevant for experiments involving a wide range of ion species, where electronic gain settings are frequently optimized to preserve detection efficiency for light ions, leading to sat-uration of the maximum induced charge for heavier reaction products. Preliminary investigations indicate that the proposed framework could be used to learn to recon-struct interaction positions accurately even after removing the saturated maximum charge from the network input, demonstrating that the learned representation effec-tively exploits the redundancy of the neighboring wire signals. Although a detailed analysis of this capability is beyond the scope of the present work, it illustrates the potential robustness of learned physics-informed representations under realistic experimental conditions. Beyond the specific application to the entrance MWPPAC detectors, the proposed framework illustrates a more general principle for intelligent scientific instrumentation. The neural network architecture itself is largely independent of the detector under con-sideration. Instead, detector-specific knowledge is introduced exclusively through the physics-informed objective function. For the entrance MWPPAC system, supervision originates from geometric consistency between two independent position measure-ments. For the ionization chamber investigated in our previous work (Rejmund and 21 Lemasson (2026)), supervision is provided by ionic charge-state and atomic mass num-ber consistency. Similarly, for the focal-plane MWPPAC detectors of VAMOS++, equivalent self-supervised calibration can be achieved by exploiting the dependence of the reconstructed atomic mass number on the measured interaction positions. Con-sequently, the proposed methodology should be viewed not as an isolated calibration algorithm, but rather as a modular framework in which detector calibration is obtained by combining differentiable detector models with the appropriate physical consistency constraints. Taken together with our previous work on self-supervised ionization chamber cal-ibration, the present results suggest a broader perspective for the development of autonomous scientific instrumentation. Within the VAMOS++ spectrometer, only the timing calibration currently requires a conventional calibration procedure. Trajec-tory reconstruction is already performed in an absolute coordinate system, while both the ionization chamber and the MWPPAC detectors can now be calibrated through self-supervised optimization. The remaining focal-plane MWPPAC calibration natu-rally follows the same methodology using detector-specific physical constraints. This progression indicates that complete self-supervised calibration of the spectrometer is becoming a realistic objective. More generally, the proposed framework demonstrates that modern scientific instruments can increasingly exploit their own physical redundancy to perform con-tinuous self-calibration during normal operation. Rather than relying on dedicated calibration measurements performed before an experiment, future intelligent detec-tor systems may continuously adapt their internal calibration parameters as detector characteristics evolve due to changing operating conditions, electronic drifts, or aging. Such adaptive behavior has the potential to improve measurement reliability, reduce experimental downtime, and simplify the operation of increasingly complex scientific facilities. The proposed framework nevertheless has several limitations. Its success depends on the availability of sufficiently informative physical constraints capable of uniquely determining the latent calibration parameters. If the detector geometry does not pro-vide adequate redundancy or if the underlying physical model is incomplete, additional supervisory information may be required. Furthermore, although the present work demonstrates the methodology using linear gain calibration, the extension to more complex nonlinear detector responses will require richer parameterizations and poten-tially stronger regularization strategies. These directions constitute promising avenues for future research. 
+
+# 9 Conclusions 
+
+This work presented a physics-informed self-supervised framework for the joint cal-ibration of sensing-wire gains and interaction position reconstruction in Multi-Wire Parallel Plate Avalanche Counters. Unlike conventional calibration procedures, the proposed method requires neither dedicated calibration measurements nor labelled 22 interaction positions. Instead, calibration and reconstruction are formulated as a uni-fied latent optimization problem in which supervision is derived exclusively from detector geometry and charge-energy consistency constraints. The proposed framework jointly estimates global wire calibration coefficients and event-wise interaction positions through end-to-end differentiable optimization. A detector-independent position reconstruction network learns the relationship between local charge distributions and sub-wire interaction positions directly from experimen-tal data, eliminating the need to assume analytical induction profiles. Experimental results obtained with the entrance MWPPAC tracking detectors of the VAMOS++ magnetic spectrometer demonstrate stable optimization, improved spatial homo-geneity, and enhanced position reconstruction performance while enabling detector calibration to be performed continuously during normal operation. Beyond the specific application considered here, the proposed methodology illus-trates a general paradigm for intelligent scientific instrumentation. Rather than designing detector-specific calibration algorithms, calibration is formulated as a mod-ular self-supervised learning problem in which detector-specific physical knowledge enters only through differentiable consistency constraints. This principle is appli-cable to a broad range of detector systems wherever redundant measurements or well-established physical relationships provide sufficient supervisory information. Together with our previous work on self-supervised calibration of the VAMOS++ ionization chamber, the present study substantially extends the range of detector sub-systems that can be calibrated autonomously. The remaining focal-plane MWPPAC detectors naturally fit within the same framework by replacing geometric consistency with atomic mass-reconstruction consistency as the supervisory constraint. Consequently, the proposed methodology represents an important step toward fully self-supervised scientific instrumentation, capable of continuously adapting its calibra-tion to detector aging, electronic drifts, and changing experimental conditions without interrupting normal operation. In this paradigm, the detector is no longer calibrated before the experiment; it is calibrated by the experiment itself. Future work will investigate the extension of the framework to detector responses affected by signal saturation, nonlinear calibration models, and additional detector subsystems. More broadly, we believe that combining differentiable machine learning models with detector-specific physical constraints provides a promising foundation for the next generation of adaptive, autonomous scientific instruments. 
+
+# References 
+
+B´ egu´ e–Guillou, L., Lemasson, A., Morfouace, P., Ramos, D., Taieb, J., Frankland, J.D., Rejmund, M., Fremont, G., Gangnant, P., Cobo-Zarzuelo, A., Kumar, N., Efremov, T., Chatillon, A., Cl´ ement, E., De France, G., Francheteau, A., Jangid, I., Lenain, C., Mauss, B., Tanaka, T., Audoin, L., Caamano, M., Errandonea, B., Godio, M., Gruyer, D., Jacquot, B., Lalande, M., Malone, R.C., Munoz, A., Ramirez, A.P.D., Rodr´ ıguez-S´ anchez, J.L., Schmitt, C., Syrett, O., Surrault, C., Tonchev, A.P.: Performance of the Particle-Identification Silicon-Telescope Array coupled with the VAMOS++ magnetic spectrometer. Nuclear Instruments and Methods in 23 Physics Research Section A 1090 , 171671 (2026) https://doi.org/10.1016/j.nima. 2026.171671 E850-21 Collaboration: E850-21 GANIL Dataset (2024). https://doi.org/10.26143/ ganil-2023-e850 21 Lau, K., Pyrlik, J.: Optimization of centroid-finding algorithms for cathode strip cham-bers. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 366 (2), 298–309 (1995) https: //doi.org/10.1016/0168-9002(95)00604-4 Pullanhiotan, S., Rejmund, M., Navin, A., Mittig, W., Bhattacharyya, S.: Performance of VAMOS for reactions near the Coulomb barrier. Nuclear Instruments and Meth-ods in Physics Research Section A 593 (3), 343–352 (2008) https://doi.org/10.1016/ j.nima.2008.05.003 Rejmund, M., Lemasson, A.: Analysis of atomic charge state and atomic number for VAMOS++ magnetic spectrometer using deep neural networks and fractionally labelled events. Journal of Instrumentation 20 (08), 08022 (2025) https://doi.org/ 10.1088/1748-0221/20/08/P08022 Rejmund, M., Lemasson, A.: Seven-dimensional trajectory reconstruction for VAMOS++. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 1076 , 170445 (2025) https://doi.org/10.1016/j.nima.2025.170445 Rejmund, M., Lemasson, A.: Self-Supervised Calibration of Scientific Instruments Using Physical Consistency Constraints (2026). https://arxiv.org/abs/2606.29466 Rejmund, M., Lecornu, B., Navin, A., Schmitt, C., Damoy, S., Delaune, O., Enguer-rand, J.M., Fremont, G., Gangnant, P., Gaudefroy, L., Jacquot, B., Pancin, J., Pullanhiotan, S., Spitaels, C.: Performance of the improved larger acceptance spec-trometer: VAMOS++. Nuclear Instruments and Methods in Physics Research Section A 646 (1), 184–191 (2011) https://doi.org/10.1016/j.nima.2011.05.007 Vandebrouck, M., Lemasson, A., Rejmund, M., Fremont, G., Pancin, J., Navin, A., Michelagnoli, C., Goupil, J., Spitaels, C., Jacquot, B.: Dual Position Sensitive MWPC for tracking reaction products at VAMOS++. Nuclear Instruments and Methods in Physics Research Section A 812 , 112–117 (2016) https://doi.org/10. 1016/j.nima.2015.12.040 24

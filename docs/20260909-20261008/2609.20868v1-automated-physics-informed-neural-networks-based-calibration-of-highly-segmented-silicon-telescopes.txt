@@ -1,0 +1,267 @@
+Title: Automated Physics-Informed Neural-Networks-Based Calibration of Highly Segmented Silicon Telescopes
+
+URL Source: https://arxiv.org/pdf/2609.20868v1
+
+Published Time: Mon, 21 Sep 2026 00:05:26 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+# Automated Physics-Informed Neural-Networks-Based Calibration of Highly Segmented Silicon Telescopes 
+
+M. Rejmund ,1 A. Lemasson ,1 P. Morfouace ,2, 3 D. Ramos ,1 J. Taieb, 2, 3 and J. D. Frankland 1
+
+> 1
+
+GANIL, CEA/DRF - CNRS/IN2P3, Bd Henri Becquerel, BP 55027, F-14076 Caen Cedex 5, France ∗
+
+> 2
+
+CEA, DAM, DIF, F-91297, Arpajon, France 
+
+> 3
+
+Universit´ e Paris-Saclay, CEA, LMCE, F-91680, Bruy` eres-le-Chˆ atels, France 
+
+(Dated: September 21, 2026) Transfer and multi-nucleon transfer reactions are essential tools for probing nuclear structure and reaction dynamics, requiring precise determination of the identity, energy, and emission angles of re-action products. The increasing granularity of modern silicon telescope arrays significantly enhances experimental capabilities but introduces major challenges for detector calibration, as conventional channel-by-channel approaches become inefficient, difficult to scale, and potentially inconsistent. In this work, we present a fully automated, physics-informed calibration framework based on neu-ral networks, specifically designed for highly segmented silicon detector arrays. The method formu-lates calibration as a global optimization problem, in which detector gains and geometrical correc-tions are determined simultaneously by minimizing the width of the reconstructed excitation energy under two-body kinematics constraints. The approach relies exclusively on experimental data and well-established physical principles, without requiring explicit modeling of detector response. A distinctive feature of the method is the use of multiple neural network sub-models sharing a common loss function with embedded physics constraints, enabling coherent and self-consistent cali-bration across all detector channels. This strategy ensures scalability, robustness, and reproducibility, making it particularly suitable for next-generation detector systems with increasing complexity. The performance of the method is demonstrated using experimental data from the Particle-Identification Silicon-Telescope Array (PISTA) in high-resolution fission studies in inverse kinematics. The results show excellent agreement with theoretical kinematics, high-quality particle identification, and a significant improvement in calibration efficiency. The proposed framework provides a general and adaptable solution for the calibration of complex detector systems in modern nuclear physics experiments. 
+
+INTRODUCTION 
+
+Transfer reactions and, more generally, multi-nucleon transfer reactions constitute a powerful tool for in-vestigating nuclear structure and reaction mechanisms. They provide direct access to single-particle and collec-tive properties and their evolution across the nuclear chart [1]. The experimental study of such processes re-quires precise determination of the identity, energy, and emission angle of reaction products, placing stringent constraints on the performance of detection systems. In this context, silicon detector telescopes have become a cornerstone of modern nuclear physics experiments due to their excellent energy resolution, particle identifica-tion capabilities, and fast response. Over the past decades, continuous developments in detector technology have led to increasingly sophisti-cated silicon arrays, characterized in particular by a high degree of segmentation. Single or double-sided strip detectors and pixelated geometries now allow for fine angular resolution and large solid-angle coverage, en-abling detailed reconstruction of complex reaction kine-matics. Modern detection systems may comprise hun-dreds or even thousands of individual channels, each providing localized information on the measured phys-ical observables. While such segmentation significantly enhances the experimental capabilities, it also introduces new chal-lenges in data analysis, and in particular in detector cal-ibration. In highly segmented systems, each individ-ual channel samples only a limited fraction of the over-all physical phase space and often results in reduced statistics per segment. Traditional calibration proce-dures, typically performed on a channel-by-channel ba-sis through iterative and often manual adjustments, become increasingly difficult to implement efficiently in this context. These approaches are not only time-consuming but may also introduce subjective biases and lack global consistency across the detector array. The rapid growth in the number of channels and the complexity of the measured observables therefore call for the development of new, more robust calibration strategies. In particular, there is a need for methods capable of handling high-dimensional data, exploiting correlations between detector segments, and providing reproducible and scalable solutions. In this respect, ma-chine learning techniques, and neural networks in par-ticular, offer a promising alternative to conventional ap-proaches. By construction, neural networks are well suited to model complex, non-linear relationships in multi-parametric datasets, and can be trained to extract optimal calibration mappings from experimental or sim-ulated data. In this work, we propose a fully data-driven, globally arXiv:2609.20868v1 [physics.ins-det] 15 Sep 2026 2constrained calibration method using physics-informed loss functions tailored to highly segmented silicon tele-scope arrays employed in transfer reaction studies. The proposed approach seeks to provide a time-efficient and fully reproducible procedure, relying on a mathemati-cally well-defined optimization process. Furthermore, its inherent scalability makes it particularly well-suited for next-generation detector systems characterized by ever-increasing granularity. The distinguishing features of our method are: (i) the exclusive utilization of avail-able data and the well-established two-body reaction kinematics, and (ii) the utilization of a neural network model composed of three independent sub-models that share a common loss function in which the physics con-straints were embedded. By leveraging the ability of neural networks to cap-ture global correlations across detector channels, this method offers a consistent and flexible solution to the challenges posed by modern multi-parametric nuclear physics experiments. Our approach is demonstrated through an applica-tion to experimental data obtained by the highly seg-mented Particle-Identification Silicon-Telescope Array (PISTA) [2] in the high-resolution studies of fission pro-cesses induced in inverse kinematics. 
+
+> PISTA ARRAY
+
+The PISTA array [2] was specifically designed to per-form isotopic identification and trajectory tracking of nuclei ranging from helium to oxygen. These nuclei are produced in multi-nucleon transfer reactions of heavy nuclei with light nuclei in inverse kinematics, resulting in fission. The fission products are detected in the VA-MOS++ spectrometer [3, 4]. The high spatial segmenta-tion of the PISTA array, in conjunction with these mea-surements, provides the necessary high-resolution exci-tation energy measurement of fissioning systems. PISTA comprises eight trapezoidal telescopes, each equipped with two stages, ∆E and Eres , of single-sided stripped silicon detectors. The detectors have thicknesses of typ-ically 100 μm and 1 mm, respectively. Figure 1(a) illustrates the schematic representation of the trapezoidal telescope within the coordinate frame of the telescope. The front side of the first stage ( ∆E) is di-vided into 91 horizontal strips, each measuring 535 μmin width, separated by 100 μm of passive inter-strips. The front side of the second stage ( Eres ) is divided into 57 vertical strips, each measuring 1.17 mm in width, sepa-rated by 100 μm of passive inter-strips. As illustrated in Figure 1(a), the trapezoidal shape of the telescope causes the lengths of the ∆E and Eres strips to vary. The distance between the first stage of the telescope to the target is 105.5 mm while the distance between the first and the second stage is 4.4 mm. The PISTA telescopes are posi-tioned at the polar angle of θ = 45 ◦ relative to the beam axis. The coordinates corresponding to the constant po-lar laboratory angle θ are depicted in red, while those for the constant azimuthal laboratory angle ϕ are shown in blue. From the figure, it can be inferred that a single 
+
+∆E and Eres strip covers a range of laboratory angles θ
+
+and ϕ, respectively. Figure 1(b) illustrates the top view of the experimen-tal configuration. The z axis is aligned with the beam axis, forming a horizontal plane with the x axis, while the y axis is aligned vertically. The target, situated at the origin of the coordinate system, is encircled by the eight telescopes of the PISTA array. These telescopes are posi-tioned at a polar angle of θ = 45 ◦ and an azimuthal an-gle ϕ that increments by 45 ◦ commencing from ϕ = 0◦.The VAMOS++ spectrometer is situated downstream of the beam axis and rotated by 20 ◦ about the y axis. Its en-trance detector, the dual position-sensitive Multi-Wire Proportional Chamber (DPS-MWPC) [5], is positioned at a distance of 167 mm from the target and is depicted in the figure. 
+
+> EXPERIMENTAL METHODS
+
+The experimental data utilized in this study were ob-tained during the E850 GANIL experiment [6], which was designed to detect, identify, and track light nuclei in coincidence with fission fragments produced in multi-nucleon transfer reactions in inverse kinematics. The re-actions were induced by a 283 U beam with an energy of 5.95 MeV/u on a 100 μg/cm 2 thick 12 C target. The fis-sion fragments were detected and isotopically identified in VAMOS++ spectrometer. Light nuclei were detected in PISTA array. 
+
+> PISTA methods
+
+For the measurement of the energy loss ∆E, the indi-vidual front strips from the first stage of the PISTA tele-scopes were utilized. Conversely, for the measurement of the residual energy Eres , the unstripped rear sides of the second stage were employed. This selection was guided by the optimal energy resolutions correspond-ing to each measurement. As previously mentioned, the trapezoidal shape of the telescope causes the length of the strips to vary. Consequently, due to capacitive cou-pling with the strips, the gain of the rear side stage may differ from one strip to another. Therefore, its energy calibration was assumed to vary as a function of the po-sition of the corresponding Eres strip. To determine the position of the interaction of the nucleus with the detec-tor, the individual front strips from the first stage and the second stage were utilized. The centers of the cor-responding strips were utilized as the defining point of 3  
+
+> FIG. 1. PISTA array and experimental setup: (a) The schematic front view of the segmentation of the trapezoidal telescope of PISTA located at the azimuthal angle ϕ
+
+= 90 ◦. This diagram illustrates 91 horizontal strips of the ∆E stage and 57 vertical strips of the Eres stage. In the reference frame of the telescope, the z axis aligns with the telescope’s normal. The origin is positioned at 105.5 mm, and the z axis intersects the detector’s plane at the centers of the middle horizontal and vertical strips. The red lines represent the coordinates for the constant polar laboratory angle θ in increments of 5 degrees, while the blue lines indicate those for the constant azimuthal angle ϕ in increments of 10 degrees. (b) The schematic top view of the experimental setup. The target is positioned in the xy plane at the origin of the coordinate system, while the beam axis aligns with the z axis. The PISTA telescopes encircle the target at a distance of 105.5 mm and a polar angle of θ = 45 ◦. The corresponding telescope’s normal is indicated. Eight telescopes are placed at the azimuthal angle ϕ every 45 ◦. The dual position-sensitive Multi-Wire Proportional Chamber (DPS-MWPC) placed at the entrance of the VAMOS++ spectrometer, rotated in the xz plane by 20 ◦ relative to the beam axis is also shown. 
+
+interaction. One of the key assets of the PISTA array is its high granularity, which is designed to guarantee a high-resolution measurement of the polar angle θ. This en-ables the high-resolution measurement of the excitation energy of the fissioning system ( E∗). Towards this goal, the interaction point of the beam with the target has to be determined, as the standard deviation of the typical beam profile is comparable to the ∆E strip width. The event-by-event measurement of the interaction position on the target is provided by the DPS-MWPC placed at the entrance of VAMOS++ spectrometer and illustrated in Fig. 1(b). However, this measurement was only avail-able for the events where the fission fragment was de-tected in VAMOS++. For the elastic scattering of 238 Uon 12 C, which was used for the calibration of the tele-scopes, the interaction position on the target was not available. The mean beam position (x, y)b, correspond-ing to the average interaction position determined over the last 5000 fission events, was used. In this experiment, to enhance the production of the desired nuclei, a high beam current was used, leading to an overwhelming rate of elastically scattered 12 C nu-clei impinging on PISTA at the larger laboratory angles. Hence the outermost ∆E strips were masked, leaving approximately 45 inner ∆E strips active. To illustrate the application of our calibration method, we exclusively utilized a single initial data run of the ex-perimental data. This data were utilized to minimize the width of the excitation energy of the system ( E∗) for the elastic scattering of 238 U on 12 C, assuming that the scat-tering occurred in the center of the target. In conjunction with these data, the pre-experiment three-alpha calibra-tion data available for the ∆E stage were utilized. The primary focus was on three strategically positioned tele-scopes at the azimuthal angles ϕ = 90 ◦, 135 ◦, and 180 ◦.
+
+> Raw data
+
+Figure 2(a) illustrates the initial uncalibrated identifi-cation chart obtained from the telescope situated at ϕ =
+
+135 ◦. It depicts the two-dimensional energy correlation plot between the raw energy loss ( ∆E) and the raw resid-ual energy ( Eres ), where the correlated bands correspond to distinct atomic numbers and atomic mass numbers. The raw energy loss was derived from the front seg-mented side of the ∆E stage, while the raw residual en-ergy was obtained from the unsegmented rear side of the Eres stage. Figure 2(b) presents a zoomed-in view of the isotopes of carbon. To emphasize the energy loss data range collected by individual strips, only the data for every sixth ∆E strip are presented. The most promi-nent correlation observed for 12 C corresponds predomi-nantly to the process of elastic scattering of 238 U on 12 C. These elastic scattering data were utilized in this work 4      
+
+> FIG. 2. Initial identification charts: Two-dimensional energy correlation plots between the raw energy loss ( ∆E) and the raw residual energy ( Eres ), resulting in correlated bands for each atomic number and atomic mass number. (a) Complete ∆Eand Eres
+> correlation, including the elements: He, Li, Be, B, C, N, and O, registered by the telescope located at ϕ
+
+= 135 ◦. (b) Zoom on the isotopes of C, where only the data from every sixth ∆E strip are shown to highlight the ∆E energy range registered by the individual strips. 
+
+in conjunction with the pre-experiment three-alpha cal-ibration data available for the ∆E stage only for the cali-bration of the PISTA telescopes. 
+
+> PISTA’s resolution and sensitivity
+
+In Ref. [2], the individual contributions to the excita-tion energy resolution of the PISTA array for the elastic scattering of 238 U on 12 C were determined using Monte Carlo simulations. The resulting widths, expressed in terms of the standard deviation, are as follows: • PISTA’s granularity: 0.124 MeV, • intrinsic energy resolution: 0.126 MeV, • target thickness: 0.208 MeV, and • beam spot profile width: 0.416 (46 ) MeV. The beam profile was determined as: σ(b)x = 350 ±
+
+50 μm and σ(b)y = 550 ± 50 μm using the DPS-MWPC. The position resolution of the DPS-MWPC on the target was approximately σx,y ∼ 400 μm. From the individual contributions to the excitation energy resolution of PISTA, it is evident that the dominant is related to the beam profile. The total mean sim-ulated excitation energy resolution yielded σs E ∗ =
+
+0.500 (39 ) MeV, which compares with the experimentally obtained σE∗ = 0.518 (1) MeV. Since the beam profile has different widths in vertical and horizontal directions, the telescopes placed at different azimuthal angles will exhibit a different excitation energy resolution. From the same simulation as in Ref. [2] one obtains for the different telescopes: σs(ϕ = 90 ◦)E∗ = 0.563 (39 ) MeV, 
+
+σs(ϕ = 135 ◦)E∗ = 0.500 (39 ) MeV, and σs(ϕ = 180 ◦)E∗ =
+
+0.429 (39 ) MeV. By comparing the beam vertical and hor-izontal widths, and the excitation energy width in the telescopes placed at ϕ = 90 ◦ and ϕ = 180 ◦ it can be in-ferred that an increase in the standard deviation of the beam profile by 100 μm results in an approximate in-crease of 0.067 MeV in the standard deviation of the ex-citation energy resolution. Consequently, the PISTA ar-ray demonstrates a higher sensitivity to variations in the beam profile width compared to the DPS-MWPC. For the reactions where one fission fragment is de-tected in VAMOS, the position of the interaction of the beam with the target is determined on an event-by-event basis, and the excitation energy resolution is lim-ited by the position resolution. The position resolution is mainly governed by the position resolution of the DPS-MWPC. This demonstrates that the achievable excitation en-ergy resolution is fundamentally limited by the beam profile and the beam profile reconstruction rather than detector performance. 
+
+> APPLICATION OF DEEP NEURAL NETWORKS
+
+The primary objective of this work was to efficiently and reproducibly achieve the high-quality calibration of the highly segmented telescopes within the PISTA ar-ray. This calibration enables the high-resolution mea-surement of the excitation energy of the populated sys-tem and precise particle identification in terms of atomic number and atomic mass number. Traditional methods such as channel-by-channel fits may not demonstrate global consistency. In contrast, the polynomial global fit exhibits poor scalability. The neural network approach, on the other hand, effectively handles non-linearity, shared constraints, and is easily scalable. 5To accomplish the objective of calibration, aregression-type neural network model [7, 8] was employed. This model provided: • individual gains ( ak) for each ∆E strip ( k∆E), • the gain ( bl ) of the Eres detector as a function of the corresponding strip number ( lEres ), • corrections to the telescope’s spatial placement rela-tive to the theoretical one. Precise knowledge of the telescope’s position is crucial to obtain the correct correlation between the measured total energy ( Etot ) of the nucleus and its emission polar angle ( θ), thereby achieving the highest possible resolu-tion of the measured excitation energy of the populated system. The most pertinent and constraining corrections to the telescope’s spatial placement are those related to the polar angle, expressed as: (i) the vertical shift ( δy) in the coordinate frame of the detector relative to its nor-mal (Figure 1(a)), (ii) the polar angle shift ( δθ ) in the lab-oratory frame (Figure 1(b)). Silicon detectors exhibit dead layers in both the junc-tion and ohmic regions. When the calibration obtained with carbon nuclei is applied to other nuclei, differences in the energy loss within these dead layers may become non-negligible compared with the excitation-energy res-olution. In such cases, energy-loss models can be used to account for these effects. One approach consists of explicitly correcting the measured total energy during training by adding the calculated energy loss of carbon in the dead layers as a function of the incidence angle. The excitation energy of other nuclei can then be recon-structed by applying the corresponding dead-layer cor-rections calculated for those nuclei. Alternatively, the energy loss of carbon in the dead layers can be absorbed into the calibration coefficients determined by the neu-ral network. In this case, the excitation energy of other nuclei is reconstructed by applying only the calculated difference between their dead-layer energy loss and that of carbon. Since both approaches are mathematically equivalent up to the treatment of the dead-layer correc-tion, neither affects the achieved excitation-energy res-olution. In the present work, the latter approach was adopted because it allows straightforward testing and comparison of different energy-loss models. To achieve the objective of calibration, the neural net-work model minimizes the width of the reconstructed excitation energy, obtained employing the two-body kinematics, and derived for the elastic scattering pro-cess of 238 U on 12 C. The excitation energy E∗ = 0was assumed for the elastic scattering. The minimiza-tion is evaluated in terms of the root mean square de-viation (RMSD). Furthermore, the model concurrently minimizes the widths obtained from the pre-experiment three-alpha calibration data available for the ∆E strips. The role of the three-alpha calibration in the model is to provide an anchor for the training process. Its contri-bution to the overall width is small since there is about a factor 10 in widths between the alpha and the excita-tion energy data. Additionally, the three-alpha calibra-tion data are used to subtract the offsets, in the units of channels, for the ∆E data. The calibration problem is intrinsically under-constrained when considering gains and geometrical corrections independently. In particular, partial degen-eracies may arise between detector gains and angular corrections. For instance, a systematic increase in gain can be partially compensated by a shift in the reconstructed angle, leading to similar excitation en-ergy distributions. These degeneracies are effectively lifted by the simultaneous use of alpha calibration data, which anchors the absolute energy scale, and the two-body kinematics constraint, which enforces a global correlation between energy and emission angle. In summary, the learned parameters are gains ak, bl ,and placement corrections δy and δθ . The imposed pa-rameters are two-body kinematics and intrinsic geome-try. Consequently, the neural network does not learn the physical laws themselves, which are explicitly imposed through the loss function, but rather infers the detector response parameters that best satisfy these constraints. 
+
+> Calibration model
+> Model formalization
+
+The inverse problem addressed by the PISTA neural networks model can be formally expressed as follows: • Observables: (∆Eraw k , Eraw res l , θgeom ), • Calibration parameters: ak, bl , δy, δθ ,• Mapping: ( ∆Eraw k , Eraw res l , θgeom ) → (Etot , θL) → E∗,• Objective function: L = RMSD (E∗ − E∗
+
+> target
+
+).
+
+> Sub-models
+
+Figure 3 illustrates schematically the PISTA neural networks model used. The model consists of three in-dependent sub-models: • ∆E gain ( ak) as a function of the strip number ( k∆E), • Eres gain ( bl ) as a function of the strip number ( lEres ), • placement corrections in terms of the vertical shift (δy), and the polar angle shift ( δθ ) as constants for each telescope. The independence of the sub-models ensures the inde-pendence of the obtained gains for ∆E and Eres , as well as the constancy of the δy and δθ corrections. The gen-eral form of neural networks employed in the model was Nl × Nu + Nou , comprising Nl layers and Nu units 6        
+
+> FIG. 3. PISTA neural networks: Neural networks model consisting of three independent sub-models trained to provide ∆Eand
+> Eres gains along with telescope placement corrections in terms of the vertical shift δyand the polar angle shift δθ . The architecture of each of the sub-models is given in the form Nl
+
+× Nu + Nou comprising Nl layers and Nu units (neurons) per layer, followed by Nou output units. The inputs of the model are indicated in red, the inputs to the loss function are indicated in blue and the gradient’s feedback obtained for a loss are indicated in green. 
+
+(neurons) per layer, followed by Nou output units. Both gain sub-models utilized the architecture Nl × Nu +
+
+Nou = 8 × 32 + 1, while the placement correction model employed Nl × Nu + Nou = 1 × 1 + 2. Tests con-ducted with smaller architectures demonstrated a di-minished convergence efficiency. Conversely, tests con-ducted with larger architectures revealed a negligible impact on the final RMSD. Each of the sub-models gen-erated an output ( O∆E, OEres , Oδy, Oδθ ) within the range 
+
+[0 − 1], which was subsequently transformed by the loss function to conform to the desired parameter range. The distinctive feature of this approach is that the three independent sub-models share a common loss function. This function monitors the progress of train-ing, tracking the degree of error in the minimization pro-cess and enabling the derivation of gradient feedback for the models necessary for their convergence. 
+
+> Sub-models’ inputs
+
+The event-by-event inputs to the sub-models are de-picted in Figure 3 and can be summarized as follows: • ∆E gain: strip number k∆E,• Eres gain: 
+
+– experimental event: strip number lEres ,
+
+– calibration event: random number Rnd [0, . . . , 57 ],• δy, δθ : random number Rnd [0, . . . , 100 ].
+
+> Sub-models’ output ranges
+
+The output range of the sub-model can be summa-rized as follows: • ∆E gain: individual, gain obtained from α calibration 
+
+±2 %, • Eres gain: common, rough estimated gain ±10 %, • δy, δθ : [−4, 4 ] mm, [−4, 4 ] degrees, 
+
+> Loss’s function inputs
+
+The event-by-event inputs to the loss function can be summarized as follows: • ∆E gain: O∆E,• Eres gain: OEres ,• placement corrections: Oδy and Oδθ ,• identifier distinguishing between experimental and calibration events: TAG ,• mean position of the beam: 
+
+– experimental event: (x, y)b7
+
+– calibration event: (0, 0 ),• training target energy: 
+
+– experimental event: the excitation energy 
+
+E∗ 
+
+> target
+
+= 0, 
+
+– calibration event: the alpha energy Eα,• raw energy ∆Eraw k ,• raw energy: 
+
+– experimental event: Eraw res l ,
+
+– calibration event: 0. 
+
+> Algorithmic structure of the loss function
+
+Algorithmic structure of the loss function is illustrated in Fig. 4. The loss function comprises three main stages: 
+
+(i) parameter mapping, (ii) energy calibration, and (iii) 
+
+event-dependent reconstruction. Experimental events undergo full kinematic reconstruction leading to E∗ =
+
+E∗(Etot , θL), while calibration events impose E∗ = ∆E.The loss is defined as the RMSD over the batch. 
+
+> Training
+
+Since the telescopes of the PISTA array are indepen-dent, the training of the PISTA neural networks model was performed for each telescope individually. The datasets utilized for training the model ranged between 1.2 − 2.2 × 10 6 events. For each telescope, the pre-experiment three-alpha calibration data constituted one-third of each dataset. At the beginning of the training process, the dataset was randomly partitioned into the training set (80 %) and the validation set (20 %). For each epoch, a complete iteration through the entire training dataset, a random rearrangement of the training dataset was performed. The training was performed in batches of 1 × 10 3 events. The training convergence of the neu-ral network was assessed in terms of the RMSD. The duration of a single training epoch was approximately 2 s. The training and validation RMSD was evaluated every 5 epochs (10 s) with early stopping, employing a tolerance of 0.0001 and a patience of 15 epochs. Remark-ably, the training convergence was typically achieved within approximately two minutes, indicating that the neural network swiftly and efficiently identifies the sys-tem characteristics. The model’s time efficiency can be compared to several weeks or months of channel-by-channel calibration. The resulting RMSD values were RMSD = 0.35, 0.34 and 0.31 MeV for the telescopes lo-cated at ϕ = 90 ◦, 135 ◦, and 180 ◦, respectively. Training tests were conducted using subsampled datasets, such as employing an equal number of counts for each indi-vidual ∆E strip. The results exhibited stability within less than 5 %. Therefore, the deterministic nature of the loss function and the limited sensitivity to initialization ensure a high degree of reproducibility of the obtained calibration parameters. The resulting calibration coefficients exhibited only modest random variations across the detector channels. For the three telescopes considered, the mean calibra-tion coefficients were a = 0.0134 MeV/ch for the ∆E
+
+stage and b = 0.00274 MeV/ch for the Eres stage. The corresponding channel-to-channel variations for each telescope were within ±2 % of a and within ±0.5 % of b,respectively. The resulting mean placement corrections were δθ = + 3.2 ◦ ± 6 % and δy = 0 mm. These values are consistent with the detector positioning determined in-dependently from the mechanical survey, providing an additional validation of the calibration procedure. 
+
+> PHYSICS VALIDATION RESULTS Excitation energy
+
+Figure 5(a) depicts a two-dimensional correlation chart between the total energy ( Etot ) and the polar an-gle ( θ) obtained for elastic scattering of 238 U on 12 C. The data were recorded by the telescope positioned at 
+
+ϕ = 135 ◦. This correlation is compared to the calculated correlation indicated by the red line, assuming that the total excitation of the system is E∗ = 0 MeV. One can observe in the figure a perfect matching of the experi-mental data with the theoretical curve. The pixelization observed for the polar angle ( θ) is due to the assumption that the nucleus interaction with the detector occurred at the center of the corresponding strips. Figure 5(b) presents a two-dimensional correlation be-tween the total excitation energy of the system ( E∗) and the polar angle ( θ) obtained using the the two-body kinematics. The data were recorded by the telescope positioned at ϕ = 180 ◦. The discontinuity in intensity, for θ > 43 ◦, is due to the absence of certain groups of strips in this telescope. The observed asymmetry in event density for the excitation energy E∗, extending to-wards 2 MeV arises from the contribution of the inelastic process that leads to the excitation of the 238 U projec-tile since the first excited state of 12 C is located at about 4.439 MeV of excitation energy. This asymmetry can be similarly observed in Fig. 5(a). Figure 5(c) depicts a one-dimensional spectrum of the reconstructed excitation energy ( E∗) for the elastic scat-tering of 238 U on 12 C. This spectrum represents the sum of the three telescopes located at ϕ = 90 ◦, 135 ◦, and 180 ◦. The peak asymmetry, relative to the Gaussian shape, due to inelastic scattering events can be clearly observed in the figure. Therefore, to evaluate the ob-tained excitation energy resolution, a Gaussian fit is per-formed only for the left-hand side events. The resulting standard deviation is σE∗ = 0.436 (10 ) MeV. 8NN outputs 
+
+## O∆E , O Eres , O δy , O δθ 
+
+## Aux inputs ∆Eraw k , E raw res l
+
+## xb, y b
+
+## E∗
+
+> target
+
+## , T AG Parameter mapping 
+
+## ak , b l, δy, δθ 
+
+## ∆E = ak · ∆Eraw k
+
+## T AG ?
+
+## Eres = bl · Eraw res 
+
+## Etot = ∆ E + Eres 
+
+## Interaction point (k∆E , l Eres ) → (x′, y ′, z ′)
+
+## δy correction 
+
+## y′ + δy → y′
+
+## δθ correction + Lab transform (x′, y ′, z ′) → (xL, y L, z L)Beam correction (xL − xb, y L − yb) → (xL, y L)
+
+## θL = θL(xL, y L, z L)Two-body kinematics 
+
+## E∗ = E∗(Etot , θ L)
+
+## Etot = ∆ EE∗ = Etot 
+
+## Batch aggregation Loss evaluation 
+
+## L =
+
+# √ 1
+
+## N
+
+# ∑(E∗ − E∗
+
+> target
+
+## )2
+
+## experimental event calibration event 
+
+FIG. 4. Algorithmic structure of the physics-informed loss function. The network outputs are mapped to physical parameters, followed by energy calibration. The processing then bifurcates depending on the event type: experimental events undergo full kinematic reconstruction, while calibration events enforce an energy anchor. Both branches contribute to the final RMSD loss. 
+
+Figure 5(d) illustrates the corresponding individual spectra for each of the three telescopes. The spectra were normalized to the same peak height to observe the evolution of the excitation energy width with the po-sition of the telescopes. As depicted in the figure, the excitation energy width increases stepwise as the az-imuthal angle of the telescope decreases from ϕ = 180 ◦
+
+to ϕ = 90 ◦. Since, in the case of elastic scattering, no fission fragment is detected in VAMOS++, the event-by-event interaction position on the target is not avail-able. As discussed in Section , the excitation energy width is predominantly influenced by the beam pro-9  
+
+> FIG. 5. PISTA neural network calibration results: Two-dimensional correlation plots: (a) The energy ( Etot
+
+= ∆E + Eres ) as a function of the polar angle ( θ) for elastic scattering of 238 U on 12 C recorded in the telescope situated at ϕ = 135 ◦. The solid red line represents the corresponding calculated correlation, leading to an excitation energy E∗ = 0 MeV. (b) The reconstructed excitation energy ( E∗) as a function of the polar angle ( θ) for elastic scattering recorded in the telescope situated at ϕ = 180 ◦.One-dimensional spectra of the reconstructed excitation energy ( E∗): (c) For three telescopes located at ϕ = 90 ◦, 135 ◦, and 180 ◦
+
+> and (d) For each of the three telescopes normalized to the same peak height.
+
+file. In the presented experiment, the estimated stan-dard deviation of the beam profile exhibited asymme-try and can be expressed as σ(b)x = 350 ± 50 μm and 
+
+σ(b)y = 550 ± 50 μm. The excitation energy width of the telescope positioned at ϕ = 180 ◦ is primarily impacted by σ(b)x, while the telescope located at ϕ = 90 ◦ is in-fluenced by σ(b)y. The telescope situated at ϕ = 135 ◦
+
+is affected by an intermediate beam profile projection. The resulting individual standard deviations for the ex-citation energy are σ(ϕ = 90 ◦)E∗ = 0.490 (10 ) MeV, 
+
+σ(ϕ = 135 ◦)E∗ = 0.415 (10 ) MeV, and σ(ϕ = 180 ◦)E∗ =
+
+0.350 (10 ) MeV. The obtained experimental values are lower than those obtained by the Monte Carlo simula-tion given in Section and require the reduction of the estimated beam profile width to σ(b)x = 250 (15 ) μmand σ(b)y = 450 (15 ) μm with which the simulation pre-dicts the individual standard deviations for the excita-tion energy as follows: σs(ϕ = 90 ◦)E∗ = 0.489 (10 ) MeV, 
+
+σs(ϕ = 135 ◦)E∗ = 0.428 (10 ) MeV, and σs(ϕ = 180 ◦)E∗ =
+
+0.357 (10 ) MeV. The agreement between the experimen-tal and simulated values of the excitation energy width obtained for the telescope positioned at ϕ = 135 ◦, in-fluenced by both vertical and horizontal beam profile widths, supports the accuracy of the estimated beam profile. 
+
+> Particle identification
+
+The presented calibration method utilizing PISTANN neural networks primarily correlates the total energy (Etot ) of the detected nuclei with the polar angle ( θ) of their trajectories through the two-body kinematics rela-tion. Consequently, no requirements were incorporated into the PISTA neural networks model regarding the form of the energy loss ( ∆E) and residual energy (Eres ).Therefore, it is of interest to verify the results of the cali-bration in terms of particle identification. 10    
+
+> FIG. 6. Particle identification: Two-dimensional energy correlation plots between the energy loss ( ∆Ecos( α)) and the residual energy ( Eres ) for three telescopes located at ϕ
+
+= 90 ◦, 135 ◦, and 180 ◦: (a) The unconditioned spectra and (b) The spectrum obtained in coincidence with any ion detected in VAMOS++ spectrometer. The angle ( α) is the angle between the particle’s trajectory and the detector’s normal. One-dimensional spectrum of the particle identification (c) For three telescopes located at ϕ = 90 ◦, 135 ◦,and 180 ◦ and (d) For each of the three telescopes. 
+
+> Two-dimensional identification
+
+Figure 6(a) presents a two-dimensional uncondi-tioned correlation chart of the energy loss ( ∆Ecos( α)) as a function of the residual energy ( Eres ) for all three telescopes combined. The angle α represents the an-gle between the particle’s trajectory and the detector’s normal. This angle is crucial for correcting the energy loss due to the varying effective thickness of the de-tector as a function of α. In the figure, the correlated bands corresponding to different atomic numbers and atomic mass numbers exhibit a smooth evolution and are well-separated. The mean value of the standard de-viation for the energy loss σ∆E = 0.3 keV, per energy bin, was determined. The most prominent and overwhelm-ing correlation corresponds to elastic scattering events. For completeness, Fig. 6(b) presents a two-dimensional chart similar to panel (a), but it is obtained by requir-ing a coincidence with any event in the VAMOS++ spec-trometer. 
+
+> One-dimensional identification
+
+For the purpose of convenience and precise quantifi-cation of the separation between distinct isotopes, the two-dimensional correlation depicted in Figure 6(b) can be transformed into a one-dimensional particle iden-tification (PID) spectrum. Towards this objective, we adopted the methodology outlined in Ref. [9] and uti-lized the neural network architecture Nl × Nu + Nou =
+
+8 × 32 + 1. The inputs to this network were (i) ∆Ecos( α), 
+
+(ii) Eres , and (iii) telescope number. The network was trained on the data presented in Figure 6(b), which were obtained in coincidence with any event in VAMOS++. Figure 6(c) presents the one-dimensional spectra of PID for the three telescopes. In PID units, the iso-topes of a given element are grouped around the el-ement’s atomic number. The corresponding isotopes are spaced by 0.12 PID units, with the isotope hav-ing an equal number of neutrons and protons placed at the element’s atomic number. Figure 6(d) illustrates the one-dimensional spectra of PID for individual tele-11 scopes. It is evident from the figure that the individ-ual spectra are highly aligned, and the achieved isotope separation quality is consistent across all telescopes. The mean value of the standard deviation for particle identification σPID = 0.03 PID units was determined. With 0.12 PID units corresponding to one mass spacing 
+
+σ/A = 0.028 for Beryllium and σ/A = 0.02 for Carbon, the achieved separation quality was observed. 
+
+> SUMMARY AND CONCLUSIONS
+
+In this work, we have presented a fully automated, physics-informed calibration framework for highly seg-mented silicon telescope arrays, based on neural net-work optimization. The method formulates detector calibration as a global inverse problem, in which de-tector gains and geometrical corrections are determined simultaneously by minimizing the width of the recon-structed excitation energy under two-body kinematics constraints. A key feature of the approach is the use of mul-tiple neural network sub-models sharing a common loss function, in which the relevant physical and ge-ometrical constraints are explicitly embedded. This design ensures a coherent and self-consistent calibra-tion across all detector channels, while preserving the independence of the different calibration parameters. The method relies exclusively on experimental data and well-established physical principles, without requiring explicit modeling of the detector response. The calibration framework was applied to experimen-tal data obtained with the PISTA array in inverse kine-matics transfer reactions. The results demonstrate ex-cellent agreement with theoretical kinematics, as evi-denced by the precise reconstruction of the excitation energy and the high quality of particle identification. The achieved excitation energy resolution and isotope separation confirm the validity and effectiveness of the method. In addition, the training process was found to be both computationally efficient and robust, with stable results obtained across different dataset configurations. From a methodological perspective, the present work illustrates how physics-informed machine learning can be used to address complex calibration problems in nuclear physics. By embedding domain knowledge directly into the optimization process, the approach avoids the limitations of purely empirical models while retaining the flexibility of data-driven methods. The proposed framework is inherently scalable and can be readily extended to detector systems with higher granularity or more complex geometries. Furthermore, the general formulation of the method makes it adapt-able to other experimental configurations, including cases involving different reaction mechanisms or detec-tor technologies. Future developments may include the incorporation of more complex kinematical constraints, as well as the extension to multi-body reaction channels. Overall, the presented approach provides a robust, re-producible, and efficient solution to the calibration of modern segmented detector systems, and constitutes a promising tool for next-generation nuclear physics ex-periments.

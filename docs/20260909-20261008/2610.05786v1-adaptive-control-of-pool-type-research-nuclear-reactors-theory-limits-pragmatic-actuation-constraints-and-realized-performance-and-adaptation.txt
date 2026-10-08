@@ -1,0 +1,910 @@
+Title: Adaptive control of pool-type research nuclear reactors: theory limits, pragmatic actuation constraints, and realized performance and adaptation
+
+URL Source: https://arxiv.org/pdf/2610.05786v1
+
+Published Time: Tue, 06 Oct 2026 02:19:14 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Adaptive control of pool-type research nuclear reactors: theory limits, pragmatic actuation constraints, and realized performance and adaptation 
+
+Dimitrios Pylorof Linyu Lin 
+
+Abstract —Adaptive control is attractive for nuclear reactors expected to operate predictably with extensive automation or bounded autonomy under dynamic electric and nonelectric demands, even as reactor and actuator characteristics depart from their nominal values. Standard adaptive control results, however, assume fixed matched dynamics and an input applied as computed. In this work we evaluate a recent model reference adaptive control with linear quadratic regulation (MRAC–LQR) construction on the nonlinear point-kinetics model of Purdue University Reactor Number One (PUR-1), with a moving physical reference, nonlinear rod worth, rate and travel limits, quantization, deadband, and optional power-only state reconstruction. An exact sampled decomposition separates matched adaptation from observer, command processing, actuator realization, independent reactivity, and unmatched-dynamics residuals. Numerical results emphasize compatible reference trajectories, plant parameter variation, response to unexpected rod motion, and actuator duty. Across sampled plants, one unchanged nominal design yields closely aligned responses through adaptively calculated, plant-dependent actuation histories, illustrating both the premise and the theory limits of adaptation at a pool-reactor scale that can support follow-on experimental verification and progression toward higher-consequence nuclear applications. 
+
+Index Terms —adaptive control, MRAC–LQR, nuclear reactor control, actuator constraints, point kinetics, load following 
+
+I. I NTRODUCTION 
+
+Since the advent of nuclear power generation in 1951 in the desert of eastern Idaho, reactor feedback control has matured significantly, but proposed missions and requirements are chang-ing rapidly. New reactor concepts are being considered for re-mote sites, islanded grids, industrial process heat, non-baseload electricity generation, and applications that seek predictable operation with extensive automation or bounded autonomy and limited or no onsite staffing; naval and spacecraft propulsion represent notable frontiers. Their power demands may be unusually dynamic relative to the predominantly baseload operation that has characterized most nuclear deployments. In parallel, the reactor and actuators seen by the controller can change with operating conditions and service life through fuel burnup, poison inventory, temperature feedback, and rod worth [1]–[5]. While protection and safety systems remain independent of feedback control, a critical question remains: 
+
+can the power control layer follow compatible trajectories, 
+
+D. Pylorof and L. Lin are with the U.S. Department of Energy Idaho National Laboratory, Idaho Falls, ID 83415, USA. This work was supported by the U.S. Department of Energy under Contract No. DE-AC07-05ID14517. The views expressed do not necessarily reflect those of the U.S. Government. 
+
+reject disturbances, and remain predictable as both the mission and the true plant depart from the nominal design ?The premise of model reference adaptive control (MRAC) is familiar: select a stable reference behavior, measure how the actual system departs from it, and update controller parameters so that the plant behaves more like the reference. We use the recent Fisher–Annaswamy MRAC–LQR construction [6], which combines a stabilizing nominal linear quadratic regulator (LQR), a direct adaptive update, and an epoch-gated learn-and-redesign mechanism, while retaining the model-following premise of direct MRAC [7], [8]. A gap nevertheless emerges for any physical, hardware-actuated system: what happens when the reference moves, uncertainty is not fully matched, and the computed input must pass through a nontrivial actuator? We develop this work as both a complement to and a reality check on adaptive control as an implementable reactor control approach. Pool-type research reactors provide an intermediate platform for examining adaptive control in nuclear systems. They retain neutron kinetics, control rods, instrumentation, operating procedures, and independent protection without the scale and regulatory complexity of a commercial plant. PUR-1 also provides a digital control and cyber-physical setting intended for staged evaluation [9]. This role resembles NASA’s use of the AirSTAR subscale aircraft to confront adaptive flight control designs with sensing and actuation before higher-consequence deployment [10]. Adaptive control in nuclear systems has been studied through state and output feedback MRAC for reactor-power tracking under parametric uncertainty and external disturbances [11], [12], and through model-reference robust adaptive control of control-element drive mechanisms [13]. Related LQR-referenced adaptive control has also been applied to a glycol heat exchanger in an integrated energy system, representing balance-of-plant thermal equipment rather than reactor core dynamics [14]. The present work links these lines by evaluating core power adaptation through an explicit nonlinear, sampled, and constrained control rod interface. Our contributions are as follows: 1) We implement MRAC–LQR for PUR-1 load following and evaluate nonlinear and constrained actuation, quanti-zation, deadband, observer-based state reconstruction, and disturbances, including effects outside the assumptions of the underlying theory. arXiv:2610.05786v1 [eess.SY] 5 Oct 2026 2) We formulate an exact sampled decomposition that separates matched adaptation from moving-reference, observer, actuator, independent reactivity, and unmatched dynamics residuals. 3) Numerical evaluations cover direct and shaped maneu-vers, 30 plant cases with paired adaptive/fixed-nominal runs, unexpected motion of a second rod, power-only reconstruction, and the deadband trade between power precision and actuator duty. Together, the formulation and 30-case comparison illustrate a practical meaning of robustness for adaptive control. The nominal physical reference, target dynamics, initial LQR gain, adaptive law structure, actuator calibration, and related logic are fixed once. Each plant is then simulated independently from the same controller initialization, with online adaptation driven only by that plant’s observed transitions and delivered input. Despite different plant dynamics, the power trajectories remain closely aligned while the rod histories differ. Unlike a conventional plant family study with a fixed controller, the coefficients of each deployed plant are not used for plant-specific synthesis; the common adaptive architecture responds online to the plant encountered. This distinction is relevant as reactor parameters evolve over the life cycle. II. R EACTOR , R EFERENCE , AND CONTROLLER 
+
+A. Physical plant and reactivity-driven dynamics 
+
+Let θ ∈ Θ collect physical reactor and actuator coefficients used in the numerical evaluations. The reactor state is 
+
+x = [ p, c 1, c 2, c 3, c 4, c 5, c 6, T, I, X ]T ∈ R10 ,
+
+where p is normalized neutron power, ci are six delayed neutron precursor states, T is a lumped fuel/moderator tem-perature, and I and X are iodine and xenon states. Define 
+
+ep := [1 0 · · · 0] T ∈ R10 ; the measured power is 
+
+y = eT 
+
+> p
+
+x + ν = p + ν, where ν is measurement error. The manipulated physical input u(t) is the AMDR reactivity contribution and w(t) is the independent regulating rod (RR) contribution, both in parts per hundred thousand (pcm), with 
+
+1 pcm = 10 −5 dimensionless reactivity. Rod positions and the nonlinear maps that generate u and w are defined in Sec. II-B. Downstream of those maps, the physical reactor is 
+
+Pθ : ˙x = fθ (x, u, w ), y = eT 
+
+> p
+
+x + ν. (1) Two safety shim rods remain fixed during each run; their combined worth is Wfix ,θ . With baseline excess reactivity offset 
+
+ρb in pcm, temperature and xenon feedback coefficients αT
+
+and αX , and bulk pool water heat sink temperature T∞, the dimensionless reactivity entering point kinetics is 
+
+ρθ (x, u, w ) = 10 −5Wfix ,θ + u + w − ρb
+
++ αT (T − T∞) + αX X. (2) Let βi be the delayed neutron fractions, β = P6 
+
+> i=1
+
+βi, Λ the prompt generation time, and λi the precursor decay constants. Let τT be the thermal time constant; λI , λ X the iodine and xenon decay constants; σX the xenon absorption coefficient; and kI = yI κf , kX = yX κf , where yI , y X are fission yields and κf is the normalized fission rate factor. Then fθ is 
+
+˙p = ρθ (x, u, w ) − β
+
+Λ p + X6 
+
+> i=1
+
+λici, (3a) 
+
+˙ci = βi
+
+Λ p − λici, i = 1 , . . . , 6, (3b) 
+
+˙T = (35 p + T∞ − T )/τ T , (3c) 
+
+˙I = kI p − λI I, (3d) 
+
+˙X = kX p + λI I − (λX + σX p)X. (3e) Dependence of the individual coefficients on θ is suppressed for readability. 
+
+B. Rod worth, command processing, and sampled actuation 
+
+The PUR-1 model contains four rod worth channels. The 
+
+auxiliary moderate displacement rod (AMDR) is the feedback actuator; the RR is normally fixed and is moved only as an independent anomaly input; and safety shim rods SS1 and SS2 remain fixed. For rod j ∈ { A, RR , SS1 , SS2 }, let qj denote position in centimeters and 
+
+Wj,θ (qj ) = aj0(θ) + aj1(θ)qj + aj2(θ)q2 
+
+> j
+
++ aj3(θ)q3 
+
+> j
+
+(4) its cubic worth map in pcm, with ajr (θ) the polynomial coefficients. A superscript 0 denotes a fixed or initial position. Thus q0SS1 = 54 cm and q0SS2 = 56 cm, and 
+
+Wfix ,θ = WSS1 ,θ (q0SS1 ) + WSS2 ,θ (q0SS2 ). (5) Let ¯θ denote the nominal design coefficients and W A(q) := 
+
+WA, ¯θ (q) the calibration retained by the controller. It is strictly increasing on 0 ≤ q ≤ 64 cm, so its inverse is single valued on the reachable worth interval. The sampled physical AMDR variations preserve this input sign. At time tk = k s, let xk := x(tk) and qj,k := qj (tk). Let 
+
+ur,k denote the sampled reference AMDR worth constructed in Sec. II-C and v⋆k the dimensionless residual command produced in Sec. II-E. With sat [a,b ](r) := min {b, max {a, r }} ,the actuator-facing command is 
+
+vraw  
+
+> k
+
+= sat 
+
+> [−vmax ,v max ]
+
+(v⋆k), vck = αf vraw  
+
+> k
+
++ (1 − αf )vck−1, (6) where vmax = 2 , αf = 0 .45 , and one unit of v is sv = 10 
+
+pcm. The filtered total worth request and corresponding rod position target are utarg  
+
+> k
+
+= ur,k + sv vck and qtarg  
+
+> A,k
+
+= IA(utarg  
+
+> k
+
+),where IA inverts W A when the requested worth is reachable and otherwise returns the nearest travel boundary. The map 
+
+AA then applies target deadband, rate and travel limits, and 0.1 cm quantization. Let q+ 
+
+> A,k
+
+and q+ 
+
+> R,k
+
+be the post-command positions held on [tk, t k+1 ), and let Fθ be the one-second flow map of (1). The sampled physical interconnection is 
+
+q+ 
+
+> A,k
+
+= AA(qA,k , q targ  
+
+> A,k
+
+), uind  
+
+> k
+
+= W A(q+
+
+> A,k
+
+),uk = WA,θ (q+
+
+> A,k
+
+), wk = WRR ,θ (q+
+
+> R,k
+
+),xk+1 = Fθ (xk, u k, w k), qA,k +1 := q+
+
+> A,k
+
+. (7) The RR memory is updated analogously; normally q+ 
+
+> R,k
+
+= qR,k .The physical plant receives uk, whereas adaptation uses the delivered, nominally indicated residual 
+
+vak = ( uind  
+
+> k
+
+− ur,k )/s v . (8) Remark 1 (Actuator cascade) . The effective system seen by adaptation includes limiting, filter memory, nominal worth inversion, rod realization, the physical worth map, and reactor dynamics. Calibration mismatch is compensable only to the extent that it preserves sign and authority and is representable through the AMDR input direction; nonlinear mismatch may instead create time-varying effective coefficients. Clipping, filtering, rate and travel limits, deadband, and quantization alter command realization and remain outside the fixed matched-input result, so their effects are evaluated numerically. 
+
+C. Compatible physical reference trajectory 
+
+Upstream of the adaptive control mechanics, it is important to differentiate between the external power command pc
+
+(potentially piecewise continuous), desired power pr , physical reference (xr , u r ), and the tracking error dynamics. In routine load following, an upstream scheduler or supervisor should provide a trajectory compatible with operating limits, ramp capability, and mission objectives; MRAC–LQR regulates to that trajectory rather than constructing it. Higher level reference governor and learning-based trajectory generation have been considered for nuclear systems [15]–[17]. The step commands used in this work are diagnostics. We either set pr = pc or pass pc through a fixed stable filter Gr selected offline as a guard against discontinuous requests. Unlike a formal reference governor, Gr does not recompute the command from state and constraint predictions [15], [18]. Let f¯θ be the nominal reactor vector field, q0 
+
+> R
+
+the fixed reference RR position, and wr := WRR ,¯θ (q0
+
+> R
+
+). The physical reference reactor satisfies 
+
+˙xr = f¯θ (xr , u r , w r ), eT 
+
+> p
+
+xr = pr . (9) The non-power components of xr follow (3b)–(3e) with nominal coefficients. Inverse kinetics gives 
+
+ρr = β + Λ
+
+pr
+
+˙pr −
+
+> 6
+
+X
+
+> i=1
+
+λici,r 
+
+!
+
+, (10) and the compatible reference AMDR worth is 
+
+ur = 10 5ρr −Wfix ,¯θ −wr +ρb −αT (Tr −T∞)−αX Xr , (11) with nominal coefficients on the right-hand side. The cor-responding reference position is qA,r = W −1 
+
+> A
+
+(ur ). At tk,define xr,k := xr (tk) and ur,k := ur (tk). Hence pc 7 → pr 7 →
+
+(xr , u r , q A,r ) defines the moving physical reference. 
+
+D. Tracking coordinates and nominal error model 
+
+Let xnom eq = [peq , c 1,eq , . . . , c 6,eq , T eq , I eq , X eq ]T be the nominal equilibrium at the initial power level, and define 
+
+Sx = diag  p−1eq , c −11,eq , . . . , c −16,eq , 0.1, I −1eq , X −1eq 
+
+ , (12) where the temperature entry is in K −1. The physical tracking coordinate and its integral augmentation are 
+
+zk := Sx(xk − xr,k ) ∈ R10 , ¯zk := 
+
+zk
+
+ηk
+
+
+
+∈ R11 , (13) where ηk is the bounded integral of scaled power error and, when antiwindup is inactive, ηk+1 = ηk + eT 
+
+> p
+
+zk.Linearizing the nominal plant/reference pair in the sampled residual coordinate vk = ( uind  
+
+> k
+
+− ur,k )/s v and applying exact one-second zero-order-hold discretization gives 
+
+zk+1 = Apzk + Bpvk, Ap ∈ R10 ×10 , Bp ∈ R10 . (14) The augmented pair is 
+
+A0 =
+
+Ap 0
+
+eT 
+
+> p
+
+1
+
+
+
+, B 0 =
+
+Bp
+
+0
+
+
+
+, ¯zk+1 = A0 ¯zk + B0vk. (15) All controllers use 
+
+Q = diag 
+
+20 , 0.7, . . . , 0.7
+
+| {z }
+
+> 6
+
+, 2, 0.03 , 0.08 , 0.10 
+
+ ∈ R11 ×11 ,R = [4] ∈ R>0, K0 = dlqr( A0, B 0, Q, R ) ∈ R1×11 , Bm =
+
+B0, and Am = A0 + B0K0, where dlqr denotes the discrete time LQR gain and Am is Schur. The entries of Q weight, in order, scaled power, six precursors, temperature, iodine, xenon, and integral error. The Jacobian and K0 are evaluated at 10% power except for the 40% multilevel maneuver; K0 is fixed within each comparison. 
+
+E. MRAC–LQR on the tracking system 
+
+We apply the Fisher–Annaswamy MRAC–LQR algorithm [6] to the tracking error system. Let bak ∈ R11 , bbk ∈ R, and bgk ∈ R
+
+denote its adaptive feedback, input effectiveness, and matched bias coefficients. They are effective control quantities, not real-time estimates of the physical coefficients θ ∈ Θ. Let ¯zfb 
+
+> k
+
+denote the coordinate supplied by the feedback path: ¯zfb  
+
+> k
+
+= ¯ zk
+
+under full state feedback and, under power-only feedback, it is the reconstructed coordinate defined in Sec. II-F. We initialize 
+
+(ba0, bg0, bb0) = ( KT 
+
+> 0
+
+, 0, 1) and project componentwise to 
+
+KT 
+
+> 0
+
+− 2111 ≤ bak ≤ KT 
+
+> 0
+
++ 2 111 ,
+
+0.30 ≤ bbk ≤ 1.80 , |bgk| ≤ 1. (16) where 111 is the vector of ones. At redesign epoch ℓ, let ∆m,ℓ ∈
+
+R11 be the epoch correction, initially zero. The unconstrained residual worth command is 
+
+v⋆k = bb−1
+
+> k
+
+(bak + ∆ m,ℓ )T ¯zfb  
+
+> k
+
+− bgk
+
+ . (17) The integral state satisfies |ηk| ≤ 0.50 and is frozen under active AMDR rate or travel limitation; exploratory excitation is disabled. Define bψk = [baT 
+
+> k
+
+bgk bbk]T ∈ R13 , ϕk =[−(¯ zfb  
+
+> k
+
+)T 1 vak ]T ∈ R13 , and ζk+1 := B†
+
+> m
+
+(¯ zfb  
+
+> k+1
+
+− Am ¯zfb  
+
+> k
+
+) ∈ R,where † denotes the Moore–Penrose pseudoinverse. With Euclidean projection proj onto (16), the fast update is 
+
+bψk+1 = proj 
+
+"bψk + (ζk+1 − bψT 
+
+> k
+
+ϕk)ϕk
+
+max {1, ∥ϕk∥2}
+
+#
+
+. (18) Equation (18) updates the applied coefficients at 1 Hz within prescribed bounds. Recursive least squares (RLS) runs at the same rate, maintaining a separate parameter estimate and information matrix from the observed transitions. With the selected box projection, the RLS estimate enters neither (17) nor (18). Its accumulated information gates LQR redesign, which is eligible only after an information increment of 2×10 −4
+
+and a minimum age of 900( ℓ+1) samples. A candidate redesign uses (bak, bbk) and must pass a Schur stability check on the resulting linear closed loop. Thus “slower” refers to gated redesign, while both learning recursions run at 1 Hz. In the plant family runs, no redesign is accepted: ∆m,ℓ = 0 and the nominal LQR design is retained, while direct adaptation changes the effective feedback law. Before each plant run, bψ0, η0, filter state, and RLS/epoch memory are reset. In the fixed-nominal pair, (17), integral action, filtering, rod realization, and the nonlinear plant remain active, while (18), RLS, and redesign are skipped; hence bψk =
+
+bψ0 and ∆m,ℓ = 0 . This isolates online adaptation from nominal feedback and actuator dynamics. The complete sampled loop therefore includes more state than (1). With col( ·) denoting column concatenation and Rk
+
+the RLS/epoch memory, define 
+
+χk = col( xk, x r,k , q A,k , q R,k , η k, v ck−1, bψk, Rk). (19) With pc,k := pc(tk) and νk := ν(tk), let ωR,k be an exogenous RR motion request, zero in normal operation. Then χk+1 =
+
+Fcl ,θ (χk, p c,k , ν k, ω R,k ) for a closed-loop map Fcl ,θ . Power-only operation augments χk with bxk. MRAC–LQR acts on 
+
+¯zfb  
+
+> k
+
+= ¯ zfb (χk) induced by this interconnection, not directly on the isolated state xk.
+
+F. Power-only state reconstruction 
+
+Reactor instrumentation typically does not directly measure many of the states in x. With power-only feedback, measured power supplies the first state and the remaining nine states are propagated from reactor physics. Over each completed one-second interval, let y(t) linearly interpolate the endpoint measurements. The estimates satisfy 
+
+˙bci = βi
+
+Λ y − λibci, ˙bT = 35 y + T∞ − bTτT
+
+,
+
+˙bI = kI y − λI bI, ˙bX = kX y + λI bI − (λX + σX y) bX. (20) Thus bx = [y, bc1, . . . , bc6, bT , bI, bX]T, bzk = Sx(bxk − xr,k ),and b¯zk = [bzT 
+
+> k
+
+ηk]T. Consequently, ¯zfb  
+
+> k
+
+= b¯zk in power-only operation. This is a physics propagation observer, not aLuenberger observer. For estimate-minus-truth errors, e.g., eX = bX − X, subtrac-tion of (3) from (20) gives 
+
+˙eci = −λieci + ( βi/Λ) ν, ˙eT = − eT /τ T + 35 ν/τ T ,
+
+˙eI = −λI eI + kI ν, 
+
+˙eX = λI eI − λX eX + kX ν − σX (y eX + Xν ).
+
+(21) With exact power measurement and consistent initialization, zero estimation error is invariant. Precursor and temperature errors decay much faster than iodine and xenon errors. Three initialization levels are used below, always with the physical reactor at its true 10% equilibrium and measured power initialized exactly. The warm case sets all nine hidden states to their true equilibrium values. The intermediate (semi-warm) case keeps the six precursors, temperature, and iodine exact but sets bX0 = 10 X0, isolating a large slow-state error. The 
+
+observer-cold case sets bci, 0 = bI0 = bX0 = 0 and bT0 = T∞;“cold” refers to estimator memory, not the physical reactor. Because the reconstructed coordinate enters both (17) and (18), the full-state MRAC–LQR result does not provide a separation principle for the coupled observer/adaptive loop. III. E XACT ERROR DECOMPOSITION AND THEORY 
+
+BOUNDARY 
+
+A. Moving-reference sampled dynamics 
+
+For the physical reference in Sec. II-C, load following is regulation of the tracking coordinate zk in (13) about zero. Combining the sampled rod/plant interconnection (7), the nominal reference reactor (9), and the delivered residual (8), the smooth one-second plant/reference flow admits an exact incremental factorization along the realized transition: 
+
+zk+1 = Akzk + Bkvak + dk. (22) Here Ak ∈ R10 ×10 is the realized state-error transition, 
+
+Bk ∈ R10 maps the delivered, nominally indicated AMDR residual into the next error, and dk ∈ R10 collects the remaining increment, including the independent reactivity deviation wk − wr. These are effective transition quantities induced by the nonlinear interconnection and may vary with operating point, reference motion, actuator realization, and the connected plant. Equation (22) is therefore not the fixed linear time-invariant model assumed by the MRAC–LQR result [6]. Partition K0 = [ Kz kη ], with Kz ∈ R1×10 and kη ∈ R, and define the ten-state comparator Am,p := Ap + BpKz . Let 
+
+PB := BpB† 
+
+> p
+
+be the orthogonal projector onto im Bp, I10 the identity, and ∆Ak := Ak − Am,p . Let a⋆k ∈ R10 , b⋆k, g ⋆k ∈ R,
+
+EA,k ∈ R10 ×10 , and EB,k , d ⊥ 
+
+> k
+
+∈ R10 be defined by the exact projections 
+
+a⋆T 
+
+> k
+
+= −B†
+
+> p
+
+∆Ak, EA,k = ( I10 − PB )∆ Ak,b⋆k = B†
+
+> p
+
+Bk, EB,k = ( I10 − PB )Bk,g⋆k = B†
+
+> p
+
+dk, d⊥ 
+
+> k
+
+= ( I10 − PB )dk (23) produce 
+
+Ak = Am,p − Bpa⋆T 
+
+> k
+
++ EA,k ,Bk = Bpb⋆k + EB,k , dk = Bpg⋆k + d⊥ 
+
+> k
+
+. (24) The starred quantities are instantaneous control-referenced projections, not physical entries of θ. If b⋆k has known sign and is bounded away from zero, define 
+
+vid  
+
+> k
+
+:= ( b⋆k)−1  a⋆T 
+
+> k
+
+zk − g⋆k
+
+ . (25) 
+
+Proposition 1 (Exact matched/unmatched separation) . Defini-tions (23) –(25) give 
+
+zk+1 = Am,p zk + Bpb⋆k(vak − vid  
+
+> k
+
+) + r⊥ 
+
+> k
+
+, (26) 
+
+where r⊥ 
+
+> k
+
+:= EA,k zk + EB,k vak + d⊥ 
+
+> k
+
+and B†
+
+> p
+
+r⊥ 
+
+> k
+
+= 0 .Proof. Substitute (24) into (22), add and subtract Bpb⋆kvid  
+
+> k
+
+, and use (25). 
+
+Remark 2 (Why the projection matters) . The decomposition is algebraically elementary, but the projection is onto im Bp,the only direction through which the scalar AMDR residual can change the nominal physical tracking dynamics. If r⊥ 
+
+> k
+
+= 0 
+
+and b⋆k̸ = 0 , vid  
+
+> k
+
+is the unique delivered residual that realizes zk+1 = Am,p zk; if r⊥
+
+> k
+
+̸ = 0 , no scalar AMDR input cancels that component at the same sample. Thus (26) distinguishes uncertainty structure from input realization and prevents inter-preting a⋆k, b ⋆k, g ⋆k as physical parameter estimates. Saturation or deadband may leave r⊥ 
+
+> k
+
+small yet enlarge vak − vid  
+
+> k
+
+. Fisher and Annaswamy’s Theorem 2 [6] is proved for the fixed discrete-time LTI plant in their Eq. (1) under Assumptions 1–2: full state measurement, exact matching to a known Schur pair, bounded and invertible input effectiveness, and direct application of the computed input. The directly covered, bias-free counterpart in our notation has constant a⋆k, b ⋆k, g⋆k = 0 , r⊥ 
+
+> k
+
+= 0 , bzk = zk,and vak = v⋆k ; the matched bias and actuator cascade terms are additional. 
+
+B. Implementation residuals and conditional bound 
+
+Let v⋆(¯ z, bψ) denote (17). The delivered input mismatch in (26) has the exact telescoping split 
+
+vak − vid  
+
+> k
+
+= v⋆(¯ zk, bψk) − vid 
+
+> k
+
+| {z }
+
+> δpar
+> k
+
++ v⋆(b¯zk, bψk) − v⋆(¯ zk, bψk)
+
+| {z }
+
+> δobs
+> k
+
++ vraw  
+
+> k
+
+− v⋆(b¯zk, bψk)
+
+| {z }
+
+> δmag
+> k
+
++ vck − vraw 
+
+> k
+
+| {z }
+
+> δfilt
+> k
+
++ vak − vck
+
+| {z }
+
+> δact
+> k
+
+. (27) These terms represent adaptive parameter , observer , magnitude limit , filter , and command realization errors. Physical worth map mismatch instead changes Bk and therefore b⋆k and 
+
+EB,k ; it is not hidden inside δact  
+
+> k
+
+. To make the last term explicit, let dA ≥ 0 be the target deadband, Dd(r) = 0 for 
+
+|r| < d and Dd(r) = r otherwise, Π[0 ,64] the travel projection, and Q0.1 the 0.1 cm quantizer. With requested increment 
+
+∆qtarg  
+
+> A,k
+
+:= qtarg  
+
+> A,k
+
+−qA,k and delivered pre-quantization increment 
+
+∆qdel 
+
+> A,k
+
+, we obtain ∆qdel  
+
+> A,k
+
+= sat [−5,5] 
+
+
+
+DdA (∆ qtarg  
+
+> A,k
+
+)
+
+
+
+and 
+
+q+ 
+
+> A,k
+
+= Q0.1
+
+
+
+Π[0 ,64] (qA,k + ∆ qdel 
+
+> A,k
+
+)
+
+
+
+. Rate limiting adds actuator memory; travel limits, deadband, and quantization create regions where a change in v⋆k is not transmitted to vak .The claim of Proposition 1 remains exact, but the applied-as-computed premise does not. Equations (26) and (27) form a comparator system driven by one aggregate residual. Define 
+
+ξk := Bpb⋆k(δpar  
+
+> k
+
++ δobs  
+
+> k
+
++ δmag  
+
+> k
+
++ δfilt  
+
+> k
+
++ δact  
+
+> k
+
+) + r⊥ 
+
+> k
+
+, (28) so that zk+1 = Am,p zk + ξk. Iterating this identity gives a conditional input-to-state-style comparison: if Ajm,p ≤
+
+Cmγj for constants Cm > 0, 0 < γ < 1, and if the closed-loop residual satisfies ∥ξk∥ ≤ ¯ξ, then 
+
+∥zk∥ ≤ Cmγk ∥z0∥ + Cm
+
+1 − γ ¯ξ. (29) This result is conditional because ξk is not exogenous; it depends on adaptation, observation, command processing, actuation, and the nonlinear plant. The bound (29) is therefore an accounting device rather than a nonlinear adaptive stability theorem: it connects the residual decomposition to the satu-ration, plant variation, observer, deadband, and quantization tests. IV. E VALUATION PROTOCOL 
+
+All simulations use the nonlinear ten-state plant, LSODA integration, and a 1 Hz control/actuation clock. Metrics include power root mean square error (RMSE), peak error, settling time, limit exposure, and rod activity. Over N samples, total AMDR mileage is calculated as MA := PN −1 
+
+> k=0
+
+|qA,k +1 − qA,k |. The reversal count Nrev is the number of sign changes in nonzero AMDR motion. Both are actuator duty proxies rather than life predictions, but they relate directly to wear, maintenance exposure, and downstream risk. Our evaluations compare direct and shaped 10% → 15% → 10% commands; 30 cases in overlapping 9- and 21-case parameter sets; paired adaptive and fixed-nominal runs; power-only feedback and observer initialization; and deadband widths dA = 0 .2 cm and dA = 0 .For unexpected RR motion, the 10% equilibrium is q0 
+
+> R
+
+=9.4287 cm; at 600 s the RR moves at no more than 0.9167 
+
+cm/s to q0 
+
+> R
+
++ ∆ qR, ∆qR ∈ {− 2, −1, 1, 2} cm, and remains there. For plant case j, let x(j)0 be its equilibrium and xr, 0 the reference equilibrium. The comparison uses 
+
+z(j) 
+
+> k
+
+= Sx
+
+h
+
+(x(j) 
+
+> k
+
+− x(j)0 ) − (xr,k − xr, 0)
+
+i
+
+. (30) For the plant family comparisons, online updates are paused during the equilibrium prelude, enabled at the maneuver in adaptive runs, and controller memory is reset before each new plant; execution order therefore transfers no learning. The same 10% → 9% → 10% case is repeated for each plant 
+
+j, with the same target system, nominal LQR gain, integral action, feedback, and actuator logic. The 9-case reactivity channel grid scales αT and αX together by {0.8, 1.0, 1.2}
+
+and AMDR differential worth independently by {0.9, 1.0, 1.1}.The 21-case expanded set varies Λ and thermal gain by ±2% ,
+
+β and λi by ±1% , τT by ±5% , αT and αX by ±10% ,
+
+kI , k X , λ I , and λX by ±2% , σX by ±1% , and AMDR/RR differential worth by ±5% ; 16 interior combinations are fixed Latin hypercube samples. Coefficients are fixed within a run. These are simulation ranges, not measured PUR-1 uncertainty bounds or licensing limits. V. R ESULTS 
+
+A. Reference feasibility and the larger maneuver 
+
+Figure 1 compares direct and shaped targets for the same diagnostic 10% → 15% → 10% command. The direct target requests the full change in one sample: desired AMDR speed reaches 43.1 cm/s, the delivered rod is rate limited for 12 s and travel limited for 391 s, and RMSE is 1.098 × 10 −2.The simulated loop nevertheless remains bounded, reaches the high-power plateau, and returns without persistent loss of regulation–an empirical result, not a safety or theorem claim. The shaped target, with natural frequency ωn = 0 .01 rad/s, requests 0.29 cm/s, reaches neither limit, lowers RMSE to 
+
+1.835 × 10 −5, and reduces mileage from 129.8 to 93.1 cm; its slower 585 s settling avoids sustained saturation. In (26), the direct case primarily enlarges vak − vid  
+
+> k
+
+through δact  
+
+> k
+
+, whereas shaping keeps the requested reference within available rod authority. 0.09 0.10 0.12 0.14 0.16 
+
+> normalized power
+
+(a) Five percentage point command 
+
+> power command / direct target direct-target response shaped target shaped-target response
+> 10 −8
+> 10 −7
+> 10 −6
+> 10 −5
+> 10 −4
+> 10 −3
+> 10 −2
+> 10 −1
+> |p − pr|
+
+(b) Tracking error     
+
+> direct target shaped target
+> 500 1000 1500 2000 2500
+> time (s)
+> −16 016 32 48 64 80
+> AMDR position (cm)
+
+(c) Rod position     
+
+> direct desired AMDR direct delivered AMDR shaped desired AMDR shaped delivered AMDR travel limits
+> 500 1000 1500 2000 2500
+> time (s)
+> −60 −40 −20 020 40 60
+> AMDR speed (cm/s)
+
+(d) Rod speed 
+
+> direct desired speed direct delivered speed shaped desired speed shaped delivered speed ±5 cm/s limit
+
+Fig. 1. Direct and shaped targets for the same 10% → 15% → 10% command. The direct physical reference is infeasible under the modeled rod speed and travel; the shaped reference remains feasible and reduces tracking error and total rod mileage. 0.0875 0.0900 0.0950 0.1000 0.1025 
+
+> normalized power
+
+Reactivity channel set (9 cases)  
+
+> 0.0875 0.0900 0.0950 0.1000 0.1025
+
+Expanded parameter set (21 cases)     
+
+> −0.2 0.0 0.2 0.4 0.6
+> tracking error (%)
+> −0.4 −0.2 0.0 0.2 0.4 600 900 1200 1500 1800
+
+time (s)     
+
+> −20 025 50 75 80
+> AMDR position (cm)
+> 600 900 1200 1500 1800
+
+time (s)     
+
+> −20 025 50 75 80
+> operator command desired power nominal PUR-1 other cases pointwise range
+
+Fig. 2. Complete adaptive response envelopes for the selected shaped 10% → 9% → 10% maneuver using (30) and the parameter ranges in Sec. IV. The nominal PUR-1 model is emphasized, all other cases remain visible, and shading gives the pointwise range. Similar power histories require different AMDR histories, which our MRAC-LQR implementation effectively utilizes to yield a practically indistinguishable power response across all considered nuclear systems. 
+
+B. One nominal design across 30 plant cases 
+
+Figure 2 shows the adaptive deployment runs for both parameter sets; it is not a frozen-controller robustness envelope. In the 9-case reactivity channel set, settling is 74–76 s, maximum pointwise power spread is 4.74 ×10 −4, simultaneous AMDR spread is 16.2 cm, and mileage is 94.7–125.9 cm. For the 21-case expanded set, the corresponding values are 67– 191 s, 4.18 × 10 −4, 12.5 cm, and 100.5–123.7 cm. Narrow power envelopes with separated rod histories make the adaptive premise observable: one fixed design-time architecture produces comparable output behavior through online, plant-dependent actuation histories. With no accepted LQR redesign, the paired fixed nominal reruns isolate direct adaptation in (18) without changing the plant, reference, feedback calculation, integral 0 600 1200 1800 2400 3000 3420                           
+
+> time (s)
+> 0.34 0.38 0.42 0.46 0.50
+> normalized power
+> (a) Complete multilevel power maneuver
+> desired power selected dA= 0.2 cm
+> dA= 0
+> 0600 1200 1800 2400 3000 3420
+> time (s)
+> 016 32 48 64
+> AMDR position (cm)
+> final 300 s
+> (b) Complete multilevel rod motion
+> −40 −20 020
+> power error (10 −5 ) (c) Multilevel maneuver: final 300 s
+> selected, dA= 0.2 cm deadband disabled, dA= 0
+> −5.0 −2.5 0.0 2.5 5.0 (d) Unexpected +2 cm RR motion: final 300 s
+> 42.8 42.9 43.0 43.1 43.2
+> AMDR position (cm)
+> 25.9 26.0 26.1 26.2 26.3 050 100 150 200 250 300
+> time within window (s)
+> 0510 15 20 25
+> cumulative travel (cm)
+> 050 100 150 200 250 300
+> time within window (s)
+> 0.0 0.5 1.0 1.5 2.0
+
+Fig. 3. Deadband ablation with all other settings fixed. The top row shows the complete multilevel 40% → 48% → 36% → 45% maneuver and rod motion; the shaded interval is expanded below at left. The lower-right column gives the final 300 s after an unexpected, held +2 cm RR displacement. Removing the deadband reduces quantization-scale power error but produces frequent 0.1 cm corrections and additional cumulative rod travel. 
+
+action, or actuator software. Adaptation lowers RMSE in all nine reactivity channel cases and in 19 of 21 expanded cases; across the overlapping sets, 28 of 30 pairs improve over 29 unique models. The two exceptions remain regulated but favor fixed nominal parameters. This neither proves r⊥ 
+
+> k
+
+= 0 nor identifies physical coefficients; it shows that matched online adjustment empirically dominates the remaining variation in most sampled cases and supports the adaptive control interpretation of robustness across the stated parameter ranges. 
+
+C. Deadband, precision, and actuator duty 
+
+Figure 3 first shows the complete 40% → 48% → 36% →
+
+45% maneuver, which exercises both regulation directions over a wider operating range. The selected and no-deadband power responses are nearly identical and neither reaches a rate or travel limit. In the final 300 s, however, removing the deadband raises mileage from 0.4 to 22.2 cm. Over the full maneuver, mileage rises from 87.1 to 115.0 cm and reversals from 4 to 287, while RMSE falls from 9.62 × 10 −5 to 2.26 × 10 −5. After the persistent +2 cm RR displacement, both settings recover in 5 s, but mileage rises from 16.8 to 31.1 cm and reversals from 10 to 160 without the deadband. In (26), deadband intentionally holds vak fixed for subthreshold corrections, replacing exact small-signal matching by a neighborhood set by deadband and quantization. Delivered input regression avoids treating an undelivered request as plant input, and parameter projection keeps the adaptive coefficients bounded. The multilevel test then supplies the empirical check: no accumulating error, delayed large correction, or escalating rod excursion appears, while quantization-driven switching is strongly suppressed. The mileage and reversal reductions matter because otherwise negligible corrections add motor and drivetrain duty, maintenance exposure, and sensitivity to backlash, stiction, wear, and failure. 
+
+D. Unexpected regulating rod motion and observer boundaries 
+
+At 600 s the RR moves from q0 
+
+> R
+
+= 9 .4287 cm to q0 
+
+> R
+
++ ∆ qR
+
+and is held while MRAC–LQR commands only the AMDR. Figure 4 shows all four signed cases. The motions add approximately −6.83 , −3.61 , +3 .98 , and +8 .33 pcm; all recover in 2–5 s without an AMDR limit, with compensating motion and power-error sign reversing with the anomaly. With exact, power-only feedback, warm initialization retains the 5 s recovery of the +2 cm case and tracks the shaped 
+
+10% → 9% → 10% maneuver nearly as in full state feedback. The compact comparison in Table I quantifies all three initialization cases. The tenfold-xenon case remains close to the warm response even though bX/X = 9 .887 at 600 s; in the observer-cold case, bX/X = 1 .63 × 10 −4 at the same time and the inconsistent precursor and temperature memories produce a large engagement transient. A ±1% sensor bias produces about a 1% physical offset. 0.099 0.100 0.101 0.102       
+
+> normalized power  (a) Power response
+> RR -2 cm RR -1 cm RR +1 cm RR +2 cm desired power
+> −2 −1 012
+> RR change (cm)
+> (b) Imposed RR position change
+> −20 −10 010
+> AMDR change (cm)  (c) Compensating AMDR motion
+> −6 −3 036
+> speed (cm/s)
+> (d) Delivered AMDR speed
+> 0300 600 900 1200 1500 1800
+> time (s)
+> −1.2 −0.6 0.0 0.6 1.2
+> power error (%)  (e) Relative power error
+
+Fig. 4. Full-horizon responses to sustained RR displacements from the 10% equilibrium q0 
+
+> R
+
+= 9 .4287 cm to q0 
+
+> R
+
++ ∆ qR, ∆qR = ±1, ±2 cm. Panels show the imposed motion, compensating AMDR action, and power response. At the physical reactivity input level, the imposed RR worth enters the same scalar channel as the AMDR and is therefore a matched disturbance. The independent rod motion and the surrounding nonlinear, filtered, quantized, rate- and travel-limited realization are not covered by the fixed-LTI MRAC–LQR result. These are generic anomaly tests rather than models of a specific failure. TABLE I
+
+CLOSED -LOOP OBSERVER INITIALIZATION RESULTS . A LL CASES BEGIN AT THE TRUE 
+
+10% EQUILIBRIUM WITH EXACT MEASURED POWER .Initialization Peak prelude AMDR range Limit time RMSE, power excursion in prelude (cm) rate/travel (s) 600 –2500 sWarm/exact − 0.0 0/0 2.69 × 10 −5
+
+bX0 = 10 X0 0.0622% 0.6 0/0 2.64 × 10 −5
+
+Observer-cold 11 .52% 47 .0 10 /49 4.58 × 10 −5
+
+VI. C ONCLUSION 
+
+In this work, we showed how MRAC–LQR can operate with nonlinear reactor dynamics and constrained actuation, including saturation, speed limits, and quantization. The plant family results demonstrate direct adaptation within prescribed bounds while retaining the nominal LQR design, reference construction, and actuator logic. This separation makes the scope of online change explicit for subsequent verification and regulatory review, although bounded coefficients alone do not establish stability of the complete constrained loop. The pool research reactor setting provides a path from simulation to experimental demonstrations and broader consideration in advanced reactor applications. REFERENCES [1] IAEA, Non-baseload Operation in Nuclear Power Plants: Load Following and Frequency Control Modes of Flexible Operation , IAEA Nuclear Energy Series NP-T-3.23, 2018. [2] P. K. Bhowmik, T. M. Anselmi, G. W. Griffith, P. Sabharwall, and Y. A. Ballout, “SMR current status: Development needs and global perspectives,” Idaho Natl. Lab., INL/CON-24-78387, 2024. [3] P. Ramuhalli and S. M. Cetiner, “Concepts for autonomous operation of microreactors,” Oak Ridge Natl. Lab., ORNL/TM-2019/1305, 2019. [4] E. S. Fleming, M. Nyre-Yu, and D. L. Luxat, “Human factors considera-tions for automating microreactors,” Sandia Natl. Labs., SAND2020-5635, 2020. [5] P. Ramuhalli, J. McConnell, W. Williams, and A. Meek, “Microreactor automated control system: Digital twin models and advanced control systems,” Oak Ridge Natl. Lab., ORNL/TM-2025/4087, 2025. [6] P. A. Fisher and A. M. Annaswamy, “Adapt and stabilize, then learn and optimize: A new approach to adaptive LQR,” arXiv:2512.04565v2, 2026. [7] K. S. Narendra and A. M. Annaswamy, Stable Adaptive Systems . Prentice Hall, 1989. [8] K. J. ˚ Astr¨ om and B. Wittenmark, Adaptive Control , 2nd ed. Addison-Wesley, 1995. [9] V. Theos et al. , “The PUR-1 cyber-physical digital twin,” arXiv preprint arXiv:2608.30186, Aug. 2026. [10] I. M. Gregory, E. Xargay, C. Cao, and N. Hovakimyan, “Flight test of an L1 adaptive controller on the NASA AirSTAR flight test vehicle,” in 
+
+Proc. AIAA Guidance, Navigation, and Control Conf. , 2010. [11] P. M. S. Reddy, S. R. Shimjith, A. P. Tiwari, and S. Kar, “State feedback output tracking model reference adaptive control for nuclear reactor,” 
+
+IFAC-PapersOnLine , vol. 53, no. 1, pp. 319–324, 2020. [12] P. M. S. Reddy, S. R. Shimjith, A. P. Tiwari, and S. Kar, “Output feedback model reference adaptive control of nuclear reactor,” Nuclear Engineering and Design , vol. 407, p. 112276, 2023. [13] B.-J. Park, P.-T. Pham, and K.-S. Hong, “Model reference robust adaptive control of control element drive mechanism in a nuclear power plant,” 
+
+International Journal of Control, Automation and Systems , vol. 18, pp. 1651–1661, 2020. [14] P. Seurin, A. M. Annaswamy, and L. Lin, “Adaptive control for a physics-informed model of a thermal energy distribution system: Qualitative analysis,” arXiv preprint arXiv:2510.26959 , 2025. [15] A. J. Dave, T. Lee, R. Ponciroli, and R. B. Vilim, “Design of a supervisory control system for autonomous operation of advanced reactors,” Annals of Nuclear Energy , vol. 182, p. 109593, 2023. [16] D. Pylorof and H. E. Garcia, “A reinforcement learning approach to long-horizon operations, health, and maintenance supervisory control of advanced energy systems,” Engineering Applications of Artificial Intelligence , vol. 116, p. 105454, 2022. [17] D. Pylorof and H. E. Garcia, “Unified system intelligence: Learning energy strategies for optimizing operations, maintenance, and market outcomes,” Applied Energy , vol. 402, p. 126906, 2026. [18] E. G. Gilbert, I. Kolmanovsky, and K. T. Tan, “Discrete-time reference governors and the nonlinear control of systems with state and control constraints,” Int. J. Robust Nonlinear Control , vol. 5, no. 5, pp. 487–504, 1995.

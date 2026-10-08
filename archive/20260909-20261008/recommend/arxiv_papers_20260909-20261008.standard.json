@@ -1,0 +1,686 @@
+{
+  "mode": "standard",
+  "generated_at": "2026-10-08T02:32:41.254700+00:00",
+  "stats": {
+    "mode": "standard",
+    "tag_count": 2,
+    "deep_divecandidates": 5,
+    "deep_cap": 7,
+    "deep_selected": 5,
+    "quick_candidates": 11,
+    "quick_skim_target": 12,
+    "quick_selected": 11
+  },
+  "deep_dive": [
+    {
+      "id": "2609.17838v1",
+      "source": "arxiv",
+      "title": "Learning Nuclear Structure with AI: Radii and Collectivity",
+      "abstract": "Low-energy nuclear structure is encoded in a broad body of experimental information across the chart of nuclides. Learning how this information is organized across observables and nuclei can provide a data-driven empirical baseline for theoretical extrapolations and experimental design. Here, we develop held-out ensembles based on NuCLR (Nuclear Co-Learned Representations), a multi-task model of nuclear data, to study charge radii and electric-quadrupole transition strengths. Out-of-fold (OOF) validation shows that shared representation improves performance over single-task learning, yielding a charge-radius $\\mathrm{RMS}$ deviation of $0.0147~{\\rm fm}$ and a $\\mathrm{B(E2)}$ $\\mathrm{RMS}$ deviation of $0.192~e^2{\\rm b}^2$ across hundreds of nuclides, competitive with state-of-the-art nuclear models. Our error bars estimate the expected prediction accuracy across the nuclear chart, highlighting regions where new data would encode information beyond the learned patterns. NuCLR thus serves as a data-driven surveyor of nuclear structure and a step toward a shared, multi-observable foundation model of the nuclear chart.",
+      "authors": [
+        "Giuliano Giacalone",
+        "Sokratis Trifinopoulos",
+        "Mike Williams"
+      ],
+      "primary_category": "nucl-th",
+      "categories": [
+        "nucl-th",
+        "cs.AI",
+        "cs.LG",
+        "nucl-ex"
+      ],
+      "published": "2026-09-15T20:57:36+00:00",
+      "link": "https://arxiv.org/pdf/2609.17838v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "AI multi-task model of nuclear data predicting charge radii and B(E2) strengths",
+      "llm_evidence_cn": "基于多任务核数据模型学习核结构，预测电荷半径与B(E2)跃迁强度",
+      "llm_evidence": "基于多任务核数据模型学习核结构，预测电荷半径与B(E2)跃迁强度",
+      "canonical_evidence": "基于多任务核数据模型学习核结构，预测电荷半径与B(E2)跃迁强度",
+      "llm_tldr_en": "Low-energy nuclear structure is spread across many observables and nuclides; this work builds held-out ensembles on NuCLR, a multi-task nuclear-data model, to study charge radii and B(E2) strengths, showing shared representations beat single-task learning.",
+      "llm_tldr_cn": "低能核结构信息分散在大量可观测量与核素中，如何用数据驱动方法统一组织这些信息、为理论外推和实验设计提供基线，是核物理机器学习的重要问题。本文基于多任务核数据模型NuCLR构建留出集集成，系统研究电荷半径与电四极跃迁强度B(E2)的预测。交叉验证表明共享表示优于单任务学习，电荷半径RMS偏差约0.0147 fm，B(E2)偏差约0.192 e²b²，在数百个核素上具有竞争力。该工作说明多任务共享表示能有效挖掘核数据中的结构规律，为核结构预言提供了数据驱动基线。",
+      "llm_tldr": "低能核结构信息分散在大量可观测量与核素中，如何用数据驱动方法统一组织这些信息、为理论外推和实验设计提供基线，是核物理机器学习的重要问题。本文基于多任务核数据模型NuCLR构建留出集集成，系统研究电荷半径与电四极跃迁强度B(E2)的预测。交叉验证表明共享表示优于单任务学习，电荷半径RMS偏差约0.0147 fm，B(E2)偏差约0.192 e²b²，在数百个核素上具有竞争力。该工作说明多任务共享表示能有效挖掘核数据中的结构规律，为核结构预言提供了数据驱动基线。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "nuclear structure deep learning",
+      "matched_requirement_id": "req-15",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2610.08195v1",
+      "source": "arxiv",
+      "title": "Omnidirectional Radiation Detector with Perpendicular Dual Silicon Photomultiplier Readout - Directional Sensitivity and Machine Learning Source Positioning",
+      "abstract": "Directional information of incident gamma rays in radiation detection is essential to many applications, from medical imaging to mapping radioactive contamination after nuclear accidents, characterization of nuclear waste during decommissioning, and nuclear security. In this work, we present a radiation detector capable of detecting gamma-ray photons in 4$π$, utilizing Gadolinium Aluminum Gallium Garnet (GAGG) scintillating crystals and silicon photomultipliers (SiPMs). The GAGG crystals are assembled in a cubical 4$\\times$4$\\times$4 matrix, and their light output is read out by SiPMs from two neighboring sides. The size of each crystal is 3$\\times$3$\\times$3 mm$^3$, while the matrix pitch is 3.2 mm, matching the size and the pitch of the 4$\\times$4 SiPMs for one-to-one coupling. The layers perpendicular to the SiPMs are separated by optical reflectors, providing efficient light collection while lowering the probability of inter-crystal leakage. The design of the radiation detector offers high detection efficiency and full-view imaging of gamma-ray sources through Compton scattering. Monte Carlo simulations were performed in Geant4 to evaluate the detection efficiency of the proposed design due to its geometrical non-uniformity. Machine learning models developed with the XGBoost algorithm were trained and tested on the simulated data to assess the capability of the detector to localize point sources of 511, 662, and 1275 keV energies. We find that the proposed design does not influence the collection efficiency of the high-energy gamma-ray photons and offers sensitivity to the direction of the incoming gamma rays. The trained models are capable of determining the source-to-detector distance of the Na-22 and Cs-137 point sources from measurements, thus providing initial conditions for faster image reconstruction.",
+      "authors": [
+        "Ana Marija Kožuljević",
+        "Gabriela Jazvac",
+        "Luka Lotina",
+        "Luka Pavelić"
+      ],
+      "primary_category": "physics.ins-det",
+      "categories": [
+        "physics.ins-det"
+      ],
+      "published": "2026-10-06T11:47:52+00:00",
+      "link": "https://arxiv.org/pdf/2610.08195v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 9.0,
+      "llm_evidence_en": "radiation detector with machine learning source positioning",
+      "llm_evidence_cn": "结合机器学习源定位的辐射探测器",
+      "llm_evidence": "结合机器学习源定位的辐射探测器",
+      "canonical_evidence": "结合机器学习源定位的辐射探测器",
+      "llm_tldr_en": "A 4-pi GAGG scintillator cube read out by dual SiPMs provides directional gamma sensitivity and machine-learning source positioning for imaging and nuclear security.",
+      "llm_tldr_cn": "入射伽马射线的方向信息在医学成像、核事故污染测绘与核安保中至关重要，但传统探测器难以实现全向方向灵敏探测。本文提出一种基于GAGG闪烁晶体与硅光电倍增管的全向伽马探测器，晶体排列为4×4×4立方矩阵并由两侧读出，结合机器学习进行源定位。结果展示了方向灵敏度与机器学习源定位能力，为紧凑型辐射探测与成像提供新方案。",
+      "llm_tldr": "入射伽马射线的方向信息在医学成像、核事故污染测绘与核安保中至关重要，但传统探测器难以实现全向方向灵敏探测。本文提出一种基于GAGG闪烁晶体与硅光电倍增管的全向伽马探测器，晶体排列为4×4×4立方矩阵并由两侧读出，结合机器学习进行源定位。结果展示了方向灵敏度与机器学习源定位能力，为紧凑型辐射探测与成像提供新方案。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "radiation detector machine learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.39422v1",
+      "source": "arxiv",
+      "title": "FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors",
+      "abstract": "Data centers are increasingly exploring small modular nuclear reactors (SMRs) as a carbon-free power source, but variable datacenter demand and negative grid prices require the SMR plant to load-follow rather than run at constant output. Load following is uniquely challenging and complex for SMR plants due to underlying nuclear physics. We propose FissionReady, a datacenter scheduler that tracks each module's fuel age, xenon state, and remaining flexibility to determine per-module operating envelopes, then coordinates load-following, batch deferral, and grid purchasing through a two-timescale optimization. FissionReady achieves zero involuntary shutdowns and zero batch deadline misses while reducing water consumption by roughly one-third and grid cost by roughly half compared to a same-sized base configuration.",
+      "authors": [
+        "Raghavendra Kanakagiri",
+        "Rohan Basu Roy",
+        "Yankai Jiang",
+        "Pranathi Wuppuluru",
+        "Devesh Tiwari"
+      ],
+      "primary_category": "cs.DC",
+      "categories": [
+        "cs.DC"
+      ],
+      "published": "2026-09-30T10:02:49+00:00",
+      "link": "https://arxiv.org/pdf/2609.39422v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "load-following scheduling for SMR plants under nuclear physics constraints",
+      "llm_evidence_cn": "面向小型模块化反应堆负载跟踪的智能调度",
+      "llm_evidence": "面向小型模块化反应堆负载跟踪的智能调度",
+      "canonical_evidence": "面向小型模块化反应堆负载跟踪的智能调度",
+      "llm_tldr_en": "Data centers powered by small modular reactors must load-follow under variable demand, which is hard due to nuclear physics. FissionReady tracks each module's fuel age, xenon state and flexibility to define operating envelopes, then coordinates load-following and deferral via two-timescale optimization, achieving zero shutdowns.",
+      "llm_tldr_cn": "数据中心若由小型模块化反应堆供电，需随波动负荷进行负载跟踪，而氙毒与燃料年龄等核物理约束使这一任务异常复杂。本文提出FissionReady调度器，跟踪每个模块的燃料年龄、氙状态与剩余灵活性以确定运行包络，并通过双时间尺度优化协调负载跟踪、批处理延迟与电网购电。实验表明其实现零非计划停堆与零批处理超期，同时降低用水量，为核能数据中心的安全灵活运行提供方案。",
+      "llm_tldr": "数据中心若由小型模块化反应堆供电，需随波动负荷进行负载跟踪，而氙毒与燃料年龄等核物理约束使这一任务异常复杂。本文提出FissionReady调度器，跟踪每个模块的燃料年龄、氙状态与剩余灵活性以确定运行包络，并通过双时间尺度优化协调负载跟踪、批处理延迟与电网购电。实验表明其实现零非计划停堆与零批处理超期，同时降低用水量，为核能数据中心的安全灵活运行提供方案。",
+      "llm_tags": [
+        "query:micro-nuc-ai"
+      ],
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Intelligent control methods for safe operation or load following of nuclear microreactors.",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.25156v1",
+      "source": "arxiv",
+      "title": "Pulse-shape discrimination with machine learning for CZT detectors at the DA$Φ$NE beam test facility",
+      "abstract": "Cadmium zinc telluride (CZT) detectors offer versatility, operational simplicity, and room-temperature X- and gamma-ray spectroscopy, making them attractive for collider applications, yet their use under high-flux conditions remains limited. Here, we present a preliminary feature-based pulse-shape analysis employing machine learning, on data acquired with a quasi-hemispherical CZT detector at the DA$\\Φ$NE beam test facility of the National Laboratory of Frascati of INFN. A 300-MeV electron beam impinging on a lead target produced characteristic Pb X-rays together with a broad background extending up to the electron-positron annihilation region. Physically motivated temporal and morphological features were extracted from the recorded waveforms and used to distinguish nominal photon-like pulses from anomalous events. An XGBoost classifier trained and validated on 10,000 labeled waveforms achieved an accuracy of approximately 97%, with most of its classification performance reached using only a few hundred labeled examples. The trained model was applied to more than 700,000 events, substantially reducing the spectral continuum and coincidence peaks, while preserving the characteristic Pb X-ray lines up to the 511-keV annihilation peak. These preliminary results demonstrate the potential of machine-learning-assisted pulse-shape discrimination for improving CZT spectroscopy in collider environments.",
+      "authors": [
+        "Simone Manti",
+        "Francesco Artibani",
+        "Leonardo Abbene",
+        "Massimiliano Bazzi",
+        "Manuele Bettelli",
+        "Giacomo Borghi",
+        "Damir Bosnar",
+        "Mario Bragadireanu",
+        "Antonino Buttacavoli",
+        "Mario Carminati",
+        "Alberto Clozza",
+        "Francesco Clozza",
+        "Luca De Paolis",
+        "Raffaele Del Grande",
+        "Kamil Dulski",
+        "Carlo Fiorini",
+        "Ivica Friščić",
+        "Gaetano Gerardi",
+        "Carlo Guaraldo",
+        "Mihai Iliescu",
+        "Masa Iwasaki",
+        "Alexander Khreptak",
+        "Johan Marton",
+        "Pawel Moskal",
+        "Hiroaki Ohnishi",
+        "Kristian Piscicchia",
+        "Fabio Principato",
+        "Alessandro Scordo",
+        "Francesco Sgaramella",
+        "Michał Silarski",
+        "Diana Sirghi",
+        "Florin Sirghi",
+        "Magdalena Skurzok",
+        "Antonio Spallone",
+        "Kairo Toho",
+        "Oton Vazquez Doce",
+        "Andrea Zappettini",
+        "Johann Zmeskal",
+        "Catalina Curceanu"
+      ],
+      "primary_category": "physics.ins-det",
+      "categories": [
+        "physics.ins-det",
+        "nucl-ex"
+      ],
+      "published": "2026-09-21T10:30:40+00:00",
+      "link": "https://arxiv.org/pdf/2609.25156v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "ML pulse-shape discrimination for CZT gamma-ray detectors",
+      "llm_evidence_cn": "面向CZT伽马探测器的机器学习脉冲形状甄别",
+      "llm_evidence": "面向CZT伽马探测器的机器学习脉冲形状甄别",
+      "canonical_evidence": "面向CZT伽马探测器的机器学习脉冲形状甄别",
+      "llm_tldr_en": "A feature-based machine learning pulse-shape analysis is applied to CZT detector data from the DAΦNE beam test, discriminating signals under high-flux X- and gamma-ray conditions.",
+      "llm_tldr_cn": "CZT探测器可在室温下进行X与伽马射线谱测量，但在高通量条件下应用受限。本文在DAΦNE束流测试装置上采集数据，提取物理启发的时域与形态特征，用机器学习进行脉冲形状甄别。该方法展示了高通量伽马/X射线环境下利用机器学习分析探测器信号的可行性，为辐射探测、谱学与同位素识别提供支持。",
+      "llm_tldr": "CZT探测器可在室温下进行X与伽马射线谱测量，但在高通量条件下应用受限。本文在DAΦNE束流测试装置上采集数据，提取物理启发的时域与形态特征，用机器学习进行脉冲形状甄别。该方法展示了高通量伽马/X射线环境下利用机器学习分析探测器信号的可行性，为辐射探测、谱学与同位素识别提供支持。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "radiation detector machine learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "id": "2609.40090v2",
+      "source": "arxiv",
+      "title": "PTNO: Training Neural Operators with Noisy Monte Carlo Estimates for Particle Transport Problems",
+      "abstract": "Particle transport under multiple scattering is central to radiative transfer and plasma physics, yet high-fidelity Monte Carlo (MC) simulations must trace prohibitively many particles. Learning-based surrogates can amortize this cost, but typically train on expensive, well-converged MC solutions. We propose the Particle Transport Neural Operator (PTNO), a neural operator that learns particle transport surrogates directly from noisy, low-cost MC labels. Such labels pose two challenges: (1) high variance, which destabilizes standard supervised learning, and (2) a high dynamic range (HDR) spanning many orders of magnitude. For the first, we learn the solution operator from noisy labels of many configurations, amortizing MC cost and generalizing to unseen configurations. Because MC labels are unbiased, we show that the squared loss on them shares its minimizer with the loss on converged solutions, and our budget-allocation study over training scenes $M$, MC samples per render $N$, and independent renders per scene $K$ shows that many noisy scenes beat fewer converged ones. For the second, a nonlinear transform such as the logarithm biases noisy supervision. Instead, PTNO keeps labels in physical space and enforces positivity with a softplus output layer that represents small values effectively. We further train with a pointwise relative $L_2$ loss (PRelL2), the stop-gradient relative loss of HDR denoising and neural rendering, which normalizes each residual by the stop-gradient prediction instead of the noisy label. We demonstrate PTNO on neutron transport in fusion reactors and radiative transfer in participating media. On the two neutronics tasks, PTNO is $10^4$-$10^5\\times$ faster than converged MC on the same CPU and $10^3$-$10^5\\times$ cheaper than MC at matched accuracy; on the two radiative-transfer tasks, MC at matched accuracy costs $0.8$-$11\\times$ as much as PTNO.",
+      "authors": [
+        "Yubo Cao",
+        "Xi Deng",
+        "Mengqi Xia",
+        "Vignesh Gopakumar",
+        "Ander Gray",
+        "Anima Anandkumar"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "cs.LG"
+      ],
+      "published": "2026-09-30T16:31:40+00:00",
+      "link": "https://arxiv.org/pdf/2609.40090v2",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 8.0,
+      "llm_evidence_en": "neural operator surrogate for particle transport trained on noisy Monte Carlo",
+      "llm_evidence_cn": "用神经算子学习粒子输运代理模型，可加速输运计算",
+      "llm_evidence": "用神经算子学习粒子输运代理模型，可加速输运计算",
+      "canonical_evidence": "用神经算子学习粒子输运代理模型，可加速输运计算",
+      "llm_tldr_en": "Particle transport Monte Carlo simulations are costly, and learning surrogates usually need well-converged labels. PTNO is a neural operator that learns transport surrogates directly from noisy, low-cost Monte Carlo estimates, handling high variance and high dynamic range, amortizing MC cost and enabling fast transport prediction.",
+      "llm_tldr_cn": "高保真蒙特卡洛粒子输运模拟需追踪海量粒子，计算代价高昂，而现有学习型代理模型通常依赖昂贵的收敛解标签。本文提出粒子输运神经算子PTNO，直接从低成本的含噪蒙特卡洛估计中学习输运代理，针对标签高方差与跨数量级动态范围两大挑战设计训练策略。该方法通过多配置标签分摊蒙特卡洛成本，实现快速输运预测，为辐射输运与等离子体物理等场景提供高效替代模型。",
+      "llm_tldr": "高保真蒙特卡洛粒子输运模拟需追踪海量粒子，计算代价高昂，而现有学习型代理模型通常依赖昂贵的收敛解标签。本文提出粒子输运神经算子PTNO，直接从低成本的含噪蒙特卡洛估计中学习输运代理，针对标签高方差与跨数量级动态范围两大挑战设计训练策略。该方法通过多配置标签分摊蒙特卡洛成本，实现快速输运预测，为辐射输运与等离子体物理等场景提供高效替代模型。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "neutron transport machine learning",
+      "matched_requirement_id": "req-13",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "quick_skim": [
+    {
+      "id": "2609.11714v1",
+      "source": "arxiv",
+      "title": "Nuclear-physics-guided Gaussian Processes",
+      "abstract": "Gaussian Process Regression is a powerful nonparametric Bayesian method that provides both predictions and principled uncertainty estimates in closed form. The majority of past applications have relied on agnostic priors, but physics knowledge can be systematically encoded into Gaussian Processes through physically-motivated mean functions and kernels. We exploit this capability in the context of nuclear physics, applying physics-guided Gaussian Process Regression to three problems: nucleon-nucleon scattering phase shifts, mass excesses, and the finite-temperature equation of state of dense matter. In each case, we demonstrate that encoding known theoretical structures yields substantial and systematic improvements in interpolation accuracy, uncertainty calibration, and extrapolation reliability over agnostic baselines. Our results highlight that the design of the prior, and in particular the mean function, is key for obtaining a reliable and well-calibrated Gaussian Process Regression.",
+      "authors": [
+        "Javier Rozalén Sarmiento",
+        "Hristijan Kochankovski",
+        "Arnau Rios",
+        "Àngels Ramos"
+      ],
+      "primary_category": "nucl-th",
+      "categories": [
+        "nucl-th",
+        "astro-ph.HE",
+        "nucl-ex"
+      ],
+      "published": "2026-09-10T15:30:59+00:00",
+      "link": "https://arxiv.org/pdf/2609.11714v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "physics-guided Gaussian processes for nuclear observables with uncertainty",
+      "llm_evidence_cn": "面向核观测量与不确定度的物理引导高斯过程",
+      "llm_evidence": "面向核观测量与不确定度的物理引导高斯过程",
+      "canonical_evidence": "面向核观测量与不确定度的物理引导高斯过程",
+      "llm_tldr_en": "Agnostic Gaussian process priors limit accuracy in nuclear physics. Encoding theoretical structure via physics-motivated mean functions and kernels improves interpolation, uncertainty calibration and extrapolation for phase shifts, mass excesses and dense-matter EOS.",
+      "llm_tldr_cn": "高斯过程回归多数采用无先验信息，难以在核物理问题中充分利用已知的理论结构，导致精度与不确定度受限。本文将物理知识系统编码进高斯过程的均值函数与核函数，并应用于核子散射相移、质量过剩与稠密物质状态方程三类问题。结果表明，编码理论结构能显著且系统地提升插值精度、不确定度校准与外推能力，为核数据评估与不确定度量化提供了有效工具。",
+      "llm_tldr": "高斯过程回归多数采用无先验信息，难以在核物理问题中充分利用已知的理论结构，导致精度与不确定度受限。本文将物理知识系统编码进高斯过程的均值函数与核函数，并应用于核子散射相移、质量过剩与稠密物质状态方程三类问题。结果表明，编码理论结构能显著且系统地提升插值精度、不确定度校准与外推能力，为核数据评估与不确定度量化提供了有效工具。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "Machine learning models for predicting nuclear reaction cross sections and their uncertainties.",
+      "matched_requirement_id": "req-20",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.14614v1",
+      "source": "arxiv",
+      "title": "SH-WRNN: Implicit Spherical Harmonics Weight Field Routing Neural Networks for Asymmetric Edge Intelligence",
+      "abstract": "Deep learning architectures remain rigidly built upon traditional fully connected layers. While networks scale up, few challenge this foundational root. In this work, we reshape this paradigm by transforming the core synapse weight matrix from static, discrete parameters into a differentiable, continuous field governed by spherical harmonics functions. We introduce the Implicit Spherical Harmonics Weight Field Routing Neural Network (SH-WRNN), which constrains weight matrices within a continuous parametric field instead of optimizing millions of localized discrete weights. When retrieving the weight matrix of the current layer, connection parameters are localized using latitude and longitude on a rectangular plane mapped from the continuous field. The latitudinal coordinate is specified by activated neurons from the previous layer, while the longitudinal coordinate is determined by keys generated from previous layer activations via matrix multiplication. By evaluating intersections on this map, the network dynamically extracts its connection weights on-the-fly. Empirical validation on MNIST demonstrates that under compact configurations of (32, 10, 10) and (32, 3, 10), SH-WRNN achieves robust accuracies of 91.05% and 81.54% within a single training epoch. Furthermore, we propose an asymmetric Surface Baking scheme. Upon convergence, the continuous weight field is baked once into a static parametric surface. By eliminating analytical spherical harmonics calculations during inference and reducing dynamic matrix extraction to high-speed localized memory slicing, this scheme achieves asymmetric algorithmic acceleration with negligible accuracy degradation. This paradigm shift bypasses GPU memory-bandwidth monopolies, opening a novel path to reshape the advantages of CPU computing. Code is available at https://github.com/jzb1111/SphericalHarmonyRoutedNeuralNetWork.",
+      "authors": [
+        "Zhibin Jiao",
+        "Xiangjing An"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-13T15:44:47+00:00",
+      "link": "https://arxiv.org/pdf/2609.14614v1",
+      "tags": [
+        "keyword:nuc-phys-ai"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "implicit parametric weight field representation instead of discrete weights",
+      "llm_evidence_cn": "以隐式参数化权重场替代离散权重",
+      "llm_evidence": "以隐式参数化权重场替代离散权重",
+      "canonical_evidence": "以隐式参数化权重场替代离散权重",
+      "llm_tldr_en": "The paper replaces static discrete synapse weight matrices with a differentiable continuous field governed by spherical harmonics, yielding an implicit parametric weight representation that reduces stored parameters for edge inference.",
+      "llm_tldr_cn": "传统神经网络将权重矩阵视为大量静态离散参数，参数量随规模急剧膨胀，限制了边缘部署。本文提出隐式球谐权重场路由网络，把每层权重矩阵表示为由球谐函数支配的可微连续场，通过经纬度定位连接参数而非优化海量独立权重。实验表明该参数化表示能在保持性能的同时显著压缩权重存储，为低比特与隐式码本式权重压缩提供了结构化构造思路。",
+      "llm_tldr": "传统神经网络将权重矩阵视为大量静态离散参数，参数量随规模急剧膨胀，限制了边缘部署。本文提出隐式球谐权重场路由网络，把每层权重矩阵表示为由球谐函数支配的可微连续场，通过经纬度定位连接参数而非优化海量独立权重。实验表明该参数化表示能在保持性能的同时显著压缩权重存储，为低比特与隐式码本式权重压缩提供了结构化构造思路。",
+      "llm_tags": [
+        "query:isc:composite"
+      ],
+      "matched_query_tag": "query:isc:composite",
+      "matched_query_text": "Papers central to 追踪 LLM 极低比特向量量化中的结构化与隐式码本，包括 lattice、trellis、生成矩阵和线性映射等码本构造方法。, especially work that connects or combines: parametric codebook; implicit codebook; structured codebook; lattice-based codebook quantization for extreme low-bit large language model weights; trellis-coded quantization for large language model weight-only compression; learned codebook generation with parameterized codebook for low-bit large language model vector quantization; structured vector quantization methods that avoid storing a large explicit codebook through lattice, trellis, algebraic, or implicit codebook representations; extreme low bit LLM quantization with codewords generated from lattices, basis vectors, generator matrices, or other compact parametric structures; LLM vector quantization with implicit codebooks parameterized by learnable generator matrices or linear transformations similar to GLVQ; LLM quantization using highly structured lattice, algebraic, or geometric codebooks similar to QuIP# E8 lattice codebooks.",
+      "matched_requirement_id": "req-composite-isc",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.30408v1",
+      "source": "arxiv",
+      "title": "Machine Learning $β$-decay Half-lives and Their Application to $r$-Process Observables",
+      "abstract": "Accurately modeling $β$-decay half-lives of highly neutron-rich nuclei is a critical challenge for understanding $r$-process nucleosynthesis and the resulting kilonova light curves. We introduce a data-driven approach to model $β$ decay that uses Mixture Density Networks (MDNs) trained on the latest experimental measurements to extrapolate the half-lives of neutron rich nuclei. Unlike standard deterministic regression, the MDN directly parameterizes the probability distribution of the half-lives, providing intrinsic (aleatoric) uncertainty. We contrast the intrinsic uncertainty of a single model with the range of models produced by using random variations of the input training data samples. While all models show excellent agreement with experimental data, we find that varying the training data sets produces a wide range of extrapolations, particularly along data-poor regions such as the $N=126$ isotonic chain. We then propagate a selection of model results into $r$-process network calculations to evaluate their impact on isotopic abundances. Finally, by coupling the resulting isotopic abundances with thermalization efficiencies, we translate the effective nuclear heating rates into bolometric light curves. We compare the ranges of outcomes produced from the intrinsic uncertainty of a single model to those produced by multiple independent models trained on different training data sets.",
+      "authors": [
+        "Mengke Li",
+        "Flora Wang",
+        "Jonathan Engel",
+        "Matthew Mumpowe",
+        "Rebecca Surman",
+        "Nicole Vassh"
+      ],
+      "primary_category": "astro-ph.HE",
+      "categories": [
+        "astro-ph.HE",
+        "nucl-th"
+      ],
+      "published": "2026-09-24T18:08:52+00:00",
+      "link": "https://arxiv.org/pdf/2609.30408v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "ML prediction of beta-decay half-lives for nuclear data",
+      "llm_evidence_cn": "用机器学习预测β衰变半衰期，属核数据评估",
+      "llm_evidence": "用机器学习预测β衰变半衰期，属核数据评估",
+      "canonical_evidence": "用机器学习预测β衰变半衰期，属核数据评估",
+      "llm_tldr_en": "Modeling beta-decay half-lives of neutron-rich nuclei is critical for r-process nucleosynthesis and kilonova light curves. This work trains Mixture Density Networks on the latest experimental data to extrapolate half-lives, parameterizing the full probability distribution to give intrinsic uncertainty, and shows good agreement with measurements.",
+      "llm_tldr_cn": "针对富中子核β衰变半衰期难以准确建模、进而影响r过程核合成与千新星光变预测的问题，本文提出基于混合密度网络的数据驱动方法。该方法在最新实验测量数据上训练，直接参数化半衰期的概率分布以给出固有不确定性，并与训练样本扰动产生的模型离散度进行对比。结果表明模型与实验吻合良好，能外推富中子核半衰期。该工作为核数据评估与不确定性量化提供了新途径。",
+      "llm_tldr": "针对富中子核β衰变半衰期难以准确建模、进而影响r过程核合成与千新星光变预测的问题，本文提出基于混合密度网络的数据驱动方法。该方法在最新实验测量数据上训练，直接参数化半衰期的概率分布以给出固有不确定性，并与训练样本扰动产生的模型离散度进行对比。结果表明模型与实验吻合良好，能外推富中子核半衰期。该工作为核数据评估与不确定性量化提供了新途径。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "nuclear data evaluation neural network",
+      "matched_requirement_id": "req-14",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.20868v1",
+      "source": "arxiv",
+      "title": "Automated Physics-Informed Neural-Networks-Based Calibration of Highly Segmented Silicon Telescopes",
+      "abstract": "Transfer and multi-nucleon transfer reactions are essential tools for probing nuclear structure and reaction dynamics, requiring precise determination of the identity, energy, and emission angles of reaction products. The increasing granularity of modern silicon telescope arrays enhances experimental capabilities but challenges detector calibration, as conventional channel-by-channel approaches become inefficient and difficult to scale.   In this work, we present a fully automated, physics-informed calibration framework based on neural networks, specifically designed for highly segmented silicon detector arrays. The method formulates calibration as a global optimization problem, in which detector gains and geometrical corrections are determined simultaneously by minimizing the width of the reconstructed excitation energy under two-body kinematics constraints. The approach relies exclusively on experimental data and well-established physical principles, without requiring explicit modeling of detector response.   A distinctive feature is the use of multiple neural network sub-models sharing a common loss function with embedded physics constraints, enabling coherent and self-consistent calibration across all detector channels. This strategy ensures scalability, robustness, and reproducibility, making it particularly suitable for next-generation detector systems with increasing complexity.   The performance of the method is demonstrated using experimental data from the Particle-Identification Silicon-Telescope Array (PISTA) in high-resolution fission studies in inverse kinematics. The results show excellent agreement with theoretical kinematics, high-quality particle identification, and a significant improvement in calibration efficiency. The proposed framework provides a general and adaptable solution for the calibration of complex detector systems in modern nuclear physics experiments.",
+      "authors": [
+        "M. Rejmund",
+        "A. Lemasson",
+        "P. Morfouace",
+        "D. Ramos",
+        "J. Taieb",
+        "J. D. Frankland"
+      ],
+      "primary_category": "physics.ins-det",
+      "categories": [
+        "physics.ins-det",
+        "cs.LG",
+        "nucl-ex"
+      ],
+      "published": "2026-09-15T12:37:50+00:00",
+      "link": "https://arxiv.org/pdf/2609.20868v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "neural network calibration of segmented silicon detector arrays",
+      "llm_evidence_cn": "分段硅探测器阵列的神经网络刻度",
+      "llm_evidence": "分段硅探测器阵列的神经网络刻度",
+      "canonical_evidence": "分段硅探测器阵列的神经网络刻度",
+      "llm_tldr_en": "Manual channel-by-channel calibration of highly segmented silicon telescope arrays is inefficient. This work formulates calibration as a global optimization solved by physics-informed neural networks, enabling automated and scalable gain and geometry correction.",
+      "llm_tldr_cn": "高分段硅望远镜阵列的通道逐一刻度效率低且难以扩展，成为核物理实验测量反应产物的瓶颈。本文提出基于物理信息的全自动神经网络刻度框架，把探测器增益与几何修正建模为全局优化问题。该方法适用于高分段硅探测器阵列，克服了传统逐通道方法的低效与难扩展问题，为反应产物身份、能量与角度的精确测量提供了可扩展方案。",
+      "llm_tldr": "高分段硅望远镜阵列的通道逐一刻度效率低且难以扩展，成为核物理实验测量反应产物的瓶颈。本文提出基于物理信息的全自动神经网络刻度框架，把探测器增益与几何修正建模为全局优化问题。该方法适用于高分段硅探测器阵列，克服了传统逐通道方法的低效与难扩展问题，为反应产物身份、能量与角度的精确测量提供了可扩展方案。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "radiation detector machine learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2609.35531v1",
+      "source": "arxiv",
+      "title": "Latent Twin Operator",
+      "abstract": "Surrogate models deployed on real physical systems rarely see data at fixed resolutions: sensor configurations vary across deployments and may evolve over time as sensing infrastructure changes. We introduce the Latent Twin Operator (LTO), a latent-space surrogate for time-evolving PDEs with a Convolutional Conditional Neural Process (ConvCNP)-style encoder and decoder that accepts a context set of $N$ sensor observations with arbitrary placement and can be queried at any resolution. A learned latent evolution map advances the encoded state directly between arbitrary time points, decoupling temporal evolution from the observation and query discretizations. We derive an explicit $\\mathcal{O}(N^{-2/(3D)})$ rate for the context discretization error in spatial dimension $D$ under quasi-uniform refinement. We verify the predicted decay empirically on a 2D heat-equation benchmark. Across time-dependent PDE benchmarks, LTO achieves strong accuracy under one-step comparisons and transfers from native to coarser spatial resolutions with fixed parameters. On Navier--Stokes, its direct latent evolution further reduces error over longer prediction horizons relative to recursive evaluation.",
+      "authors": [
+        "Deepanshu Verma",
+        "Riley Chen",
+        "Matthias Chung"
+      ],
+      "primary_category": "cs.CE",
+      "categories": [
+        "cs.CE",
+        "math.NA"
+      ],
+      "published": "2026-09-28T16:13:38+00:00",
+      "link": "https://arxiv.org/pdf/2609.35531v1",
+      "tags": [
+        "query:micro-nuc-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "latent-space surrogate for time-evolving PDEs with arbitrary sensor placement",
+      "llm_evidence_cn": "用于时变PDE的潜在空间代理模型，支持任意传感器布置",
+      "llm_evidence": "用于时变PDE的潜在空间代理模型，支持任意传感器布置",
+      "canonical_evidence": "用于时变PDE的潜在空间代理模型，支持任意传感器布置",
+      "llm_tldr_en": "Proposes Latent Twin Operator, a latent-space surrogate for PDEs that handles arbitrary sensor placements and resolutions, enabling monitoring and state estimation with variable sensing infrastructure.",
+      "llm_tldr_cn": "针对现有代理模型难以适应传感器配置变化的问题，提出潜在孪生算子（LTO），一种基于卷积条件神经过程的潜在空间代理模型，可接受任意位置和数量的传感器观测，并在任意分辨率下查询。学习到的潜在演化映射直接推进编码状态，解耦时间演化与观测离散化。理论上给出了空间离散误差的收敛率，为核微反应堆等系统的数字孪生与状态监测提供了可迁移的方法。",
+      "llm_tldr": "针对现有代理模型难以适应传感器配置变化的问题，提出潜在孪生算子（LTO），一种基于卷积条件神经过程的潜在空间代理模型，可接受任意位置和数量的传感器观测，并在任意分辨率下查询。学习到的潜在演化映射直接推进编码状态，解耦时间演化与观测离散化。理论上给出了空间离散误差的收敛率，为核微反应堆等系统的数字孪生与状态监测提供了可迁移的方法。",
+      "llm_tags": [
+        "query:micro-nuc-ai"
+      ],
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Digital twins and surrogate models for monitoring and state estimation in nuclear microreactors.",
+      "matched_requirement_id": "req-9",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.21995v1",
+      "source": "arxiv",
+      "title": "Assessment of Machine Learning-Based Critical Heat Flux Models in the CTF Subchannel Code for Square Rod Bundle Prediction",
+      "abstract": "The prediction of critical heat flux (CHF), a key safety-related quantity in nuclear thermal hydraulics, remains an important challenge due to its direct relationship with fuel performance and reactor safety. Recent studies have demonstrated that relative to traditional empirical correlations and lookup tables (LUTs), machine learning (ML) methods can substantially improve CHF prediction accuracy. Most ML-based CHF models, however, have been developed and evaluated using tube databases, leaving their applicability to reactor-relevant rod bundle geometries largely unexplored.   This study evaluates ML-based CHF models deployed within the CTF subchannel code using the Electric Power Research Institute (EPRI) rod bundle CHF database. Both pure and hybrid residual correction models are considered in local and semilocal formulations. The tube-trained ML CHF models generally transferred favorably to rod bundle applications and outperformed traditional CHF methods across most geometries and operating conditions. The local hybrid LUT model produced the strongest overall performance, and the semilocal pure ML model remained highly competitive. Comparison against the Bowring correlation, W-3 correlation, and 2006 Groeneveld LUT demonstrated that substantial improvements in rod bundle CHF prediction are possible even when models are trained exclusively on tube data. These findings provide one of the first large-scale assessments of ML-based CHF models in square rod bundles within a production-level subchannel analysis environment and support their broader application in reactor thermal hydraulic analysis.",
+      "authors": [
+        "Aidan Furlong",
+        "Vinicius de Melo Monteiro",
+        "Robert Salko",
+        "Juliana Pacheco Duarte",
+        "Xu Wu"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-09-18T16:56:45+00:00",
+      "link": "https://arxiv.org/pdf/2609.21995v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "machine learning critical heat flux models for reactor thermal safety",
+      "llm_evidence_cn": "用于反应堆热工安全的机器学习临界热流密度模型",
+      "llm_evidence": "用于反应堆热工安全的机器学习临界热流密度模型",
+      "canonical_evidence": "用于反应堆热工安全的机器学习临界热流密度模型",
+      "llm_tldr_en": "Evaluates machine learning critical heat flux models inside the CTF subchannel code for square rod bundle geometries, testing whether tube-based ML models transfer to reactor-relevant fuel assembly prediction.",
+      "llm_tldr_cn": "临界热流密度是反应堆热工水力的关键安全量，但现有机器学习模型多基于圆管数据库，其在反应堆棒束几何中的适用性尚不明确。本文在CTF子通道程序中部署基于机器学习的临界热流密度模型，并采用EPRI相关数据对正方形棒束工况进行评估。结果表明机器学习模型在棒束几何下仍具竞争力，优于传统经验关系式与查表方法。该工作为数据驱动热工安全模型向真实堆芯几何推广提供了评估依据。",
+      "llm_tldr": "临界热流密度是反应堆热工水力的关键安全量，但现有机器学习模型多基于圆管数据库，其在反应堆棒束几何中的适用性尚不明确。本文在CTF子通道程序中部署基于机器学习的临界热流密度模型，并采用EPRI相关数据对正方形棒束工况进行评估。结果表明机器学习模型在棒束几何下仍具竞争力，优于传统经验关系式与查表方法。该工作为数据驱动热工安全模型向真实堆芯几何推广提供了评估依据。",
+      "llm_tags": [
+        "query:micro-nuc-ai"
+      ],
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Machine learning methods for modeling the neutronics or thermal behavior of nuclear microreactors.",
+      "matched_requirement_id": "req-10",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.04665v1",
+      "source": "arxiv",
+      "title": "Efficient Neural Surrogates for Linear Radiation Transport on the Lattice and Hohlraum benchmarks",
+      "abstract": "Linear radiation transport equations (RTEs) form the simulation foundations underpinning design and analysis tasks in nuclear engineering, inertial confinement fusion, medical imaging, and astrophysics, but resolving the high-dimensional phase space at engineering fidelity remains expensive enough that outer-loop workflows, such as design optimization, uncertainty quantification, and parameter sweeps, are routinely budget-bound on traditional solvers. Neural surrogates promise to relax this bottleneck by amortizing simulation cost across thousands of downstream queries, but the architectural choices and engineered inductive biases that make a surrogate accurate on one transport problem do not transfer straightforwardly across model families. We benchmark two parameter-matched neural surrogate architectures, the physics-attention Transolver and the multi-scale graph network Bi-Stride Multi-Scale MeshGraphNet (BSMS-MGN), as end-to-end approximations of the final-time particle concentration for the two-dimensional linear RTE on the canonical Lattice and Hohlraum benchmarks. An ablation across Fourier features and region-weighted training loss exposes strongly architecture-dependent inductive-bias preferences, indicating that design choices common to physics-informed surrogate workflows must be revisited per architecture rather than imported across model families, and that downstream utility depends on per-QoI sensitivity rather than a single field-level score. The model training recipe, training data, and evaluation pipeline are released alongside this paper to support reproduction, transfer to related transport problems, and evaluation as amortized forward-model components in larger outer-loop simulation workflows.",
+      "authors": [
+        "Carmelo Gonzales",
+        "Steffen Schotthöfer",
+        "Cory D. Hauck"
+      ],
+      "primary_category": "cs.AI",
+      "categories": [
+        "cs.AI",
+        "hep-lat"
+      ],
+      "published": "2026-10-03T17:26:34+00:00",
+      "link": "https://arxiv.org/pdf/2610.04665v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "neural surrogates to accelerate radiation transport simulation",
+      "llm_evidence_cn": "用神经代理模型加速辐射输运计算",
+      "llm_evidence": "用神经代理模型加速辐射输运计算",
+      "canonical_evidence": "用神经代理模型加速辐射输运计算",
+      "llm_tldr_en": "Proposes efficient neural surrogates for linear radiation transport equations, designing architecture and inductive biases to amortize expensive high-dimensional phase-space simulation across thousands of downstream design and uncertainty queries.",
+      "llm_tldr_cn": "线性辐射输运方程的高维相空间求解成本极高，导致设计优化、不确定性量化等外层工作流受算力限制。本文提出面向Lattice与Hohlraum基准的高效神经代理模型，针对不同输运问题设计合适的网络架构与归纳偏置。结果显示代理模型能够摊销仿真成本，支撑大量下游查询并保持精度。该工作为核工程、惯性约束聚变等领域的输运仿真加速提供了可迁移的方法。",
+      "llm_tldr": "线性辐射输运方程的高维相空间求解成本极高，导致设计优化、不确定性量化等外层工作流受算力限制。本文提出面向Lattice与Hohlraum基准的高效神经代理模型，针对不同输运问题设计合适的网络架构与归纳偏置。结果显示代理模型能够摊销仿真成本，支撑大量下游查询并保持精度。该工作为核工程、惯性约束聚变等领域的输运仿真加速提供了可迁移的方法。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "Data driven evaluation of nuclear data or acceleration of neutron transport calculations.",
+      "matched_requirement_id": "req-18",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2609.28604v1",
+      "source": "arxiv",
+      "title": "Physics-Informed Self-Supervised Learning for Joint Wire Calibration and Interaction Position Reconstruction in Multi-Wire Parallel Plate Avalanche Counters",
+      "abstract": "Scientific instruments require accurate calibration to convert detector signals into reliable physical observables. Conventional calibration procedures typically rely on dedicated calibration measurements, analytical response models or labelled reference data, limiting their ability to adapt to changing operating conditions and detector aging.   We present a physics-informed self-supervised learning framework that jointly performs wire calibration and interaction position reconstruction in Multi-Wire Parallel Plate Avalanche Counters (MWPPACs) without requiring labelled position measurements or dedicated calibration runs. The method formulates detector calibration as a latent optimization problem in which global wire gains and event-wise interaction positions are estimated simultaneously using supervision derived exclusively from detector geometry and charge-energy consistency constraints. A detector-independent neural network reconstructs sub-wire interaction positions from local charge distributions, eliminating the need to assume analytical induction profiles by learning the detector response directly from experimental data. The end-to-end differentiable framework enables continuous detector self-calibration while improving the uniformity and accuracy of position reconstruction. Experimental evaluation on the entrance MWPPAC tracking detectors of the VAMOS++ magnetic spectrometer demonstrates stable convergence, improved spatial homogeneity and enhanced position resolution.   Beyond the detector studied, the method establishes a general framework for physics-informed self-supervised calibration of scientific instruments and is a step toward autonomous intelligent instrumentation capable of continuous adaptation during operation. In this paradigm, detector calibration is no longer a prerequisite for an experiment but an integral part of the measurement process itself.",
+      "authors": [
+        "Antoine Lemasson",
+        "Maurycy Rejmund"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG",
+        "nucl-ex",
+        "physics.ins-det"
+      ],
+      "published": "2026-09-23T16:18:12+00:00",
+      "link": "https://arxiv.org/pdf/2609.28604v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "machine learning calibration and signal reconstruction for radiation detectors",
+      "llm_evidence_cn": "辐射探测器的机器学习校准与信号重建",
+      "llm_evidence": "辐射探测器的机器学习校准与信号重建",
+      "canonical_evidence": "辐射探测器的机器学习校准与信号重建",
+      "llm_tldr_en": "Detector calibration normally needs labelled reference data. This work uses physics-informed self-supervised learning to jointly calibrate wires and reconstruct interaction positions in MWPPACs without labelled positions, improving adaptivity to detector aging.",
+      "llm_tldr_cn": "传统辐射探测器校准依赖专用标定测量或带标签参考数据，难以适应工况变化和探测器老化。本文提出物理信息自监督学习框架，将探测器校准建模为可微分优化问题，在无位置标签条件下联合完成多丝平行板雪崩计数器的丝校准与作用位置重建。结果表明该方法能在缺少标定数据时恢复可靠位置信息，为探测器信号到物理量的转换提供了自适应、无需人工标注的新途径。",
+      "llm_tldr": "传统辐射探测器校准依赖专用标定测量或带标签参考数据，难以适应工况变化和探测器老化。本文提出物理信息自监督学习框架，将探测器校准建模为可微分优化问题，在无位置标签条件下联合完成多丝平行板雪崩计数器的丝校准与作用位置重建。结果表明该方法能在缺少标定数据时恢复可靠位置信息，为探测器信号到物理量的转换提供了自适应、无需人工标注的新途径。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "radiation detector machine learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.05786v1",
+      "source": "arxiv",
+      "title": "Adaptive control of pool-type research nuclear reactors: theory limits, pragmatic actuation constraints, and realized performance and adaptation",
+      "abstract": "Adaptive control is attractive for nuclear reactors expected to operate predictably with extensive automation or bounded autonomy under dynamic electric and nonelectric demands, even as reactor and actuator characteristics depart from their nominal values. Standard adaptive control results, however, assume fixed matched dynamics and an input applied as computed. In this work we evaluate a recent model reference adaptive control with linear quadratic regulation (MRAC-LQR) construction on the nonlinear point-kinetics model of Purdue University Reactor Number One (PUR-1), with a moving physical reference, nonlinear rod worth, rate and travel limits, quantization, deadband, and optional power-only state reconstruction. An exact sampled decomposition separates matched adaptation from observer, command processing, actuator realization, independent reactivity, and unmatched-dynamics residuals. Numerical results emphasize compatible reference trajectories, plant parameter variation, response to unexpected rod motion, and actuator duty. Across sampled plants, one unchanged nominal design yields closely aligned responses through adaptively calculated, plant-dependent actuation histories, illustrating both the premise and the theory limits of adaptation at a pool-reactor scale that can support follow-on experimental verification and progression toward higher-consequence nuclear applications.",
+      "authors": [
+        "Dimitrios Pylorof",
+        "Linyu Lin"
+      ],
+      "primary_category": "eess.SY",
+      "categories": [
+        "eess.SY",
+        "math.OC"
+      ],
+      "published": "2026-10-05T04:34:15+00:00",
+      "link": "https://arxiv.org/pdf/2610.05786v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "adaptive control for safe reactor operation with actuation constraints",
+      "llm_evidence_cn": "带执行约束的反应堆安全运行自适应控制",
+      "llm_evidence": "带执行约束的反应堆安全运行自适应控制",
+      "canonical_evidence": "带执行约束的反应堆安全运行自适应控制",
+      "llm_tldr_en": "MRAC-LQR adaptive control is evaluated on the nonlinear point-kinetics model of PUR-1 with rod worth, rate, travel limits, quantization and deadband, characterizing theory limits and realized performance.",
+      "llm_tldr_cn": "研究堆在广泛自动化或有限自主运行下对自适应控制有需求，但标准自适应控制假设固定匹配动态且输入按计算值施加，忽略实际驱动约束。本文将模型参考自适应控制与线性二次调节（MRAC-LQR）应用于PUR-1的非线性点动力学模型，并计入移动物理参考、非线性棒价值、速率与行程限制、量化及死区。结果刻画了理论极限与可实现性能及自适应表现，为核反应堆安全自主控制提供参考。",
+      "llm_tldr": "研究堆在广泛自动化或有限自主运行下对自适应控制有需求，但标准自适应控制假设固定匹配动态且输入按计算值施加，忽略实际驱动约束。本文将模型参考自适应控制与线性二次调节（MRAC-LQR）应用于PUR-1的非线性点动力学模型，并计入移动物理参考、非线性棒价值、速率与行程限制、量化及死区。结果刻画了理论极限与可实现性能及自适应表现，为核反应堆安全自主控制提供参考。",
+      "llm_tags": [
+        "query:micro-nuc-ai"
+      ],
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Intelligent control methods for safe operation or load following of nuclear microreactors.",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    },
+    {
+      "id": "2610.04058v1",
+      "source": "arxiv",
+      "title": "Application of sequence learning for predicting radiation damage of the CMS electromagnetic calorimeter",
+      "abstract": "In this paper we use machine learning methods to predict radiation damage in the lead tungstate crystals of the CMS electromagnetic calorimeter at the Large Hadron Collider. We analyze LHC Open Data collected from 2016 to 2018 and study the time evolution of the crystal optical transparency. We apply deep neural network models to predict its behavior over different future time intervals, and find that encoder-decoder sequence-to-sequence architectures can effectively describe crystal aging.",
+      "authors": [
+        "Mario Ivan Gallegos Torres",
+        "Leonid Serkin",
+        "Guy Paic"
+      ],
+      "primary_category": "physics.ins-det",
+      "categories": [
+        "physics.ins-det",
+        "cs.LG",
+        "hep-ex"
+      ],
+      "published": "2026-10-02T21:11:26+00:00",
+      "link": "https://arxiv.org/pdf/2610.04058v1",
+      "tags": [
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai",
+        "query:nuc-phys-ai"
+      ],
+      "llm_score": 6.0,
+      "llm_evidence_en": "deep sequence learning for radiation damage prediction in a detector",
+      "llm_evidence_cn": "用深度序列学习预测探测器辐射损伤",
+      "llm_evidence": "用深度序列学习预测探测器辐射损伤",
+      "canonical_evidence": "用深度序列学习预测探测器辐射损伤",
+      "llm_tldr_en": "The paper predicts radiation damage in CMS lead tungstate calorimeter crystals using machine learning. Analyzing LHC Open Data from 2016-2018, it tracks crystal optical transparency over time and applies deep neural networks, finding encoder-decoder sequence-to-sequence models effectively describe crystal aging.",
+      "llm_tldr_cn": "高能物理量能器晶体在长期辐照下会逐渐损伤，需对其老化趋势进行预测以支持监测与维护。本文利用2016至2018年LHC开放数据，研究铅钨酸晶体光学透明度的时变规律，并采用深度神经网络在不同未来时间区间上预测其行为。结果表明编码器-解码器序列到序列结构能有效刻画晶体老化过程，为辐射探测器的状态监测提供数据驱动手段。",
+      "llm_tldr": "高能物理量能器晶体在长期辐照下会逐渐损伤，需对其老化趋势进行预测以支持监测与维护。本文利用2016至2018年LHC开放数据，研究铅钨酸晶体光学透明度的时变规律，并采用深度神经网络在不同未来时间区间上预测其行为。结果表明编码器-解码器序列到序列结构能有效刻画晶体老化过程，为辐射探测器的状态监测提供数据驱动手段。",
+      "llm_tags": [
+        "query:nuc-phys-ai"
+      ],
+      "matched_query_tag": "query:nuc-phys-ai",
+      "matched_query_text": "radiation detector machine learning",
+      "matched_requirement_id": "req-11",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "6"
+    },
+    {
+      "id": "2610.06211v1",
+      "source": "arxiv",
+      "title": "Structured Representation Learning for Behavior Cloning: How can we learn to safely control a nuclear power plant?",
+      "abstract": "Learned models for industrial control are usually judged by aggregate accuracy, but accuracy at the component level does not guarantee safety once it is embedded in the system it is meant to serve. We study this gap on a behavior-cloning task: imitating an expert Nonlinear Model Predictive Control (NMPC) policy for load-following of a Pressurized Water Reactor (PWR), an industrial system with tight safety constraints. We propose a structured architecture encoding variables from each timescale into separate latent spaces, reflecting the physical decomposition of the system, before training a controller to imitate the expert on the product latent space. On long-horizon rollouts, separated embeddings improve both accuracy and feasibility compared with a shared-embedding baseline. Sensitivity analysis further shows that our model yields interpretable representations aligned with the system's physics. However, standalone deployment still leaves several percent of trajectories infeasible regardless of the architecture. Using our method to warmstart the NMPC optimizer rather than acting standalone, we recover full feasibility and near-optimal cost while still cutting computation time by $\\sim$15% relative to the expert controller, and even more for abrupt operating changes.",
+      "authors": [
+        "Perceval Beja-Battais",
+        "Alain Grosset{ê}te",
+        "Nicolas Vayatis"
+      ],
+      "primary_category": "cs.LG",
+      "categories": [
+        "cs.LG"
+      ],
+      "published": "2026-10-05T12:22:29+00:00",
+      "link": "https://arxiv.org/pdf/2610.06211v1",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ],
+      "llm_score": 7.0,
+      "llm_evidence_en": "behavior cloning with structured latent representation for safe load-following control of a nuclear reactor",
+      "llm_evidence_cn": "结构化潜表征行为克隆用于核反应堆安全负荷跟踪控制",
+      "llm_evidence": "结构化潜表征行为克隆用于核反应堆安全负荷跟踪控制",
+      "canonical_evidence": "结构化潜表征行为克隆用于核反应堆安全负荷跟踪控制",
+      "llm_tldr_en": "Component-level accuracy does not guarantee safety when learned controllers are embedded in a plant; this work imitates an expert NMPC load-following policy for a PWR using a structured architecture with separate latent spaces per timescale, improving long-horizon rollout safety.",
+      "llm_tldr_cn": "学习型控制器即便组件精度高，嵌入真实系统后仍未必安全。本文以压水堆负荷跟踪为场景，模仿专家非线性模型预测控制策略进行行为克隆，提出按时间尺度将变量编码到分离潜空间的结构化架构。长时域滚动测试表明，分离嵌入相比普通模型可提升控制安全性与稳定性。该工作为核反应堆智能负荷跟踪与安全控制提供结构化学习思路，可推广至微型反应堆自主控制。",
+      "llm_tldr": "学习型控制器即便组件精度高，嵌入真实系统后仍未必安全。本文以压水堆负荷跟踪为场景，模仿专家非线性模型预测控制策略进行行为克隆，提出按时间尺度将变量编码到分离潜空间的结构化架构。长时域滚动测试表明，分离嵌入相比普通模型可提升控制安全性与稳定性。该工作为核反应堆智能负荷跟踪与安全控制提供结构化学习思路，可推广至微型反应堆自主控制。",
+      "llm_tags": [
+        "query:micro-nuc-ai"
+      ],
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Intelligent control methods for safe operation or load following of nuclear microreactors.",
+      "matched_requirement_id": "req-8",
+      "selection_source": "fresh_fetch",
+      "quick_tier": "7"
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
-  "generated_at": "2026-10-07T23:21:29.353829+00:00",
-  "updated_date": "20261007",
+  "generated_at": "2026-10-08T02:32:41.256269+00:00",
+  "updated_date": "20260909-20261008",
   "carryover_days": 9,
   "tag_states": {
     "isc": {
@@ -10,6 +10,16 @@
     },
     "elblq": {
       "updated_date": "20260919",
+      "carryover_days": 9,
+      "items": []
+    },
+    "micro-nuc-ai": {
+      "updated_date": "20260909-20261008",
+      "carryover_days": 9,
+      "items": []
+    },
+    "nuc-phys-ai": {
+      "updated_date": "20260909-20261008",
       "carryover_days": 9,
       "items": []
     }

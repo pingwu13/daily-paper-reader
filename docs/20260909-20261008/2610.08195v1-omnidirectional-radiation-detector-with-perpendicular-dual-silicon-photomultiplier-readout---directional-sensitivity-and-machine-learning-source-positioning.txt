@@ -1,0 +1,336 @@
+Title: Omnidirectional Radiation Detector with Perpendicular Dual Silicon Photomultiplier Readout - Directional Sensitivity and Machine Learning Source Positioning
+
+URL Source: https://arxiv.org/pdf/2610.08195v1
+
+Published Time: Wed, 07 Oct 2026 01:48:42 GMT
+
+Number of Pages: 20
+
+Markdown Content:
+# Omnidirectional Radiation Detector with Perpendicular Dual Silicon Photomultiplier Readout - Directional Sensitivity and Machine Learning Source Positioning 
+
+Ana Marija Kožuljević 1,* , Gabriela Jazvac 1, Luka Lotina 1, and Luka Pavelić 1,2 1Institute for Medical Research and Occupational Health, Division of Radiation Protection, Ksaverska c. 2, 10 000 Zagreb, Croatia 
+
+2Nucleometrix d.o.o., Papova 4, 10 000 Zagreb, Croatia 
+
+*Corresponding author: akozuljevic@imi.hr October 7, 2026 
+
+Abstract 
+
+Directional information of incident gamma rays in radiation detec-tion is essential to many applications, from medical imaging to mapping radioactive contamination after nuclear accidents, characterization of nu-clear waste during decommissioning, and nuclear security. In this work, we present a radiation detector capable of detecting gamma-ray photons in 4 π, utilizing Gadolinium Aluminum Gallium Garnet (GAGG) scintil-lating crystals and silicon photomultipliers (SiPMs). The GAGG crystals are assembled in a cubical 4 ×4×4 matrix, and their light output is read out by SiPMs from two neighboring sides. The size of each crystal is 3×3×3 mm 3, while the matrix pitch is 3.2 mm, matching the size and the pitch of the 4 ×4 SiPMs for one-to-one coupling. The layers perpendicular to the SiPMs are separated by optical reflectors, providing efficient light collection while lowering the probability of inter-crystal leakage. The de-sign of the radiation detector offers high detection efficiency and full-view imaging of gamma-ray sources through Compton scattering. Monte Carlo simulations were performed in Geant4 to evaluate the detection efficiency of the proposed design due to its geometrical non-uniformity. Machine learning models developed with the XGBoost algorithm were trained and tested on the simulated data to assess the capability of the detector to localize point sources of 511, 662, and 1275 keV energies. We find that the proposed design does not influence the collection efficiency of the high-energy gamma-ray photons and offers sensitivity to the direction of the incoming gamma rays. The trained models are capable of determining the source-to-detector distance of the Na-22 and Cs-137 point sources from measurements, thus providing initial conditions for faster image recon-struction. 
+
+Keywords: directional detector; dual readout; GAGG; machine learning; Monte Carlo simulation; silicon photomultiplier 1arXiv:2610.08195v1 [physics.ins-det] 6 Oct 2026 1 Introduction 
+
+Knowledge of directional information is a crucial element in the imaging of gamma-emitting sources, occurring in many applications of radiation detection, from medical imaging and nuclear security to nuclear decommissioning and post-nuclear disaster decontamination of released radionuclides, such as Cs-137 [1, 2]. Common methods of detection include position-sensitive, energy-resolving de-tectors, often limited in their field of view (FOV) and detection sensitivity, requiring heavy collimators or coded aperture approaches. These methods need multiple detectors or additional equipment for rotation to cover the full FOV, creating further complications such as increased weight and price, as well as longer acquisition times. In this work, we present a novel type of directional 4 π
+
+radiation detector, covering the full FOV with depth of interaction (DOI) infor-mation, without additional appliances (Fig. 1). The design relies on detecting the scattered and absorbed gamma rays in one volume of a segmented scintil-lating detector, read out from two sides by silicon photomultipliers (SiPMs). It consists of 64 voxels, each voxel being a Gadolinium Aluminum Gallium Gar-net (GAGG) cube. The SiPMs are perpendicular to each other, sitting on two neighboring faces of the cubical volume. Other similar cubical designs have more complicated readout configurations, for example, the SiPMs coupled to the four lateral faces of the detector [3], or all six of the faces covered by SiPMs [4, 5, 6]. The presented radiation detector has the modality of a Compton Camera (CC), a gamma-ray imaging device that utilizes electronic collimation. Typi-cally, a CC has two layers: a layer in which the incoming gamma ray scatters and transmits part of its energy to the recoil electron in the material, and a second layer in which the gamma ray is photoelectrically absorbed. Each layer in this configuration has its own readout, but this design is still limited to a small FOV and low detection efficiency, as the sensitive component of the CC is only one side of the detector exposed to incoming gamma rays. As each voxel cube of the proposed detector design can act as a scatterer and an absorber, the detection efficiency is enhanced, and the compactness of the detection system is improved. Unlike other proposed parallel dual read-out CCs [7, 8], this design does not require calculating signal ratios for DOI determination. The capability of this radiation detector design to act as a CC has been previously explored, and images of a Cs-137 point source positioned in front of one face and one ver-tex have been reconstructed [9]. To reconstruct an image of a radiation source, reconstruction algorithms, such as simple and forward back-projection, require information of the source position before the reconstruction [10, 11]. Maximum likelihood estimation methods (like Maximum Likelihood Expectation Maxi-mization - MLEM) do not require prior knowledge of the source position, but providing initial values would greatly reduce computing requirements and re-construction time. In this paper, we utilize the eXtreme Gradient Boosting (XGBoost) machine learning library for determination of the source-to-detector distance from raw measurements. We show that the detector itself is sensitive to the direction of the incoming gamma rays through attenuation in its sensi-tive volume, enabling source positioning prior to the reconstruction. Machine learning (ML) methods have been successfully applied to problems of local-ization and identification of gamma-ray sources [12, 13, 14, 15], as well as for event selection and detection optimization [16, 17]. XGBoost library has been 2Figure 1: Visualisation of the simulated detector setup for the proposed omnidi-rectional radiation detector design. The voxels are GAGG crystals (in yellow), with reflectors (in white) and SiPMs (in cyan). previously utilized for tracking of the interactions in scintillator-SiPM particle detectors [18], but its capability for source-to-detector distance determination is explored here for the first time. We also examine the detection efficiency of the proposed design for gamma-ray energies of Na-22 and Cs-137 point sources. The efficiencies at these energies are relevant for experimental measurements, as two sides of the sensitive volume are covered by SiPMs. 
+
+# 2 Methods 
+
+2.1 Detector design 
+
+We propose a novel type of gamma-ray detector with depth of interaction (DOI) capability, comprised of 64 scintillating crystals, as depicted in Fig. 1. The crystals are arranged in a 4x4x4 voxel array in a cubical formation, with crystal sizes of 3x3x3 mm 3 and a 3.2 mm matrix pitch. The read-out consists of two silicon photomultipliers (SiPMs), positioned perpendicularly to each other on adjacent faces of the segmented detector cube, with 1:1 coupling to the crystals. The SiPMs are 4x4 matrices of pixels, with pixel sizes of 3x3 mm 2 and a 3.2 mm pitch, which correspond to the sizes of the respective voxels to which they are attached. Reflectors, modelled as titanium dioxide (Ti0 2), are placed in planes that are perpendicular to both SiPMs, in between the 4x4 layers of the crystals. The reflectors provide maximal light collection by the SiPMs, as well as lower the possibility of inter-crystal light leakage from one plane to another. Additionally, reflectors encompass the outer faces of the detectors that are not in contact with the SiPMs. 
+
+2.2 Data acquisition and analysis 
+
+Monte Carlo simulations of the proposed detector setups were developed in the Geant4 programming package, v11.3.2 [19]. To simulate the physics processes, the QGSP _BIC _HP _EMZ physics list was used. This physics list includes the Doppler broadening phenomenon, including the momentum of electrons during 3(a) (b) 
+
+Figure 2: The faces (a) and vertices (b) of the proposed detector. a Compton scattering interaction. The GAGG crystals, i.e. the voxels, were selected as sensitive volumes in which the gamma rays deposit their energy. Point sources of relevant energies were placed in a spherical array with radius r
+
+around the detectors, with coinciding centers of the detector and the sphere, so that: 
+
+r = a√32 + distance . (1) where a is the length of the side of the detector ( a = 12.6 mm), and distance is a parameter of separation between the face or the vertex and the source. The output of the simulation included the calculation of the efficiencies for events in which the total deposited energy in the module exceeds 10 keV, as well as the information on the total energy deposited per event per voxel. The total energy deposit in each voxel was smeared via Gaussian smearing on an event-by-event basis to achieve an energy spectrum expected in realistic conditions. The standard deviation of the Gaussian was chosen to be: 
+
+σ(E) = 
+
+r E
+
+511 × σ511 , (2) where σ511 is deduced from the experimentally obtained energy resolution of 12% full width at half-maximum (FWHM) in a similar setup [20], with energy values expressed in keV. The smearing resulted in energy resolutions of 10.5% (FWHM) at 662 keV (corresponding to the experimentally observed values in [11]) and 7.6% (FWHM) at 1275 keV, preserving the ∼ 1/√E scaling of the energy resolution. Both data collection and analysis were optimized for utilization of the bash parallel command to expedite the computing processes [21]. The analysis of the collected data was conducted in ROOT [22]. Plotting was done in Python, utilizing the Claude Opus 4.8 tool for drafting the data visualisation code. 
+
+2.3 Detection efficiency calculations 
+
+The proposed detector design has a non-uniform geometry that could influence its response, as its sensitive volume is covered from two sides. To discern the 4detector’s response to the gamma rays from various point sources, intrinsic, geometric, and absolute efficiencies were calculated for each face and vertex of the detectors. 5 million events were utilized for these calculations. Intrinsic efficiency ϵint of a detector is defined as the ratio of the number of gamma rays that are detected ( Ndetected ), and the number of gamma rays that enter the detector ( Nenter ) (Eq. 3): 
+
+ϵint = Ndetected 
+
+Nenter 
+
+, (3) with its error σint calculated as in Eq. 4: 
+
+σint =
+
+s
+
+ϵint (ϵint − 1) 
+
+Nenter 
+
+. (4) The intrinsic efficiency depends on the energy of the gamma rays that enter the detector, and the material and the thickness of the detector module. The geometric efficiency ϵgeom of a detector is a measure of how well the detector intercepts radiation emitted from the source, and is defined as a number of gamma rays that enter the detector Nenter divided by the number of gamma rays emitted from the source Nemitted (Eq. 5): 
+
+ϵgeom = Nenter 
+
+Nemitted in 4 π , (5) with the error σgeom (Eq. 6) calculated assuming Poisson statistics: 
+
+σgeom =
+
+√Nenter 
+
+Nemitted in 4 π . (6) The absolute efficiency of a detector ϵabs is defined as the ratio of the number of photons that interacted with the detector Ndetected and the number of photons emitted by the source Nemitted (Eq. 7): 
+
+ϵabs = Ndetected 
+
+Nemitted in 4 π , (7) and its error σabs (Eq. 8) 
+
+σabs =
+
+√Ndetected 
+
+Nemitted in 4 π . (8) The absolute efficiency measures the overall performance of the detection system. It is also related to the intrinsic ϵint and geometric ϵgeom efficiencies, as it can be calculated from the relation in Eq. 9: 
+
+ϵabs = ϵint × ϵgeom . (9) 
+
+2.4 Machine learning methods 
+
+A machine learning (ML) model was developed with the XGBoost library [23], which utilizes supervised learning algorithms based on gradient-boosted decision trees. It is available as an application programming interface (API) in Python’s 5scikit-learn library [24]. XGBoost library is widely used for ML tasks such as classification and regression, since it is designed to be highly efficient, portable, and flexible. The draft of the code for utilization of the XGBoost library was developed using Claude Opus 4.8. As the point sources of the 511, 662, and 1275 keV energies were positioned around the detector at various distances, there were 924 classes from: • 3 energies (511, 662 and 1275 keV), • 14 positions in front of faces and vertices, • and 22 distances at each position, ranging from 10 mm to 300 mm. The grid spacing of the training distances from 10 mm to 100 mm was 10 mm, from 100 mm to 200 mm it was 12.5 mm, and from 200 mm to 300 mm it was 25 mm. The features chosen for training were: • occupancy of each of the 64 detector voxels, i.e., the fractions of events that fired in each voxel, • photopeak fraction at ±2σ from the peak, • 3 multiplicity fractions: 1-voxel, 2-voxel and (3+)-voxel events, • log-rate of the number of collected events, resulting in 132 features in total. The occupancy of the voxels will vary during irradiation from different source positions, as the gamma rays attenuate in the detector, and its effect can be seen in Figure 3. The energy depositions are known, as it is assumed that the detector is calibrated. The multiplicity fractions slightly differ between faces and vertices, and the number of collected events, represented by the log-rate, will depend on the energy and position of the source, but also on its distance from the detector. The total of 50 million events per class was separated into three categories: 60% for training, 20% for validation, and 20% for testing. After Gaussian smearing of the energy resolution (Eq. 2), an energy cutoff at 100 keV was applied to correspond to the realistic experimental conditions of background noise removal. The pseudomeasurement grouping was defined as 200 000 lines per class. The XGBoost ML model’s regression capabilities were utilized for the deduction of the source’s distance from the face or the vertex in front of which it was positioned. The hyperparameters relevant for the model’s training are summarized in Table 1. The regression was performed on the logarithm of the Distance (log 10 (Distance)) to minimize the errors at large Distances, and transformed back after regression. 
+
+2.5 ML model’s performance evaluation and validation 
+
+To assess the accuracy of the model’s prediction capability, three measures were used: Mean Absolute Error (MAE), Root Mean Square Error (RMSE), and the coefficient of determination R 2. The MAE represents the average magnitude of the errors made by a predictive model and is calculated as: 
+
+MAE = 
+
+Pni=1 |yobserved,i − ypredicted,i |
+
+n . (10) 61st layer 2nd layer 3rd layer 4th layer (a) (b) Figure 3: The occupancy of the voxels in a 2 ×10 6 sample of events obtained for a 662 keV source positioned 100 mm in front of the face F2 in (a), and in front of the V5 vertex (b). The RMSE value is calculated by: 
+
+RMSE = 
+
+r P ni=1 |yobserved,i − ypredicted,i |2
+
+n , (11) and evaluates the prediction potential of the model, but unlike MAE, it weights larger errors more heavily than the smaller ones. The R 2 metric is defined as: 
+
+R2 = 1 −
+
+Pni=1 |yobserved,i − ypredicted,i |2
+
+Pni=1 |yobserved,i − ¯yobserved,i |2 , (12) and describes how much variance in the target variable is explained by the model. To validate predictive performance, the model was trained by excluding the target distances at each energy and then evaluated by interpolating the held-out Table 1: XGBoost hyperparameters used in model training. 
+
+Hyperparameter Meaning Regression n_estimators Max number of trees in the ensemble 5000 max_depth Max depth of the trees 3learning_rate Step size of each boosting iteration 0.07 subsample Fraction of samples used for training 0.8 colsample_bytree Fraction of features used for training 0.5 tree_method Tree construction algorithm hist objective Learning task and loss function reg:squarederror eval_metric Evaluation of model performance metric MAE early_stopping_rounds Number of rounds with no improvement 30 random_state Random number seed 42 
+
+7data. The bias in the distance interpolation is calculated as the average of the difference between predicted and true values, testing the systematic offset in the predicted values. 
+
+# 3 Results 
+
+3.1 Detector’s response due to the geometrical non-uniformity 
+
+The proposed design of the detector relies on the SiPM read-out from two neigh-boring faces of the detector cube. The effect of this geometrical non-uniformity of the proposed detector system was studied by efficiency calculations of the gamma-ray photons that deposited more than 10 keV of their energy in one of the voxels in the detector module. The ϵint , ϵgeom , and ϵabs were measured and calculated for all of the detector’s faces and vertices at source energies corre-sponding to Na-22 and Cs-137 at 511, 662, and 1275 keV, at source-to-detector distances ranging from 10 mm to 300 mm. The results can be seen in Figs. 4 and 5, comparing the efficiencies for the faces and vertices of the detector at the selected energies and distances, respectively. It can be observed that intrinsic efficiency lowers with increasing energy at every distance (Figs. 4a and 4b), for both faces and vertices. The intrinsic efficiency loss from 511 keV to 1275 keV point source energies is from ∼38% for 10 mm source-to-detector distance to 
+
+∼33% for 300 mm separation if the source is in front of the faces, while for the vertices it is approximately 37% at every distance. The intrinsic efficiencies for 511, 662 and 1275 keV energies for faces (Fig. 5a) and vertices (Fig. 5b) at dif-ferent source-to-detector distances show opposite tendencies. The faces exhibit an increase in intrinsic efficiencies as the distance increase from 10 mm to 300 mm: ∼50% for 511 keV, ∼60% for 662 keV, and ∼65% for 1275 keV. Intrinsic efficiency values for the vertices in the same distance interval are lower by ∼11% for 511 keV, ∼12% for 662 keV, and ∼13% for 1275 keV point source energies. Geometric efficiencies do not depend on the source energies, but change expo-nentially with the source-to-detector distance. The absolute efficiencies for point sources of different energies also exponentially decrease with distance, but for distances below 100 mm, the energies show slight differentiation, as the lowest energy of 511 keV has the highest absolute efficiency of up to 2% for the closest positions, while the 662 keV and 1275 keV energies have lower efficiencies of 1.7% and 1.25%, respectively. 
+
+3.2 Regression model of the source-to-detector distances 
+
+The regression models for source-to-detector distance determination were trained on all the available data, i.e., 50 million events per class for all 22 distances, for each point source energy (511, 662, and 1275 keV). The learning curves ob-tained during training and validation for the models are compared in Fig. 6. The curves are well matched, demonstrating the absence of overfitting in the models and their stable convergence. The results of the regression for the pre-dicted distances vs. their true values are presented in Figure 7. The most useful feature for the models’ training was log-rate, with importance scores of 0.099 for the 511 keV model, 0.111 for the 662 keV model, and 0.106 for the 1275 keV model. It is evident that the model’s accuracy is highest for low source-to-8600 800 1000 1200 
+
+Energy (keV) 
+
+20 25 30 35 40 45 50 
+
+> Intrinsic efficiency (%)
+
+600 800 1000 1200 
+
+Energy (keV) 
+
+0123456
+
+> Geometric efficiency (%)
+
+600 800 1000 1200 
+
+Energy (keV) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 
+
+> Absolute efficiency (%)
+
+Distance 10 mm 20 mm 30 mm 40 mm 50 mm 60 mm 70 mm 80 mm 90 mm 100 mm 125 mm 150 mm 175 mm 200 mm 250 mm 300 mm Orientation 
+
+F1 F2 F3 F4 F5 F6 (a) 600 800 1000 1200 
+
+Energy (keV) 
+
+20 22 24 26 28 30 32 34 
+
+> Intrinsic efficiency (%)
+
+600 800 1000 1200 
+
+Energy (keV) 
+
+012345
+
+> Geometric efficiency (%)
+
+600 800 1000 1200 
+
+Energy (keV) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 
+
+> Absolute efficiency (%)
+
+Distance 10 mm 20 mm 30 mm 40 mm 50 mm 60 mm 70 mm 80 mm 90 mm 100 mm 125 mm 150 mm 175 mm 200 mm 250 mm 300 mm Orientation 
+
+V1 V2 V3 V4 V5 V6 V7 V8 
+
+(b) 
+
+Figure 4: The ϵint , ϵgeom and ϵabs dependence on the 511, 662 and 1275 keV energies at various distances for faces (a) and vertices (b) of the proposed de-tector. 0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+20 25 30 35 40 45 50 
+
+> Intrinsic efficiency (%)
+
+0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+0123456
+
+> Geometric efficiency (%)
+
+0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 
+
+> Absolute efficiency (%)
+
+Energy 511 keV 662 keV 1275 keV Orientation 
+
+F1 F2 F3 F4 F5 F6 
+
+(a) 0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+20 22 24 26 28 30 32 34 
+
+> Intrinsic efficiency (%)
+
+0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+012345
+
+> Geometric efficiency (%)
+
+0 50 100 150 200 250 300 
+
+Distance (mm) 
+
+0.00 0.25 0.50 0.75 1.00 1.25 1.50 1.75 2.00 
+
+> Absolute efficiency (%)
+
+Energy 511 keV 662 keV 1275 keV Orientation 
+
+V1 V2 V3 V4 V5 V6 V7 V8 
+
+(b) 
+
+Figure 5: The ϵint , ϵgeom and ϵabs dependence on distance for 511, 662 and 1275 keV energies for faces (a) and vertices (b) of the proposed detector. 9Table 2: XGBoost regression model results for every energy on all distances from faces and vertices of the detector. TOTAL Energy [keV] MAE [mm] RMSE [mm] R2 [%] 511 4.5 7.4 0.9921 662 4.7 7.8 0.9911 1275 5.1 8.4 0.9896 FACES Energy [keV] MAE [mm] RMSE [mm] R2
+
+511 4.8 8.0 0.9921 662 5.1 8.4 0.9896 1275 5.4 8.9 0.9884 VERTICES Energy [keV] MAE [mm] RMSE [mm] R2
+
+511 4.2 6.9 0.9931 662 4.4 7.2 0.9923 1275 4.9 8.0 0.9905 detector separation, and gradually falls off with increasing distance. The values in Table 2 represent the average MAEs and RMSEs in the model’s predictions across all distances. The results show that the errors are increasing with the point source energy, but their mean remains below the lowest grid spacing, sug-gesting that the models have strong prediction capabilities. In Fig. 8, MAEs and RMSEs are presented for every distance on which the models were trained. As the regression results in Fig. 7 indicate, the errors are higher for larger distances and grid spacings. The values of MAEs range from less than 2.5 mm for distances up to 100 mm (with 10 mm grid spacing) for faces and vertices, to ∼13 mm for faces and vertices at larger distances (Fig. 8a and 8b). The RMSEs follow the same trend as MAEs, with a slightly steeper rise from the low to high distances, as their calculation penalizes larger errors more heavily, with ∼15 mm RMSE for 250 mm distances (25 mm grid spacing) from the faces (Fig. 8c), and ∼14 mm RMSE for the vertices (Fig. 8d). The R 2 values in Table 2 show that the models fit the data almost perfectly, with approximately 99% of the variation in the data explained by the models. 
+
+3.3 Validation of the regression model 
+
+The validation of the models’ predictive performance was performed by testing their interpolation capabilities. The source-to-detector distances at 60, 125, and 200 mm were held out during the model’s training for each of the energies. The results of the interpolations can be seen in Table 3, averaged over 10 random seeds. The MAEs and RMSEs in the Table represent their averaged values for 10 0 1000 2000 3000 4000 
+
+Boosting round 
+
+0.00 0.05 0.10 0.15 0.20 0.25 
+
+> MAE [mm]
+
+train validation best iter = 4560 (a) 0 500 1000 1500 2000 2500 3000 3500 
+
+Boosting round 
+
+0.00 0.05 0.10 0.15 0.20 0.25 
+
+> MAE [mm]
+
+train validation best iter = 3468 
+
+(b) 0 500 1000 1500 2000 2500 3000 3500 
+
+Boosting round 
+
+0.00 0.05 0.10 0.15 0.20 0.25 
+
+> MAE [mm]
+
+train validation best iter = 3536 
+
+(c) 
+
+Figure 6: Comparison of the training and validation learning curves for XGBoost regression models at (a) 511, (b) 662, and (c) 1275 keV energies. 11 0 50 100 150 200 250 300 350 
+
+True distance [mm] 
+
+> 050 100 150 200 250 300 350
+> Predicted distance [mm]
+> 511 keV 662 keV 1275 keV
+
+(a) 0 50 100 150 200 250 300 
+
+True distance [mm]  
+
+> 050 100 150 200 250 300
+> Predicted distance [mm]
+> 511 keV 662 keV 1275 keV
+
+(b) 
+
+Figure 7: The distance regression results at 511, 662 and 1275 keV energies for (a) faces and (b) vertices of the proposed detector. 
+
+(a) (b) 
+
+(c) (d) 
+
+Figure 8: The MAE and the RMSE values for models at 511, 662, and 1275 keV energies for faces (Figures (a) and (c)) and vertices (Figures (b) and (d)) of the proposed detector. 12 (a) (b)  
+
+> (c) (d)
+
+Figure 9: The distance interpolation MAEs and RMSEs averaged over 10 ran-dom seeds at 511, 662, and 1275 keV energies for faces ((a) and (c)) and vertices ((b) and (d)) of the proposed detector, compared to models’ errors trained with 60, 125 and 200 mm distances held-out. the models at the selected distances, while bias is the measure of the result’s average offset from the true distance. The MAEs and RMSEs show the same tendencies as the complete model, increasing with source-to-detector distance and energy of the point sources, and generally lower than half of the respective grid spacings. The MAEs and RMSEs of the interpolated values presented in Fig. 9 are slightly higher than their trained models’ counterparts. MAEs for interpolated distances for both faces (Fig. 9a) and vertices (Fig. 9b) are lower than half of the grid spacing at respective distances for every energy considered: less than 4 mm for interpolated distance of 60 mm from the faces and 2 mm for vertices, less than 6 mm for 125 mm, and less than 11 mm at 200 mm for all models. RMSEs show the same trend, with error values for interpolated distance of 60 mm of less than 5 mm for faces (Fig. 9c), and less than 3 mm for vertices (Fig. 9d). The mid-distance interpolation of 125 mm has RMSEs of ∼6.5 mm for both faces and vertices. For the interpolated distance at 200 mm from faces RMSE is ∼13.5 mm, and ∼11 mm for vertices for energies of 511 and 662 keV, while for 1275 keV the error value is ∼13 mm. The bias in Table 3 shows that, overall, predictions are almost perfect, with the maximum offset of 3.5 ±0.2 mm for interpolated distance at 125 mm for the model with the point source of 1275 keV energy. 13 Table 3: XGBoost regression model results on interpolated distances over 10 random seeds. FACES Energy [keV] True distance [mm] MAE [mm] RMSE [mm] Bias [mm] 60 2.1 ±0.1 2.7 ±0.2 1.1 ±0.2 511 125 3.9 ±0.2 5.0 ±0.2 0.7 ±0.3 200 9.5 ±0.4 11.7 ±0.3 -1.1 ±0.3 60 3.0 ±0.2 3.7 ±0.2 2.5 ±0.2 662 125 3.9 ±0.1 4.9 ±0.1 0.4 ±0.3 200 10.6 ±0.3 13.0 ±0.3 -0.2 ±0.3 60 3.5 ±0.3 4.1 ±0.4 3.1 ±0.3 1275 125 5.2 ±0.2 6.0 ±0.1 -0.1 ±0.3 200 10.7 ±0.2 13.2 ±0.2 -0.4 ±0.2 VERTICES Energy [keV] True distance [mm] MAE [mm] RMSE [mm] Bias [mm] 60 1.5 ±0.1 1.9 ±0.1 0.3 ±0.4 511 125 4.9 ±0.2 6.1 ±0.2 2.7 ±0.2 200 8.7 ±0.1 10.5 ±0.2 0.7 ±0.1 60 1.9 ±0.1 2.4 ±0.1 -0.3 ±0.2 662 125 4.9 ±0.4 5.9 ±0.3 3.3 ±0.4 200 9.0 ±0.1 11.1 ±0.1 0.9 ±0.2 60 2.0 ±0.1 2.5 ±0.2 -0.4 ±0.2 1275 125 5.7 ±0.1 6.6 ±0.1 3.5 ±0.2 200 10.9 ±0.2 13.5 ±0.1 3.1 ±0.3 14 4 Discussion 
+
+Geant4 simulations were conducted for exploration of the detection sensitivity of a novel radiation detector, capable of determining the position of the source in 4 π. As its readout is positioned on two sensitive volume faces, it raised concerns about the detector’s capability for effective collection of gamma rays from all sides. The results have shown that the influence of the geometrical non-uniformity of the design imposes no restrictions on the detection sensitivity from all sides of the detector, as the differences in the efficiencies between the differ-ent faces and vertices are less than 1%. The intrinsic efficiency will suffer from edge effects when measured by a point source. This effect can be seen in Figure 5, when the source is positioned in front of the faces, as the intrinsic efficiency of the vertices is higher than for faces at the lowest distance at respective energies. The intrinsic efficiency of the faces increases with the distance of the source, as expected for the larger cross-section, while it decreases for the vertices. The geometrical efficiency falls with increasing distance as well, at the same rate for all energies and all source positions. The highest absolute efficiency is achieved for the lowest source-to-detector distance of 10 mm at 511 keV, but the differ-ences between its values at different energies fade with increasing distance from 100 mm to 300 mm. Due to the detector’s small size, with 2 cm 3 of sensitive volume, the absolute efficiency of the detector setup converges to <0.1% for all three tested energies after 100 mm distance. The localization of the source prior to the image reconstruction was also one of the goals of the study. The ML regression models were built with the XGBoost library, utilizing the Geant4 simulated data for training, validation, and testing. The results indicate that this algorithm can determine the source-to-detector distance with accuracy higher than half of the training grid spacing for 511, 662, and 1275 keV point source energies, without overfitting and with stable convergence of the models. To test the validity of the predictions of the models, the three distances at 60, 125, and 200 mm were held out during training. Interpolation of these distances has shown that the prediction offset from their true value is less than 3% in the least accurate model for 1275 keV and 125 mm interpolation distance, while the other models had better predictions. The interpolation results demonstrate that the regression models correctly capture continuous distance dependence, and that the XGBoost algorithm is applicable to the problem of source-to-detector distance determination. As the models’ interpolation RMSE remains under 7% for 200 mm for the 1275 keV source energy, it can be concluded that this approach could be expanded with the training grid of sources set to distances larger than 300 mm. However, the exact constraints of the method require further investigation. The light-sharing principle of the detector can be extended to larger setups, either by increasing the size of the voxels or their number. The concept of source positioning with the XGBoost algorithm could then be applied for training ML models for sources even further away from the detector. The detection efficiency and modeling errors could be influenced by the lim-itations of the simulation setup. The voxels in the detector matrix could have different experimental energy resolutions, depending on their positions. Due to the bright nature of GAGG crystals, with light output of 54 000 photons/MeV, high self-transparency, and compactness of the detector’s body, these differences should be small. The experimental construction of the detector would also in-15 clude plastic black encapsulation for noise suppression, which could contribute to scatter detection. Due to the detector’s overall small size and low weight, it would allow for easy portability, as it could be hand-held, mounted on a drone, or on a robotic arm. The absolute position of the source could be determined with a denser grid of point sources surrounding the detector, but the informa-tion about the general direction of the gamma ray source and its distance from the detector’s face or vertex is enough to speed up image reconstruction by providing initial spatial parameters. 
+
+# 5 Conclusion 
+
+In this work, we presented the design of a novel omnidirectional segmented radi-ation detector, utilizing dual perpendicular SiPM readout. Its performance was tested with Monte Carlo simulations in Geant4. We found that detection effi-ciency for energies relevant to experimental measurements of Na-22 and Cs-137 point sources is not affected by its geometrical non-uniformity. The XGBoost machine learning algorithm successfully predicted the separation distance from the point sources to the detector’s faces and vertices. This demonstrates the detector’s adequacy for omnidirectional radiation detection, combined with the detector’s capability to determine the position of the source through attenuation of the gamma rays and occupancy of the crystals they interact with. The de-termination of the source’s position from raw measurements of the gamma rays could significantly reduce image reconstruction duration and computational re-quirements when the detector is applied as a Compton camera. 16 Acknowledgments 
+
+This research was funded by the European Union – Next Generation EU and is part of the project Voxel Matrix Detector for Full Solid Angle Radiological Imaging – VMDScan - NPOO.C3.2.R2-I1.06.0084. 
+
+# Declaration of AI-assisted tools 
+
+The authors used Claude Opus 4.8 (Anthropic, 2026) to draft Python scripts for data visualization, as well as scripts for the implementation of the XGBoost algorithms. The authors inspected, tested, and revised the scripts before the implementation. Claude did not select the research question, collect data, de-termine the conclusions, or approve the final manuscript. 
+
+# Declaration of data availability 
+
+The data presented in this study will be available upon reasonable request. 
+
+# Conflicts of Interest 
+
+The authors declare no conflict of interest. 17 References 
+
+[1] J. Uher, C. Frojdh, J. Jakubek, S. Pospisil, G. Thungstrom, and Z. Vykydal. Directional radiation detector. In 2007 IEEE Nuclear Science Symposium Conference Record , volume 2, pages 1162–1165, 2007. [2] Y. Sato, Y. Tanifuji, Y. Terasaka, H. Usami, M. Kaburagi, K. Kawabata, Utsugi W., Kikuchi H., Takahira S., and T. Torii. Radiation imaging using a compact compton camera inside the fukushima daiichi nuclear power station building. J. Nucl. Sci. Technol. , 55(9):965–970, 2018. [3] P. Peng, M. S. Judenhofer, and S. R. Cherry. Compton pet: a layered struc-ture pet detector with high performance. Phys. Med. Biol. , 64(10):10LT01, 2019. [4] T. Yamaya, T. Mitsuhashi, T. Matsumoto, N. Inadama, F. Nishikido, E. Yoshida, H. Murayama, H. Kawai, M. Suga, and M. Watanabe. Asipm-based isotropic-3d pet detector x’tal cube with a three-dimensional array of 1 mm3 crystals. Phys. Med. Biol. , 56(21):6793–6807, 2019. [5] M. Ghelman, N. Kopeika, S. Rotman, N. Ben David, E. Vax, and A. Oso-vizky. Wide energetic response of 4 π directional gamma detector based on combination of compton scattering and photoelectric effect. IEEE Trans. Nucl. Sci. , 71(5):1072–1083, 2024. [6] Max Ghelman, Natan Kopeika, Stanley Rotman, Zohar Davidov, and Alon Osovizky. 4π directional radiation detector based on compton scatter-ing with channel reduction method. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment , 1072:170246, 2025. [7] A. Kishimoto, J. Kataoka, T. Kato, T. Miura, T. Nakamori, K. Kamada, S. Nakamura, K. Sato, Y. Ishikawa, K. Yamamura, N. Kawabata, and S. Yamamoto. Development of a dual-sided readout doi-pet module using large-area monolithic mppc-arrays. IEEE Trans. Nucl. Sci. , 60(1):38–43, 2013. [8] H. Lee, T. Lee, and W. Lee. Development of a position-sensitive 4 π compton camera based on a single segmented scintillator. IEEE Trans. Nucl. Sci. ,67(12):226–239, 2020. [9] A.M. Kožuljević, G. Jazvac, L. Lotina, and L. Pavelić. Segmented comp-ton camera with dual perpendicular silicon photomultiplier read-out for 4 π
+
+gamma ray imaging. In Proceedings of the 15th International Conference of the Croatian Nuclear Society , Zadar, Croatia, May 31–June 3, 2026. Croatian Nuclear Society. [10] Mohini W. Rawool-Sullivan, John P. Sullivan, Shawn R. Tornga, and Steven P. Brumby. A simple algorithm for estimation of source-to-detector distance in compton imaging. Applied Radiation and Isotopes , 66(12):1986– 1991, 2008. 18 [11] Om Prakash Dash, Tomislav Bokulić, Damir Bosnar, Petar Žugec, and Mi-hael Makek. Design and characteristics of a novel single-plane compton gamma camera based on gagg scintillators readout by sipms. Nuclear In-struments and Methods in Physics Research Section A: Accelerators, Spec-trometers, Detectors and Associated Equipment , 1047:167808, 2023. [12] Mark S. Bandstra, Joseph C. Curtis, James M. Ghawaly, Jr, A. Chandler Jones, and Tenzing H. Y. Joshi. Explaining machine-learning models for gamma-ray detection and identification. PLOS ONE , 18(6):1–21, 06 2023. [13] G. Fragkos, K. Karafasoulis, A. Kyriakis, and C. Potiriadis. Localization of radioactive source using a network of small form factor czt sensors. Journal of Instrumentation , 15:C04015, 2020. [14] K. Karafasoulis, I. Kaissas, C. Papadimitropoulos, K. Potiriadis, and C.P. Lambropoulos. Simulated near-field radioactive source localization in 3d with coded aperture and convolutional neural networks. Journal of Instru-mentation , 20:C01046, 2025. [15] Matthew Durbin, Ryan Sheatsley, Patrick McDaniel, and Azaree Lintereur. Experimental tests of gamma-ray localization aided with machine-learning (glam) capabilities. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equip-ment , 1038:166905, 2022. [16] J. Pérez-Curbelo, J. Roser, E. Muñoz, L. Barrientos, V. Sanz, and G. Llosá. Improving compton camera imaging of multi-energy radioactive sources by using machine learning algorithms for event selection. Radiation Physics and Chemistry , 226:112166, 2025. [17] B. González-González, U. Abascal-Ruiz, M. Villa-Alfageme, and S. Hurtado-Bermúdez. Accuracy of machine learning algorithms for hpge detector efficiency determination. Radiation Physics and Chemistry ,239:113328, 2026. [18] Yoav Simhony, Alex Segal, Ofer Amrani, and Erez Etzion. From light to energy: Machine learning algorithms for position and energy deposition estimation in scintillator–sipm detectors. Sensors , 26(1), 2026. [19] S. Agostinelli, J. Allison, K. Amako, J. Apostolakis, H. Araujo, P. Arce, M. Asai, D. Axen, S. Banerjee, G. Barrand, F. Behner, L. Bellagamba, J. Boudreau, L. Broglia, A. Brunengo, H. Burkhardt, S. Chauvie, J. Chuma, R. Chytracek, G. Cooperman, G. Cosmo, P. Degtyarenko, A. Dell’Acqua, G. Depaola, D. Dietrich, R. Enami, A. Feliciello, C. Fer-guson, H. Fesefeldt, G. Folger, F. Foppiano, A. Forti, S. Garelli, S. Gi-ani, R. Giannitrapani, D. Gibin, J.J. Gómez Cadenas, I. González, G. Gracia Abril, G. Greeniaus, W. Greiner, V. Grichine, A. Grossheim, S. Guatelli, P. Gumplinger, R. Hamatsu, K. Hashimoto, H. Hasui, A. Heikkinen, A. Howard, V. Ivanchenko, A. Johnson, F.W. Jones, J. Kallenbach, N. Kanaya, M. Kawabata, Y. Kawabata, M. Kawaguti, S. Kelner, P. Kent, A. Kimura, T. Kodama, R. Kokoulin, M. Kossov, H. Kurashige, E. Lamanna, T. Lampén, V. Lara, V. Lefebure, F. Lei, 19 M. Liendl, W. Lockman, F. Longo, S. Magni, M. Maire, E. Meder-nach, K. Minamimoto, P. Mora de Freitas, Y. Morita, K. Murakami, M. Nagamatu, R. Nartallo, P. Nieminen, T. Nishimura, K. Ohtsubo, M. Okamura, S. O’Neale, Y. Oohata, K. Paech, J. Perl, A. Pfeiffer, M.G. Pia, F. Ranjard, A. Rybin, S. Sadilov, E. Di Salvo, G. Santin, T. Sasaki, N. Savvas, Y. Sawada, S. Scherer, S. Sei, V. Sirotenko, D. Smith, N. Starkov, H. Stoecker, J. Sulkimo, M. Takahata, S. Tanaka, E. Tcherni-aev, E. Safai Tehrani, M. Tropeano, P. Truscott, H. Uno, L. Urban, P. Ur-ban, M. Verderi, A. Walkden, W. Wander, H. Weber, J.P. Wellisch, T. We-naus, D.C. Williams, D. Wright, T. Yamada, H. Yoshida, and D. Zschi-esche. Geant4—a simulation toolkit. Nucl. Instrum. Methods Phys. Res. A, 506(3):250–303, 2003. [20] Mihael Makek, Damir Bosnar, Ana Marija Kožuljević, and Luka Pavelić. Investigation of GaGG:Ce with TOFPET2 ASIC Readout for Applications in Gamma Imaging Systems. Crystals , 10:1073, 2020. [21] O. Tang. GNU Parallel 20210822 (’Kabul’). Zenodo , 2022. [22] Rene Brun and Fons Rademakers. Root — an object oriented data analysis framework. Nucl. Instrum. Methods Phys. Res. A , 389(1):81–86, 1997. [23] Tianqi Chen and Carlos Guestrin. Xgboost: A scalable tree boosting sys-tem. In Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining , KDD ’16, page 785–794, New York, NY, USA, 2016. [24] F. Pedregosa, G. Varoquaux, A. Gramfort, V. Michel, B. Thirion, O. Grisel, M. Blondel, P. Prettenhofer, R. Weiss, V. Dubourg, J. Vanderplas, A. Pas-sos, D. Cournapeau, M. Brucher, M. Perrot, and E. Duchesnay. Scikit-learn: Machine learning in Python. Journal of Machine Learning Research ,12:2825–2830, 2011. 20

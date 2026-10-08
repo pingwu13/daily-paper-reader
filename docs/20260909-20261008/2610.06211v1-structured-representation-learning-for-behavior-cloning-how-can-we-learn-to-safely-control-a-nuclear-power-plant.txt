@@ -1,0 +1,347 @@
+Title: Structured Representation Learning for Behavior Cloning: How can we learn to safely control a nuclear power plant?
+
+URL Source: https://arxiv.org/pdf/2610.06211v1
+
+Published Time: Tue, 06 Oct 2026 02:53:36 GMT
+
+Number of Pages: 8
+
+Markdown Content:
+# Structured Representation Learning for Behavior Cloning: How can we learn to safely control a nuclear power plant? 
+
+Perceval Beja-Battais 1,2 Alain Grossetête 2 Nicolas Vayatis 1
+
+> 1
+
+Université Paris-Saclay, CNRS, ENS Paris-Saclay, Centre Borelli, Gif-sur-Yvette, France 
+
+> 2
+
+Framatome, Reactor Process Department, Courbevoie, France 
+
+perceval.beja-battais@ens-paris-saclay.fr 
+
+Abstract 
+
+Learned models for industrial control are usually judged by aggregate accuracy, but accuracy at the component level does not guarantee safety once it is embed-ded in the system it is meant to serve. We study this gap on a behavior-cloning task: imitating an expert Nonlinear Model Predictive Control (NMPC) policy for load-following of a Pressurized Water Reactor (PWR), an industrial system with tight safety constraints. We propose a structured architecture encoding variables from each timescale into separate latent spaces, reflecting the physical decomposi-tion of the system, before training a controller to imitate the expert on the product latent space. On long-horizon rollouts, separated embeddings improve both ac-curacy and feasibility compared with a shared-embedding baseline. Sensitivity analysis further shows that our model yields interpretable representations aligned with the system’s physics. However, standalone deployment still leaves several percent of trajectories infeasible regardless of the architecture. Using our method to warmstart the NMPC optimizer rather than acting standalone, we recover full feasibility and near-optimal cost while still cutting computation time by ∼15% relative to the expert controller, and even more for abrupt operating changes. 
+
+1 Introduction 
+
+Power-grid management and load-following. Due to climate change, real-time power grid man-agement increasingly requires Nuclear Power Plants (NPPs) to operate in load-following mode. To do so, operators can resort to predictive systems [Dupré and Grossetête, 2025]. However, operating in load-following can be a challenging task: most NPPs are designed to operate in base-load. 
+
+ML for NMPC. NMPC is a methodology [Qin and Badgwell, 2003] that repeatedly solves an Optimal Control Problem (OCP) minimizing a cost function subject to dynamics and constraints, but its significant online computational burden limits its practical deployment in resource-constrained industrial pipelines [Rao, 2009, Diehl et al., 2009, Fiedler et al., 2023]. Machine Learning (ML) has emerged as a principled means of reducing this online cost, giving rise to the Learning-based MPC literature [Hewing et al., 2020], with methodologies aiming to learn either the dynamics [Hossain and Kumar, 2023] or the controller of a system [Vaupel et al., 2020, Li et al., 2024]. 
+
+Implications for power-grid systems. Designing ML-based controllers for multiscale dynamical systems naturally arises for power-grid systems, in which the controllers are typically embedded inside a larger system for power-grid management. Feasibility is crucial: real-time controllers have to provide outputs that strictly respect safety constraints inside the nuclear reactor core.     
+
+> 40th Conference on Neural Information Processing Systems (NeurIPS 2026). Workshop: AI Foundations for Power Grids. arXiv:2610.06211v1 [cs.LG] 5 Oct 2026 xzw
+> Slow State Encoder
+> ϕx
+> ϕx(x)
+> Fast State Encoder
+> ϕz
+> ϕz(z)
+> Exogenous State Encoder
+> ϕw
+> ϕw(w)
+> Latent Representation
+> Φ( x, z, w )Controller
+> ππ◦Φ( x, z, w )
+> Environment
+
+Figure 1: Proposed multi-stream architecture: we encode the input data in separated latent spaces and the controller π
+
+acts on the product latent space. This architecture enhances feasibility of the standalone controller, as well as improving interpretability and closed-loop performance. 
+
+Contributions. We propose Struc-tured Representation Learning for Behavior Cloning (SRLBC) of an ex-pert NMPC controller for a nuclear reactor core. We design a structured closed-loop controller and show that separating timescales yields more in-terpretable representations, improves performance and the satisfaction of strict nonlinear safety constraints. Moreover, we show that using the learned policy to warmstart the expert NMPC optimizer recovers full con-straint feasibility while still yielding a significant reduction in computation time, offering a safety-preserving deployment path for the proposed controller. 
+
+2 Problem Statement 
+
+Dynamical system and control problem. The goal is to design a closed-loop controller for the load-following of PWRs. The dynamics of the core evolve according to the differential system 
+
+˙x(t) = f (x(t), z (t), u (t), w (t)) ∈ Rnx , x(0) = x0,ε ˙z(t) = g(x(t), z (t), u (t), w (t)) ∈ Rnz , z(0) = z0. (1) The system is described by a slow state variable x(t), a fast state variable z(t), and an exogenous input variable w(t) which is known in advance (e.g., power demand). The full equations are given in Appendix A. u(t) represents dilution or boron injection commands from the operator. This system is highly nonlinear due to multiple factors: stiffness arises from the fast-evolving coupled subsys-tem on z(t), with challenging nonlinearities induced by the reactivity (a highly nonlinear function, depending on all the state variables of the system [Stacey, 2018]). Moreover, u(t) directly acts on the slow state x(t), but differently depending on its sign: ∂f ∂u is discontinuous at u = 0 . The substan-tially high dimension of the control problem, with nx = 14 , n z = 8 , n w = 30 , induces a non-trivial mapping (x(t), z (t), w (t), . . . , w (t + k dt)) 7 → πMPC (x, z, w ) := ( u∗(t), . . . , u ∗(t + k dt)) . Our aim is to design an explicit state-feedback controller, without online optimization, mimicking the behavior of the optimal control input u∗(t) of the nonlinear OCP 
+
+u∗ := arg min 
+
+> u
+
+
+
+J(u) := 
+
+Z tf
+
+> 0
+
+ℓ(x(t), z (t), w (t), u (t))d t
+
+
+
+, s.t. h(z(t)) ≤ 0 and (1). (2) 
+
+From the OCP to Behavior Cloning. Let πMPC (x0, z 0, w ) be the optimal policy recovered from solving (2) at each timestep. Approximate MPC (AMPC) learns an ML-based policy that can be deployed online without solving the underlying OCP, while providing statistical guarantees [Hert-neck et al., 2018]. However, the considered robust MPC formulation relies on a quadratic cost function in the state and control variables, which limits its applicability to our application setting. Imitation Learning (IL) consists of a wider class of methods, in which a policy π is learned by observing an expert’s demonstration [Hua et al., 2021]. The simplest IL framework is Behavior Cloning (BC). In this setting, we assume access to a dataset of optimal control inputs and trajecto-ries D := {(xi, z i, w i, π MPC (xi, z i, w i)) , i ∈ J1, N K}, and learn a mapping πBC ≈ πMPC . Learning such policies for complex systems can be challenging, especially when the offline computational cost required to generate a representative set of demonstrations from πMPC (x, z, w ) is substantial. Moreover, statistical learning theory is difficult to apply to provide safety guarantees for the result-ing controller. In most cases, πBC may still act as a black box. For safety-critical applications, πBC 
+
+should therefore be designed to be as interpretable as possible, even when used for warmstarting. 
+
+3 Experiment 
+
+Designing the controller and training the model. Our model consists of four components: a slow-state encoder ϕx : Rnx → Rdx , a fast-state encoder ϕz : Rnz → Rdz , an exogenous-variable 2Method Without Warmstart (Standalone) With Warmstart Embed. (Size) & Train. Spec. Ratio to Optimal Cost Relative Gap to Optimal Control Feasibility Comput. Time (s) Ratio to Optimal Cost Feasibility Comput. Time (s)                                                                                                   
+
+> BC Baseline (64) 1.12 ±0.12 (8 .0±2.8) ·10 −394 .1% 20 .4±0.61.00 ±0.01 100 .0%292 .3±17 .9
+> BC Baseline (128) 1.15 ±0.15 (9 .8±3.9) ·10 −392 .2% 20 .5±0.61.00 ±0.01 99 .6% 293 .8±17 .6
+> SRLBC (64) 1.08 ±0.11 (7 .8±3.5) ·10 −397 .8%20 .5±0.61.00 ±0.01 100 .0%285 .7±16 .1
+> SRLBC (64) + Decor. 1.07 ±0.08 (6.8±2.5)·10 −395 .3% 20 .5±0.61.00 ±0.01 100 .0%293 .0±17 .3
+> Optimal Policy – πMPC 1.00 0100 .0%348 .3±14 .61.00 100 .0%348 .3±14 .6
+
+Table 1: Comparison of the learned policies in standalone operation and when used to warmstart the NMPC optimization. Cost ratio to optimal = J(πBC ◦ Φ) /J (πMPC ), Rel. gap to optimal control 
+
+= ∥πBC ◦ Φ − πMPC ∥/∥πMPC ∥. Mean ± Std over 1000 test rollouts of 48h. Without warmstart, 
+
+πBC ◦ Φ is directly used as the control policy. With warmstart, the policy provides the initial guess for the NMPC optimization at each timestep. encoder ϕw : Rnw → Rdw , and a latent controller πBC : Rdx+dz +dw → Rnu . The entire ar-chitecture is trained via BC to approximate the expert controller πMPC (x, z, w ) by minimizing the BC loss ℓBC (·) := ∥πBC ◦ Φ( ·) − πMPC (·)∥, where Φ := [ ϕ⊤ 
+
+> x
+
+, ϕ ⊤ 
+
+> z
+
+, ϕ ⊤ 
+
+> w
+
+]⊤. We used a 2-layer MLP with d = 64 neurons per hidden layer and ReLU activation for each encoder ϕx(x), ϕ z (z), ϕ w(w).The controller block has the same architecture. We give further motivations for these choices in Appendix D. The encoders were pretrained on the reconstruction loss, after which the main train-ing consists of simultaneously optimizing the encoders and controllers on the BC loss in order to finetune the encoders specifically for control tasks. Compared with a naive shared embedding, this architectural prior imposes a strong structural constraint on the representation. The dimensions of each embedding were selected by comparing a validation BC loss over all possible 91 combinations in {(dx, d z , d w), n x ≤ dx, n z ≤ dz , n w ≤ dw, d = dx + dz + dw}, so that each embedding is at least as large as the underlying dimension. Note that this latent-dimension search is specific to the separated architecture, which must allocate capacity across three constrained subspaces a priori. We compare the performance of the proposed methodology with an unconstrained embedding of di-mension d on (x, z, w ). For the common baseline, no such decomposition needs to be chosen. With this methodology, we found dx = 14 , d z = 12 , d w = 38 . Common embeddings and separated em-beddings share the same total latent dimension d = 64 = dx + dz + dw, ensuring a fair comparison. We also compared our methodology against a larger, encoder-controller baseline, but with 2d = 128 
+
+neurons per layer, and a 2d-dimensional embedding. Finally, we compare SRLBC with and without enforced decorrelation. This is done by also minimizing λ∥Cov( ϕα) − Idα ∥, α ∈ { x, z, w } during training, with λ a hyperparameter that was optimized using log-grid search. 
+
+Data acquisition. To design the dataset D := {(xi, z i, w i, π MPC (xi, z i, w i)) , i ∈ J1, N K}, a large number of simulations were collected in which the expert NMPC controller optimized the nonlinear OCP (2). The stage cost of the integral cost function ℓ(z(t), w (t)) penalizes the distance of the axial offset of the power distribution of the core from a reference. Moreover, a strict safety constraint 
+
+h(z(t)) ≤ 0 on the axial offset deviation has to be respected at all times. This OCP involves a non-convex, nonlinear cost function, non-convex nonlinear constraints over the complex multiscale system (1). The simulations were sampled using a random transient generator, which corresponds to a realistic random exogenous sequence of w(t), e.g., low demand at night, high demand in mornings and evenings. In total, approximately 80 000 training points of the form (xi, z i, w i, π MPC (xi, z i, w i)) 
+
+were collected through parallel simulations of 260 trajectories, each spanning a duration of 48 hours. Using DAgger [Ross et al., 2011] for each benchmarked policy, the training set was augmented with 
+
+100 new 48 -hour trajectories. 
+
+Quantitative Results. We compared the performance of the different architectures on a large test set of 1 000 rollouts of 48h in Table 1. Using SRLBC, the controller learns a mapping closer to 
+
+πMPC , indicating that separated embeddings help the learned policy to better approximate the expert controller. Rollouts using the NMPC controller yield the optimal trajectory in about 6 minutes for 48h simulations, while rollouts using any BC-based controller are rapid due to their instantaneous online evaluation. In practice, 20 seconds roughly corresponds to the computation time required for simulating the system during 48h. This yields an acceleration of a factor of ∼17 compared to the expert when BC controllers act standalone. However, we recommend combining the BC approach with a form of safety-filter as is often done for sensitive applications [Hsu et al., 2023]. In our case, this can be done by warmstarting the optimization process of the expert controller with the outputs of the learned controller. This allows systematic feasibility recovery, while still yielding an acceleration of about 15% on average. More specifically, the speedup is particularly significant when standard 3shift-initialization fails (implemented on πMPC ). If w(t) varies over the last segment of the control discretization, e.g., due to changes in power demand, BC-based methods are substantially more efficient. When the electricity regulator asks for a last-minute change, these gains really matter. 0510 15 20 25 30 35 40 45 50   
+
+> (x,z,w)
+> 0612 18 24 30 36 42 48 54 60
+> (x, z, w)
+
+(a) Unstructured embedding. 0510 15 20 25 30 35 40 45 50   
+
+> (x,z,w)
+> 0612 18 24 30 36 42 48 54 60
+> (x, z, w)
+
+(b) Embedding from SRLBC. 
+
+Figure 2: Sensitivity analysis. 
+
+Interpretability of the controller. The separated architecture im-poses a block-structured decomposition of the latent space. This yields a more interpretable embedding, directly depending on un-derstandable combinations of physical variables. The heatmaps from Figs. 2a–2b show the averaged absolute value of the Jacobian coefficients for each embedding (normalized with respect to the in-put’s variances). The histograms, on the left side, show relative importance of the ith representation [Φ( x, z, w )] i for constructing the controller’s output π ◦ Φ( x, z, w ). We recover that a few state variables (namely, the boron concentration and the fast-evolving variables from z(t)) explain most of the controller’s output. The rest of the state and exogenous variables help regularize. This ob-servation is consistent with reactor physics, since the control input directly impacts the boron concentration, and because the cost and constraint functions only depend on z(t). What is most striking, however, is that separating the embeddings of the slow and fast variables drastically improves interpretability: ∂π ∂Φ is much more structured and less diffuse throughout the components. 
+
+4 Discussion 
+
+Feasibility is not a byproduct of accuracy. A recurring assump-tion in learning-based control is that minimizing an imitation loss is a good proxy for safe deployment. Our results suggest other-wise. The BC loss and the closed-loop cost ratio track each other closely across all architectures, yet feasibility varies by up to 6 points among architectures with similar losses. The decoupling is, we believe, a useful cautionary example for the broader question of what it means for a learned model to respect the physics : an ag-gregate error metric can improve while the property that actually matters for deployment moves in the opposite direction. 
+
+Components are not systems. Table 1 tells two different stories about the same controller. Standalone, even our best BC variants leave 2 to 5% of trajectories infeasible but are not, on their own, safe substitutes for the loop they would replace. Used instead as a warmstart for the expert NMPC optimizer, the same policies recover full feasibility while still cutting computation time. Here, the controller did not change, but its role in the system did. 
+
+Limitations. Two limitations bound the scope of these claims. First, the benchmark exhibits dis-tributional shift within a fixed system (varying xenon dynamics, exogenous turbine-power profiles) rather than a structural shift. Second, the benchmark itself is a single-plant industrial simulator, not an open community dataset, and is closer in spirit to the kind of high-fidelity, non-IEEE test case this workshop calls for than to a released artifact. 
+
+5 Conclusion 
+
+We introduced SRLBC, a simple timescale-aware architecture for behavior-cloning of expert con-trollers of multiscale nonlinear systems. We tried to answer the larger question: what should we require from a learned controller before using it as an embedded system? On a challenging PWR load-following benchmark, we find that BC metrics can be poor proxies for constraint satisfac-tion: accuracy alone does not predict the controller’s effect once embedded in a system. By itself, structuring the embedding by timescale improves feasibility and interpretability. Combining it with NMPC-warmstarting recovers full constraint satisfaction with a significant compute saving over the expert controller, yielding an improved robust controller. 4References 
+
+Joel AE Andersson, Joris Gillis, Greg Horn, James B Rawlings, and Moritz Diehl. CasADi: a software framework for nonlinear optimization and optimal control. Mathematical Programming Computation , 11(1):1–36, 2019. Moritz Diehl, Hans Joachim Ferreau, and Niels Haverbeke. Efficient numerical methods for nonlin-ear MPC and moving horizon estimation. In Nonlinear model predictive control , pages 391–417. Springer, 2009. Guillaume Dupré and Alain Grossetête. The OAPS solution: a real-time predictive system for flex-ible PWR operation. In International Congress on Advances in Nuclear Power Plants (ICAPP) ,2025. Guillaume Dupré, Alain Grossetête, Philippe Chevrel, and Mohamed Yagoubi. Enhanced flexibility of PWRs (Mode A) using an efficient NMPC-based boration/dilution system. In 2021 european control conference (ECC) , pages 1092–1098. IEEE, 2021. Felix Fiedler, Benjamin Karg, Lukas Lüken, Dean Brandner, Moritz Heinlein, Felix Brabender, and Sergio Lucia. do-mpc: Towards FAIR nonlinear and robust model predictive control. Control Engineering Practice , 140:105676, 2023. Michael Hertneck, Johannes Köhler, Sebastian Trimpe, and Frank Allgöwer. Learning an approxi-mate model predictive controller with guarantees. IEEE Control Systems Letters , 2(3):543–548, 2018. Lukas Hewing, Kim P Wabersich, Marcel Menner, and Melanie N Zeilinger. Learning-based model predictive control: Toward safe learning in control. Annual Review of Control, Robotics, and Autonomous Systems , 3(1):269–296, 2020. Ramij Raja Hossain and Ratnesh Kumar. Machine learning accelerated real-time model predictive control for power systems. IEEE/CAA Journal of Automatica Sinica , 10(4):916–930, 2023. Kai-Chieh Hsu, Haimin Hu, and Jaime F Fisac. The safety filter: A unified view of safety-critical control in autonomous systems. Annual Review of Control, Robotics, and Autonomous Systems ,7, 2023. Jiang Hua, Liangcai Zeng, Gongfa Li, and Zhaojie Ju. Learning for a robot: Deep reinforcement learning, imitation learning, transfer learning. Sensors , 21(4):1278, 2021. Zhaoxin Li, Xiaoke Wang, Letian Chen, Rohan Paleja, Subramanya Nageshrao, and Matthew Gom-bolay. Faster model predictive control via self-supervised initialization learning. arXiv preprint arXiv:2408.03394 , 2024. Adam Paszke, Sam Gross, Francisco Massa, Adam Lerer, James Bradbury, Gregory Chanan, Trevor Killeen, Zeming Lin, Natalia Gimelshein, Luca Antiga, et al. PyTorch: An imperative style, high-performance deep learning library. Advances in neural information processing systems , 32, 2019. S Joe Qin and Thomas A Badgwell. A survey of industrial model predictive control technology. 
+
+Control engineering practice , 11(7):733–764, 2003. Anil V Rao. A survey of numerical methods for optimal control. Advances in the Astronautical Sciences , 135(1):497–528, 2009. Stéphane Ross, Geoffrey Gordon, and Drew Bagnell. A reduction of imitation learning and struc-tured prediction to no-regret online learning. In Proceedings of the fourteenth international con-ference on artificial intelligence and statistics , pages 627–635. JMLR Workshop and Conference Proceedings, 2011. Weston M Stacey. Nuclear reactor physics . John Wiley & Sons, 3rd edition, 2018. Yannic Vaupel, Nils C Hamacher, Adrian Caspari, Adel Mhamdi, Ioannis G Kevrekidis, and Alexan-der Mitsos. Accelerating nonlinear model predictive control through machine learning. Journal of process control , 92:261–270, 2020. 5Andreas Wächter and Lorenz T Biegler. On the implementation of an interior-point filter line-search algorithm for large-scale nonlinear programming. Mathematical programming , 106(1): 25–57, 2006. 
+
+A Reactor Core Dynamics 
+
+The system’s dynamics are given by: 
+
+dI dt = N γ IP( t) − λII( t), (3a) 
+
+dX dt = N γ XP( t)+ λII( t)
+
+−(λX +σXN P( t))X( t), (3b) 
+
+dC rcv b
+
+dt = 1
+
+τrcv 
+
+(−Crcv b (t) + Cb,inj (t)) , (3c) 
+
+dC rcp b
+
+dt = QMrcp 
+
+(C rcv b (t) − Crcp b (t)) , (3d) 
+
+dH in 
+
+dt = KH
+
+τsg 
+
+ PNi=1 Pi(t) − Pturb (t)
+
+
+
+, (3e) 
+
+dX bank 
+
+dt = GF4( Tref (Pturb (t)) − T (H in (t))) , (3f) 
+
+dP dt =
+
+ (ρ(t) − β)IN + Dexch 
+
+Λ∗
+
+
+
+P( t), (3g) 
+
+where Cb,inj follows the equation 
+
+Cb,inj (t) := 
+
+
+
+Crcp b (t) + u(t)
+
+Qch 
+
+(Cbor ,rea − Crcp b (t)) if u(t) ≥ 0,
+
+Crcp b (t) − u(t)
+
+Qch 
+
+(Cdil ,rea − Crcp b (t)) if u(t) < 0.
+
+GF4 is a discontinuous profile. All the other undefined parameters are either scalar or matrix constants. In these equations, x(t) := (I( t), X( t), Crcv b (t), Crcp b (t)) , and z(t) := (H in (t), Xbank (t), P( t)) . I, X, and P are 6-dimensional vectors. One can introduce a ratio 
+
+0 < ε ≈ 10 −2 ≪ 1 between the typical timescales of slow and fast variables. 
+
+B Infeasibility example 0 10 20 30 40 50                     
+
+> t(h) 020 40 60 80 100
+> w(t)
+> Turbine power w(t)
+> 010 20 30 40 50
+> t(h) 8
+> 6
+> 4
+> 2
+> 02
+> Control Inputs
+> SRLBC
+> MPC
+> 010 20 30 40 50
+> t(h) 8
+> 6
+> 4
+> 2
+> 02468
+> AO( z(t))
+> Axial Offset deviation
+> Safety Limit 010 20 30 40 50
+> t(h) 050 100 150 200 250
+> T
+> 0 (z(t)) dt
+> Integral Cost function
+
+Figure 3: Representative example of a failure using SRLBC standalone controller (dotted, blue). NMPC expert is plotted in solid green. At t ≈ 15 hours, a last-minute change occurs: the power that was increasing is rapidly asked to decrease, which creates a challenging situation. SRLBC fails to keep the axial offset above −5% (bottom-left graph). 6C Details on the formulation, solver and hardware 
+
+NMPC formulation. The expert controller πMPC solves the OCP (2) in a receding-horizon fashion, following the methodology from [Dupré et al., 2021]. The OCP is solved over a prediction horizon of K = 30 steps, transcribed using single shooting formulation with dt = 1 min. The control input is parametrized as piecewise constant over each interval [t + 10 j dt, t + 10( j + 1) d t), j ∈ { 0, 1, 2},which yields the discretized problem 
+
+min 
+
+> u=( u0,u 1,u 2)2
+
+X
+
+> j=0 9
+
+X
+
+> k=0
+
+ℓ(x10 j+k, z 10 j+k, w 10 j+k, u j )
+
+s.t. (xi+1 , z i+1 ) = Fdt(xi, z i, u j , w i), (x0, z 0) = ( x(t), z (t)) ,h(zi+1 ) ≤ 0, umin ≤ uj ≤ umax , i ∈ { 0, . . . , K − 1}, j = ⌊i/ 10 ⌋,
+
+(4) where Fdt denotes the numerical integration of the stiff dynamics (1) over one sampling in-terval, performed with a specialized homemade stiff solver. The stage cost is ℓ(z(t), w (t)) = 
+
+P3 
+
+> i=1
+
+Pi − P6 
+
+> i=4
+
+Pi
+
+P6 
+
+> i=1
+
+Pi
+
+| {z }
+
+> :=AO(P( t))
+
+−AO ref (w(t)) 
+
+> 2
+
+, the safety constraint is h(z(t)) = |AO(P( t)) −
+
+AO ref (w(t)) | − ∆AO max with ∆AO max = 5% , and the input bounds are umin = −10 kg/s and 
+
+umax = 3 kg/s. 
+
+Initialization and warmstart. In the baseline expert πMPC , the optimizer is initialized by shift-initialization: the solution computed at time t is shifted by one step, and the last control input is duplicated, to provide the initial guess at t + d t. In the warmstarted configuration, the initial guess is instead given by the output of the learned policy, (u(0) 0 , u (0) 1 , u (0) 2 ) := πBC ◦ Φ( x(t), z (t), w ), which predicts the whole control sequence over the horizon. The optimizer then proceeds identically in both cases, so that feasibility and optimality are certified by the solver rather than by the learned policy. 
+
+Solver. The discretized problem (4) is solved with IPOPT [Wächter and Biegler, 2006] via 
+
+CasADi [Andersson et al., 2019]. The stopping criteria are the algorithm tolerance, set to 0.1, and the maximum iteration number set to 30 .
+
+Hardware and deployment. All closed-loop rollouts reported in Table 1, for both the NMPC expert and the learned controllers, were run on a single core of an Intel Xeon Platinum 8260 (2.40 GHz). Both the NMPC and the neural network controllers are deployed on the CPU, so that the reported computation times are directly comparable. The neural networks were trained on a single NVIDIA Tesla V100-SXM2-32GB, using PyTorch [Paszke et al., 2019]. Training one model from scratch takes a few minutes ( ≤ 10 minutes). 
+
+D Motivation for the block-separable representation 
+
+Where the coupling is modeled. The block-separable structure only constrains the encoding of the variables, not the decision. Each encoder ϕx, ϕz , ϕw extracts a representation of a single group of variables, while the latent controller πBC is a nonlinear MLP acting on the concatena-tion Φ = [ ϕ⊤ 
+
+> x
+
+, ϕ ⊤ 
+
+> z
+
+, ϕ ⊤ 
+
+> w
+
+]⊤. Interactions between x, z and w are therefore still learned by πBC , which can represent arbitrary nonlinear couplings between the three latent blocks. The prior we impose is that the coupling between variables should be resolved at the controller level, once each group of variables has been summarized separately, rather than mixed from the first layer. 
+
+Why this prior matches the structure of the dynamics. The dynamics (3) are coupled but heav-ily structured. First, the boron subsystem (C rcv b , Crcp b ) is closed: it is driven only by the control input 
+
+u and does not depend on z. Second, the iodine and xenon concentrations (I , X) are driven by the power P, but with time constants of several hours: they act as low-pass filters of the fast variables, so that over the 30 -minute prediction horizon of the NMPC, the influence of the fast transients of z
+
+on x remains limited. Conversely, z depends strongly on x, through the reactivity ρ, which depends 7on the boron concentration and on the xenon. Since ε ≪ 1, the fast state quickly converges to a quasi-steady state z ≈ z∗(x, u, w ) parametrized by the slow state, and the remaining information carried by z mostly describes fast transients. Encoding each timescale separately thus reflects the singularly perturbed structure of (1), and leaves the coupling between the slow manifold and the fast transients to the controller. 
+
+Explicit interaction terms. Intermediate architectures, in which explicit interaction terms be-tween the latent blocks are added to the encoders (e.g., bilinear terms or cross-attention between 
+
+ϕx, ϕz and ϕw), are a natural extension of this work. Such terms could encode the known one-way couplings of the dynamics, e.g., from x to z through the reactivity, while preserving the attribution of each latent component to a group of physical variables. We leave this study for future work. 
+
+E Evaluation Checklist 
+
+1. Physics feasibility. We assess feasibility by verifying that all trajectories generated using the controller satisfy the operational and safety constraints of the nuclear reactor model. Constraint-violation statistics are reported in Section 3, Table 1. 2. Out-of-distribution evaluation. The test trajectories are generated independently from the training data and therefore correspond to unseen 48 -hour long load-following scenarios. However, they are sampled from the same underlying distribution as the training trajectories and therefore do not constitute a strict out-of-distribution evaluation. The test set instead assesses generalization to unseen realizations within the training distribution. 3. Failure modes. Failure cases are quantified through feasibility violation statistics reported in Table 1. While the magnitude of constraint violations could provide additional informa-tion, it is of secondary importance in this application. The primary requirement is binary feasibility: a load-following trajectory must remain within the admissible operational and safety domain. In most cases, the violations remain relatively small. A representative fail-ure case illustrating the evolution of the violated safety variable is provided in Appendix B. 4. System-level effect. The presented controllers are evaluated both as standalone controllers and as warmstarts for the NMPC expert controller. At the system level, their integration into the NMPC pipeline is assessed in terms of computational cost and feasibility. The ML warmstart reduces the NMPC computation time while preserving the feasibility of the resulting control trajectories (Section 3, Table 1). 5. Data and code. The code used in this work is proprietary and cannot be publicly released due to industrial confidentiality constraints. The underlying reactor simulation model and associated datasets are also subject to the same restrictions. However, algorithmic details, experimental protocols, and aggregate metrics are fully reported in the paper. No release of the proprietary code or underlying dataset is planned. 8

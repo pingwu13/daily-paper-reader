@@ -1,0 +1,243 @@
+Title: Pulse-shape discrimination with machine learning for CZT detectors at the DAΦNE beam test facility
+
+URL Source: https://arxiv.org/pdf/2609.25156v1
+
+Published Time: Wed, 23 Sep 2026 00:13:23 GMT
+
+Number of Pages: 11
+
+Markdown Content:
+> Published:
+> Copyright: © 2026 by the authors. Submitted to Proceedings for possible open access publication under the terms and conditions of the Creative Commons Attribution (CC BY) license.
+
+Article 
+
+# Pulse-shape discrimination with machine learning for CZT detectors at the DA ΦNE beam test facility 
+
+Simone Manti 1, * , Francesco Artibani 1,2  , Leonardo Abbene 3,1  , Massimiliano Bazzi 1 , Manuele Bettelli 4 , Giacomo Borghi 5,6  , Damir Bosnar 7 , Mario Bragadireanu 8 , Antonino Buttacavoli 3,1  , Mario Carminati 5,6  , Alberto Clozza 1 ,Francesco Clozza 1,9  , Luca De Paolis 1 , Raffaele Del Grande 10,1  , Kamil Dulski 
+
+1,11,12  , Carlo Fiorini 5,6  , Ivica Frišˇ ci´ c 7 , Gaetano Gerardi 3 , Carlo Guaraldo 1 ,Mihai Iliescu 1 , Masa Iwasaki 13  , Alexander Khreptak 11,12,1  , Johan Marton 14,15  ,Pawel Moskal 11,12  , Hiroaki Ohnishi 16  , Kristian Piscicchia 17,1  , Fabio Principato 
+
+3,1  , Alessandro Scordo 1 , Francesco Sgaramella 1 , Micha Silarski 11  , Diana Sirghi 
+
+17,1,8  , Florin Sirghi 1,8  , Magdalena Skurzok 11,12,1  , Antonio Spallone 1 , Kairo Toho 16,1  , Oton Vazquez Doce 1 , Andrea Zappettini 4 , Johann Zmeskal 14  and Catalina Curceanu 1,8  
+
+> 1
+
+Laboratori Nazionali di Frascati INFN, Frascati, Italy  
+
+> 2
+
+Università degli Studi di Roma Tre, Dipartimento di Fisica, Roma, Italy  
+
+> 3
+
+Department of Physics and Chemistry (DiFC), Emilio Segrè, University of Palermo, Palermo, Italy  
+
+> 4
+
+Istituto Materiali per l’Elettronica e il Magnetismo, Consiglio Nazionale delle Ricerche, Parco Area delle Scienze 37/A, 43124 Parma, Italy  
+
+> 5
+
+Politecnico di Milano, Dipartimento di Elettronica, Informazione e Bioingegneria, Milano, Italy  
+
+> 6
+
+INFN Sezione di Milano, Milano, Italy  
+
+> 7
+
+Department of Physics, Faculty of Science, University of Zagreb, Zagreb, Croatia  
+
+> 8
+
+IFIN-HH, Institutul Naional Pentru Fizic i Inginerie Nuclear Horia Hulubei, 30 Reactorului, 077125, Mgurele, Romania  
+
+> 9
+
+Università degli Studi di Roma Tor Vergata, Dipartimento di Fisica, Roma, Italy  
+
+> 10
+
+Faculty of Nuclear Sciences and Physical Engineering, Czech Technical University in Prague, Behovà 7, 115 19, Prague, Czech Republic  
+
+> 11
+
+Faculty of Physics, Astronomy, and Applied Computer Science, Jagiellonian University, Kraków, Poland  
+
+> 12
+
+Center for Theranostics, Jagiellonian University, Krakow, Poland  
+
+> 13
+
+RIKEN, Tokyo, Japan  
+
+> 14
+
+Stefan Meyer Institute for Subatomic Physics, Vienna, Austria  
+
+> 15
+
+Atominstitut, Technische Universität Wien, Stadionallee 2, 1020 Vienna, Austria  
+
+> 16
+
+Research Center for Accelerator and Radioisotope Science (RARiS), Tohoku University, Sendai, Japan  
+
+> 17
+
+Centro Ricerche Enrico Fermi, Museo Storico della Fisica e Centro Studi e Ricerche “Enrico Fermi”, Roma, Italy 
+
+* Correspondence: Simone.Manti@lnf.infn.it 
+
+Abstract 
+
+Cadmium zinc telluride (CZT) detectors offer versatility, operational simplicity, and room-temperature X- and gamma-ray spectroscopy, making them attractive for collider applica-tions, yet their use under high-flux conditions remains limited. Here, we present a prelim-inary feature-based pulse-shape analysis employing machine learning, on data acquired with a quasi-hemispherical CZT detector at the DA ΦNE beam test facility of the National Laboratory of Frascati of INFN. A 300-MeV electron beam impinging on a lead target produced characteristic Pb X-rays together with a broad background extending up to the electronpositron annihilation region. Physically motivated temporal and morphological features were extracted from the recorded waveforms and used to distinguish nominal photon-like pulses from anomalous events. An XGBoost classifier trained and validated on 10,000 labeled waveforms achieved an accuracy of approximately 97%, with most of its classification performance reached using only a few hundred labeled examples. The 
+
+Version September 23, 2026 submitted to Proceedings https://doi.org/10.3390/proceedings1010000 arXiv:2609.25156v1 [physics.ins-det] 21 Sep 2026 Version September 23, 2026 submitted to Proceedings 2 of 11 
+
+trained model was applied to more than 700,000 events, substantially reducing the spec-tral continuum and coincidence peaks, while preserving the characteristic Pb X-ray lines up to the 511-keV annihilation peak. These preliminary results demonstrate the potential of machine-learning-assisted pulse-shape discrimination for improving CZT spectroscopy in collider environments. 
+
+Keywords: CZT; BTF; pulse-shape analysis; machine learning; XGBoost 
+
+## 1. Introduction 
+
+High-resolution X- and gamma-ray spectroscopy is an essential tool in nuclear and particle physics [1,2], astrophysics [3], medical imaging [4], and plasma diagnostics [5]. Many of these applications require compact detection systems capable of operating over a broad energy range and under different experimental conditions. In particular, experi-ments characterized by high particle rates or intense electromagnetic backgrounds require detectors combining good spectroscopic performance, high detection efficiency, and stable operation over extended acquisition periods. Cadmium zinc telluride (CZT) detectors represent an attractive solution for room-temperature photon spectroscopy [6]. Their high effective atomic number and density provide good photon-stopping efficiency, while their wide band gap allows operation without cryo-genic cooling. These properties enable the development of compact detection systems with good spectroscopic performance, achieving an energy resolution of a few % over en-ergies ranging from a few keV to hundreds of keV [7], extending the possibility to detect from X-rays to gamma rays [8]. However, variations in charge transport and collection inside the crystal can produce different pulse morphologies, incomplete charge collection, and low-energy tails. Consequently, the recorded waveform contains information about the interaction and charge-collection processes that is not fully represented by the recon-structed pulse amplitude alone. The operation of CZT detectors in accelerator environments is particularly challenging be-cause of the intense and complex electromagnetic background [9]. In addition to single photon interactions, the acquired data may contain multiple energy depositions, pile-up events, charged-particle interactions, electronic artifacts, accidental triggers, and saturated pulses. Some of these contributions overlap in energy with the signals of interest and can-not therefore be efficiently rejected using only the reconstructed energy. The identification of additional features sensitive to the event topology is consequently important for im-proving peak visibility and the signal-to-background ratio. Within the SIDDHARTA-2 experiment [10] at the DA ΦNE collider [11–13], CZT detectors are being investigated for the spectroscopy of intermediate-mass kaonic atoms. The char-acteristic transitions of these systems extend above the energy range primarily covered by the silicon drift detectors employed for light kaonic atoms. Previous measurements at DA ΦNE demonstrated the feasibility of operating CZT detectors in a collider environment [14] and allowed several characteristic X-ray transitions to be observed in kaonic fluorine and copper [15]. Nevertheless, the residual beam-induced background limits the visibility of weak spectral features and represents an important challenge for future precision mea-surements, as planned by the EXKALIBUR project [16]. Pulse-shape analysis (PSA) provides a possible approach for distinguishing photon-like events from background contributions [17–19]. The temporal development of the detector signal reflects the charge-collection process and may reveal multiple interactions, pile-up, anomalous rise profiles, saturation, or the absence of a physical pulse. Physically inter-  
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 3 of 11
+
+pretable features, including the rise time, the number of peaks in the waveform derivative, and proxies for the interaction depth and charge-collection dynamics, can therefore be used to characterize the recorded events. Multivariate and machine learning (ML) meth-ods can exploit correlations among these features, potentially improving event classifica-tion compared to selection criteria based solely on individual features [20,21]. In this work, we present a preliminary PSA of data acquired with a quasi-hemispherical CZT detector with the DA ΦNE beam test facility (BTF) at the National Laboratory of Frascati of INFN (INFN-LNF). Representative waveform morphologies are identified and characterized using a limited set of physically motivated pulse-shape features. The dis-tributions of these features are investigated, and their capability to reject non-photon-like events is evaluated by comparing the amplitude spectrum before and after event selection. Particular attention is devoted to the visibility of the characteristic Pb X-ray lines and of the 511-keV annihilation peak. The purpose of this study is to demonstrate the feasibility of an interpretable waveform-based background-suppression strategy for CZT detectors operating in an accelerator environment. The paper is structured as follows. Section 2 describes the experimental setup, the CZT de-tection system, and the waveform-processing and feature-extraction procedures. Section 3 presents the feature distributions, the preliminary classification results, and the effect of the event selection on the measured spectrum. Finally, Section 4 summarizes the main conclusions and outlines future developments. 
+
+## 2. Experimental setup and methods 
+
+The data used in this work were collected during a dedicated measurement campaign in 2026 at the DA ΦNE BTF of the INFN-LNF, where the BTF provides pulsed electron or positron beams with adjustable energy and intensity [22]. For the present measurements, a 300-MeV electron beam impinged on a 1-mm-thick lead target. The beamtarget interac-tions produced characteristic Pb X-rays, accompanied by bremsstrahlung and secondary particles. The resulting spectrum covered the characteristic Pb fluorescence lines (L α, K α
+
+and K β) and the higher-energy continuum, including the 511-keV electronpositron an-nihilation line. This configuration provided a controlled accelerator environment for in-vestigating pulse-shape signatures associated with beam-induced backgrounds relevant to, although not fully representative of, those encountered at the interaction point of the DA ΦNE collider, as in the SIDDHARTA-2 experiment. The detection system consisted of a quasi-hemispherical CZT crystal with dimensions of 10 × 10 × 5 mm 3, grown by the Traveling Heater Method by REDLEN Technologies. The crystal and its front-end electronics were enclosed in a thin aluminum housing equipped with a 0.27 mm-thick entrance window. The quasi-hemispherical electrode geometry was employed to reduce the contribution of holes to the induced signal and to improve the charge-collection properties of the detector. Above the CZT detector a 1 mm-thick Pb target was placed, whose surface was oriented at approximately 45 ◦ with respect to the incident beam (see Figure 1). The detector was positioned close to the target to increase the detection efficiency for the characteristic Pb X-rays. Two luminosity monitors were installed along the beam line, one before and one after the target. Each monitor consisted of a plastic scintillator read out at both ends by photomultiplier tubes and was used to monitor the passage of the electron bunches. The detector signals were digitized using a CAEN VX2740 digitizer with 16-bit resolution and a sampling rate of 125 MS/s. For each trigger, the pulse waveform and its corresponding amplitude were stored for offline analysis. The processed waveform contained 656 sam-ples, corresponding to an approximately 5 μs time interval around the detector pulse. The pulse amplitude was subsequently converted into energy using a linear calibration based   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 4 of 11
+
+Figure 1. Experimental arrangement used for the measurements at the DA ΦNE BTF of INFN-LNF. A 1 mm-thick Pb target was placed close to the CZT detector and between the front and rear luminosity monitors, where each luminosity monitor consisted of a plastic scintillator read out at both ends by photomultiplier tubes. 
+
+on the positions of the Pb Kα and Kβ lines. The goal of the PSA is to classify the acquired waveforms. Figure 2 shows some examples of pulses assigned to the normal and anomalous classes. Normal pulses display a single, regular rising edge followed by a stable plateau (see Figure 2a). Anomalous waveforms instead include pulses with multiple steps, pile-up, irregular charge collection, electronic disturbances, or no clearly identifiable physical pulse (see Figure 2b). A set of 25 features was extracted from each waveform to quantify its amplitude, temporal 0 1 2 3 4 5Time [ s] 
+
+> 0.0 0.2 0.4 0.6 0.8 1.0 Normalized amplitude
+
+a) Normal       
+
+> 012345Time [ s]
+> 0.0 0.2 0.4 0.6 0.8 1.0
+
+b) Anomaly 
+
+Figure 2. Examples of waveforms categorized as normal in panel (a) and events assigned to the anomaly class in panel (b). 
+
+development, and degree of regularity. These features included the pulse amplitude and integral, the rise time, the number of peaks in the first derivative, the waveform centroid and root mean square (RMS) width, the curvature, the charge-collection time, different rise-time ratios, and proxies for the depth of interaction (DOI), drift velocity, late charge collection, and ballistic deficit. Three representative features were considered in greater detail for the PSA: the rise time, the number of peaks in the waveform derivative, and the normalized RMS-width proxy, denoted as DOI RMS . The rise time was calculated as   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 5 of 11
+
+t90 − t10 , where t10 and t90 are the first times at which the waveform reaches 10% and 90% of its maximum amplitude, respectively. The derivative was filtered using a median filter before identifying local maxima, reducing the number of peaks produced by high-frequency fluctuations. The temporal centroid tc, its weighted RMS width σt, and the dimensionless DOI RMS feature were calculated within a single definition as 
+
+tc = ∑i witi
+
+∑i wi
+
+, σt =
+
+√
+
+∑i wi(ti − tc)2
+
+∑i wi
+
+, DOI RMS = σt
+
+t90 − t10 
+
+, (1) where ti is the time coordinate of the i-th sample and wi is the waveform value. The de-nominator t90 − t10 represents the charge-collection-time proxy used in the analysis. The resulting feature characterizes the temporal spread of the collected charge relative to the pulse rise time. It is therefore sensitive to variations in the charge-collection process, al-though it should not be interpreted as a direct measurement of the physical interaction depth. Binary classification for the PSA was performed using the XGBoost algorithm. The anal-ysis was implemented in Python using the scikit-learn and xgboost [23] libraries. A subset of 10,000 events was used to train and evaluate the classifier. Initial labels were as-signed based on the number of peaks in the first derivative and the rise time. Events were labeled as normal if the first derivative contained exactly one peak and the rise time was within 2 σ from the mean of 0.2 μs. The labels were then visually inspected to identify and correct possible false positives and false negatives. The labeled dataset was divided into training and test sets using an 80/20 split. The XGBoost classifier consisted of 300 boosted decision trees with a maximum depth of four, a learning rate of 0.05, a row-subsampling fraction of 0.8, and a feature-subsampling fraction of 0.8 per tree. The classification thresh-old was selected to maximize the F1-score on the test set. 
+
+## 3. Preliminary results and discussion 
+
+The analysis was organized in three steps. First, the extraction of features from the acquired waveforms. Then, the creation of the training set for training the XGBoost and finally the classification of the entire data with the final selection in the total spectrum. Figure 3 shows the distributions of the three features: the rise time, the number of peaks 0.0 0.3 0.6 0.9 1.2 1.5 Rise time [ s]         
+
+> 0.0 0.5 1.0 1.5 2.0 Events / bin
+> ×10 3
+> a)
+> Total Normal Anomaly 0123Number of peaks 012345
+> ×10 3
+> b)
+> 036912 15 DOI RMS 0246
+> ×10 2
+> c)
+
+Figure 3. Distributions of three representative pulse-shape features for the manually validated nor-mal (green) and anomalous (red) waveforms; the black histogram represents the complete labeled sample: (a) rise time, (b) number of peaks in the first derivative, and (c) normalized temporal-width proxy DOI RMS .
+
+in the first derivative, and DOI RMS for the labeled dataset. Each feature provides some discrimination between the two classes, although their distributions partially overlap. As   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 6 of 11
+
+shown in Figure 3(a), normal events are concentrated in a relatively narrow rise-time in-terval around 0.2 μs. Anomalous events exhibit a broader distribution, with a component close to zero and a long tail extending beyond 1 μs. Very short rise times are consistent with noise-like pulses, whereas longer rise times may reflect irregular charge collection, pile-up, or temporally separated energy depositions. The number of peaks in the first derivative, shown in Figure 3(b), characterizes the structure of the rising edge. Most nor-mal events exhibit a single peak, consistent with a smooth, regular rise. Anomalous events more frequently exhibit either no identifiable peak or multiple peaks, the latter being consistent with multi-step waveforms, pile-up, or noise. Some overlap remains, partic-ularly for low-energy events, in which noise-induced fluctuations along the rising edge can produce additional derivative peaks. The combined feature DOI RMS defined in (1), shown in Figure 3(c), exhibits the clearest separation between the two classes. Normal events predominantly populate intermediate and high values, with a maximum around 8–9, whereas anomalous events are concentrated mainly below DOI RMS ≃ 4. Neverthe-less, residual overlap limits the discrimination achievable with a single threshold. These distributions therefore motivate a multivariate approach that exploits the complementary information and correlations among the three waveform features using ML methods. ML was used to classify waveforms based on pulse-shape features. XGBoost was trained on a subset of the acquired events, with initial labels assigned using feature-based criteria (see Section 2) and subsequently refined through visual inspection. The classification per-formance obtained using the complete feature set is reported in Figure 4. The receiver operating characteristic (ROC) curves, evaluated on the fixed test sample, are shown in Figure 4(a). XGBoost achieved an area under the curve (AUC) of 0.996 and an accuracy of 96.8%. To compare ML with respect to using feature selection, we also used the DOI RMS as a threshold, but achieving only an AUC of 0.85, exhibiting the advantage of exploiting the entire feature correlation for classification. We further explore the dependence of the XG-Boost accuracy on the number of training events as shown in Figure 4(b). With only a few training events, the mean accuracy is approximately 79% and exhibits a relatively large variation among the different stratified samples. The accuracy increases to approximately 93% with a few hundred of training events and approaches 97% when several thousand labeled waveforms are used. The observed saturation indicates that most of the classifica-tion performance can already be obtained with a few hundred labeled events, although a larger training sample improves both accuracy and stability.       
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 7 of 11 0.00 0.25 0.50 0.75 1.00 False positive rate 0.0 0.2 0.4 0.6 0.8 1.0 True positive rate
+
+a)    
+
+> XGBoost DOI RMS Random
+> 10 100 1000 5000 Training size (events) 50% 60% 70% 80% 90% 100% Accuracy
+
+b) 
+
+Figure 4. In panel (a) the ROC for XGBoost (blue) and the curve (red) obtained using the DOI RMS 
+
+feature as the threshold for the classifier. Panel (b) XGBoost classification accuracy as a function of the number of training events. The points and shaded region in panel (b) represent the mean and standard deviation obtained from ten independently drawn stratified training subsets, respectively. 
+
+After the classification performance had been evaluated on the independent test sam-ple, the final XGBoost model was then applied to 790700 events. This selection accepted 381351 events, corresponding to 48.2% of the complete dataset. Figure 5 compares the cal-ibrated spectrum of the complete dataset with that obtained after the XGBoost selection. The two distributions use the same acquisition exposure and energy binning and are re-ported as absolute counts. The unselected spectrum contains the characteristic Pb Lα, Kα,and Kβ lines, together with double- and triple-coincidence structures at approximately 150 and 220 keV, respectively and the electron–positron annihilation peak around 511 keV. The XGBoost selection produces a broad reduction of the continuum over the entire in-vestigated energy range while preserving the main characteristic lines. The double- and triple-coincidence regions are suppressed more strongly than the isolated Pb K lines, con-sistently with the presence of multi-step or pile-up waveforms among the rejected events. A reduction of the high-energy continuum is also observed around the 511-keV region, where the annihilation peak remains visible after the selection, with improved signal-to-noise ratio. These results demonstrate that the information encoded in the waveform fea-tures can be used to improve the relative visibility of spectral structures in the presence of an intense accelerator-induced background.                
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 8 of 11 0100 200 300 400 500 600 Energy [keV]
+> 10 2
+> 10 3
+> 10 4Counts / 1.5 keV
+> Pb Lα
+> Pb Kα
+> Pb KβDouble coincidence
+> Triple coincidence
+> ee−+peak
+> Raw spectrum XGBoost
+> Figure 5. Calibrated CZT energy spectrum before event selection (red) and after retaining events classified as normal by the feature-based XGBoost model (green). The same acquisition exposure and an energy-bin width of 1.5 keV are used for both distributions. The characteristic Pb lines, the double- and triple-coincidence structures, and the 511-keV electron–positron annihilation peak are indicated.
+
+This preliminary study demonstrates that a few hundred manually labeled wave-forms are sufficient to achieve classification accuracy above 90% relative to the assigned labels and suppress the spectral continuum while preserving the main spectral struc-tures. Further validation across independent acquisitions, detector setups, and beam con-ditions is needed to establish generalizability. Future developments could employ one-dimensional convolutional neural networks (CNNs) to exploit waveform morphology di-rectly. Integration into the DAQ could enable online event rejection without routinely storing full waveforms, potentially reducing processing time by bypassing explicit fea-ture extraction; this advantage should be verified through latency benchmarks. CNN implementation in FPGA-based acquisition systems provides a precedent for this ap-proach [24]. ML interpretability methods, like feature importance and SHAP analysis [25] could clarify the features driving the current classifier, while Grad-CAM adapted to one-dimensional signals could identify waveform regions relevant to CNN predictions [26]. Finally, Monte Carlo simulations coupled with charge-transport, signal-formation, and electronics-response models could provide physically motivated training labels, reducing reliance on manual annotation, provided that simulated waveforms are validated against measurements [27–29]. 
+
+## 4. Conclusions 
+
+This work demonstrates the feasibility of feature-based pulse-shape analysis for back-ground suppression in a quasi-hemispherical CZT detector operated at the DA ΦNE BTF of INFN-LNF. By combining temporal and morphological waveform features, the XG-Boost classifier achieved an AUC of 0.996 and an accuracy of 96.8% on the fixed test sample, with accuracies above 90% already obtained using a few hundred labeled wave-forms. The final model, trained on the complete labeled sample and applied to 790700 events, retained 48.2% of the data and substantially reduced the spectral continuum while maintaining the visibility of the characteristic Pb lines and the 511-keV annihilation peak.   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 9 of 11
+
+The preferential suppression of the double- and triple-coincidence structures is consistent with the rejection of multi-step and pile-up waveforms. These results establish a proof of concept for machine-learning-assisted PSA and support its further development for CZT spectroscopy in accelerator environments. The classification metrics quantify agreement with morphology-based labels rather than independently verified interaction topologies. Further validation will focus on the energy dependence of signal efficiency and background rejection, including the role of amplitude-related features, and on stability across independent acquisitions and detector conditions. Complementary studies using simulated waveforms will support the physical interpretation of the selected events and the development of the method toward quantita-tive spectroscopy and online event selection. 
+
+Author Contributions: Conceptualization, S.M., F.A., C.C. and A.Sc.; methodology, S.M., F.A., L.A. and A.B.; software, S.M., F.A., G.B., M.C. and C.F.; validation, S.M., F.A., L.A., A.B. and A.Sc.; formal analysis, S.M., F.A., F.C. and F.Sg.; investigation, S.M., F.A., M.Ba., D.B., M.Br., A.C., L.D.P., R.D.G., K.D., I.F., G.G., C.G., M.Il., M.Iw., A.K., J.M., P.M., H.O., K.P., F.P., F.Sg., M.Si., D.S., F.Si., M.Sk., A.Sp., K.T., O.V.D. and J.Z.; resources, M.Ba., M.Be., D.B., M.Br., R.D.G., K.D., M.Iw., J.M., P.M., H.O., D.S., F.Si., M.Sk., A.Sp., K.T., A.Z., J.Z. and C.C.; data curation, S.M., F.A., A.C., C.G., M.Il. and O.V.D.; writing-original draft preparation, S.M. and F.A.; writing-review and editing, L.A., M.Ba., M.Be., G.B., D.B., M.Br., A.B., M.C., A.C., F.C., L.D.P., R.D.G., K.D., C.F., I.F., G.G., C.G., M.Il., M.Iw., A.K., J.M., P.M., H.O., K.P., F.P., A.Sc., F.Sg., M.Si., D.S., F.Si., M.Sk., A.Sp., K.T., O.V.D., A.Z., J.Z. and C.C.; visualization, S.M. and F.A.; supervision, C.C., A.Sc., L.A. and A.B.; project administration, S.M., F.A., A.Sc. and C.C.; funding acquisition, C.C., A.Sc., M.Iw. and P.M. All authors have read and agreed to the published version of the manuscript. 
+
+Funding: This work was supported by the INFN KAONNIS project; the Austrian Science Fund (FWF), grants P24756-N20 and P33037-N; the Croatian Science Foundation, project IP-2022-10-3878; the EU STRONG-2020 project, Grant Agreement No. 824093; the EU Horizon 2020 programme under the Marie Skodowska-Curie Actions, Grant Agreement No. 754496; the Japan Society for the Promotion of Science through JSPS KAKENHI grants JP18H05402 and JP22H04917; the Polish Ministry of Science and Higher Education, grant 7150/E-338/M/2018; the Polish National Agency for Academic Exchange, grant PPN/BIT/2021/1/00037; and COST Action CA24131–ENRICH, sup-ported by COST (European Cooperation in Science and Technology, https://www.cost.eu/). We gratefully acknowledge the Polish high-performance computing infrastructure PLGrid (HPC Cen-ter: ACK Cyfronet AGH) for providing computing facilities and support within computational grant PLG/2025/018524 
+
+Data Availability Statement: The data supporting the findings of this study are available from the corresponding author upon reasonable request. 
+
+Acknowledgments: We warmly thank Luca Gennaro Foggetta and Eleonora Diociaiuti for their outstanding tailored beam setups and excellent scientific support. We also extend our gratitude to the DA ΦNE operators and LINAC service for maintaining great uptime in BTF injections. We thank C. Capoccia from INFN-LNF and H. Schneider, L. Stohwasser and D. Pristauz-Telsnigg from the Stefan Meyer Institute for their fundamental contributions to the design and construction of the SIDDHARTA-2 setup. Special thanks are extended to Catia Milardi for her continued support and contribution during data taking. 
+
+Conflicts of Interest: The authors declare no conflicts of interest. 
+
+## References 
+
+1. Eberth, J.; Simpson, J. From Ge(Li) Detectors to Gamma-Ray Tracking Arrays–50 Years of Gamma Spectroscopy with Germanium Detectors. Progress in Particle and Nuclear Physics 2008 ,
+
+60 , 283–337. https://doi.org/10.1016/j.ppnp.2007.09.001.   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 10 of 11
+
+2. Gotta, D. Precision Spectroscopy of Light Exotic Atoms. Progress in Particle and Nuclear Physics 
+
+2004 , 52 , 133–195. https://doi.org/10.1016/j.ppnp.2003.09.003. 3. Harrison, F.A.; Craig, W.W.; Christensen, F.E.; Hailey, C.J.; Zhang, W.W.; Boggs, S.E.; Stern, D.; Cook, W.R.; Forster, K.; Giommi, P.; et al. The Nuclear Spectroscopic Telescope Array (NuSTAR) High-Energy X-ray Mission. The Astrophysical Journal 2013 , 770 , 103. https://doi. org/10.1088/0004-637X/770/2/103. 4. Taguchi, K.; Iwanczyk, J.S. Vision 20/20: Single-Photon-Counting X-ray Detectors in Medical Imaging. Medical Physics 2013 , 40 , 100901. https://doi.org/10.1118/1.4820371. 5. Renner, O.; Rosmej, F.B. Challenges of X-Ray Spectroscopy in Investigations of Matter under Extreme Conditions. Matter and Radiation at Extremes 2019 , 4, 024201. https://doi.org/10.106 3/1.5086344. 6. Iniewski, K. CdTe and CdZnTe Materials: Material Properties and Applications ; Springer Nature, 2024. 7. Mele, F.; Quercia, J.; Abbene, L.; Benassi, G.; Bettelli, M.; Buttacavoli, A.; Principato, F.; Zappettini, A.; Bertuccio, G. Advances in High-Energy-Resolution CdZnTe Linear Array Pixel Detectors with Fast and Low Noise Readout Electronics. Sensors 2023 , 23 . https: //doi.org/10.3390/s23042167. 8. Eisen, Y.; Shor, A. CdTe and CdZnTe Materials for Room-Temperature X-ray and Gamma Ray Detectors. Journal of Crystal Growth 1998 , 184–185 , 1302–1312. https://doi.org/10.1016/S0022-0248(98)80270-4. 9. Abbene, L.; Principato, F.; Gerardi, G.; Buttacavoli, A.; Cascio, D.; Bettelli, M.; Amadè, N.S.; Seller, P.; Veale, M.C.; Fox, O.; et al. Room-Temperature X-ray Response of Cadmium–Zinc– Telluride Pixel Detectors Grown by the Vertical Bridgman Technique. Journal of Synchrotron Radiation 2020 , 27 , 319–328. https://doi.org/10.1107/S1600577519015996. 10. Sirghi, F.; et al. SIDDHARTA-2 Apparatus for Kaonic Atoms Research. Journal of Instrumenta-tion 2024 , 19 , P11006. https://doi.org/10.1088/1748-0221/19/11/P11006. 11. Milardi, C.; Alesini, D.; Bini, S.; Blanco-García, O.; Boscolo, M.; Buonomo, B.; Cantarella, S.; Caschera, S.; Castorina, G.; Chavanne, J.; et al. Preparation Activity for the SIDDHARTA-2 Run at DA ΦNE. In Proceedings of the 9th International Particle Accelerator Conference (IPAC2018). JACOW Publishing, Geneva, Switzerland, 2018, pp. 334–337. https://doi.org/10 .18429/JACoW-IPAC2018-MOPMF088. 12. Milardi, C.; Alesini, D.; Blanco-García, O.; Boscolo, M.; Buonomo, B.; Cantarella, S.; Cha-vanne, J.; D’Uffizi, A.; De Santis, A.; Di Giulio, C.; et al. DA ΦNE Commissioning for the SIDDHARTA-2 Experiment. In Proceedings of the 12th International Particle Accelera-tor Conference (IPAC2021). JACOW Publishing, Geneva, Switzerland, 2021, pp. 1322–1325. https://doi.org/10.18429/JACoW-IPAC2021-TUPAB001. 13. Milardi, C.; Alesini, D.; Blanco-García, O.; Boscolo, M.; Buonomo, B.; Cantarella, S.; Chavanne, J.; D’Uffizi, A.; De Santis, A.; Di Giulio, C.; et al. DA ΦNE Operation Strategy for the Ob-servation of Kaonic Deuterium. In Proceedings of the 15th International Particle Accelera-tor Conference (IPAC2024). JACoW Publishing, Geneva, Switzerland, 2024, pp. 2504–2507. https://doi.org/10.18429/JACoW-IPAC2024-WEPR17. 14. Scordo, A.; Abbene, L.; Artibani, F.; Bazzi, M.; Bettelli, M.; Bosnar, D.; Borghi, G.; Bragadire-anu, M.; Buttacavoli, A.; Cargnelli, M.; et al. CdZnTe Detectors Tested at the DA ΦNE Col-lider for Future Kaonic Atoms Measurements. Nuclear Instruments and Methods in Physics Re-search Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 2024 , 1060 , 169060. https://doi.org/10.1016/j.nima.2023.169060. 15. Artibani, F.; Manti, S.; Abbene, L.; Buttacavoli, A.; Bettelli, M.; Gerardi, G.; Principato, F.; Zappettini, A.; Bazzi, M.; Borghi, G.; et al. Kaonic Copper and Fluorine Absolute Yields Measurement with a CZT-based Detection System at DA ΦNE. Journal of Physics G: Nuclear and Particle Physics 2026 . https://doi.org/10.1088/1361-6471/ae9f75. 16. Manti, S.; Khreptak, A.; Marton, J.; Moskal, P.; Ohnishi, H.; Pischicchia, K.; Principato, F.; Scordo, A.; Sgaramella, F.; Silarski, M.; et al. EXKALIBUR: Towards a Kaonic Atoms Periodic Table to Test Fundamental Interactions. Acta Physica Polonica A 2025 , 148 , S89–S89. https: //doi.org/10.12693/APhysPolA.148.S89.   
+
+> https://doi.org/10.3390/proceedings1010000 Version September 23, 2026 submitted to Proceedings 11 of 11
+
+17. McGrath, J.; Fulton, B.R.; Joshi, P.; Davies, P.; Muenstermann, D.; Schulz, O.; Zuber, K.; Freer, M. Detecting Multi-Hit Events in a CdZnTe Coplanar Grid Detector Using Pulse Shape Analysis: A Method for Improving Background Rejection in the COBRA 0 νββ Experiment. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 2010 , 615 , 57–61. https://doi.org/10.1016/j.nima.2010.01.025. 18. Nakhostin, M.; Podolyak, Zs.; Sellin, P.J. Application of Pulse-Shape Discrimination to Copla-nar CdZnTe Detectors. Nuclear Instruments and Methods in Physics Research Section A: Accelera-tors, Spectrometers, Detectors and Associated Equipment 2013 , 729 , 541–545. https://doi.org/10.1 016/j.nima.2013.07.073. 19. Fritts, M.; Tebrügge, J.; Durst, J.; Ebert, J.; Gößling, C.; Göpfert, T.; Gehre, D.; Hagner, C.; Heidrich, N.; Homann, M.; et al. Pulse-Shape Discrimination of Surface Events in CdZnTe Detectors for the COBRA Experiment. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 2014 , 749 , 27–34. https: //doi.org/10.1016/j.nima.2014.02.038. 20. Holl, P.; Hauertmann, L.; Majorovits, B.; Schulz, O.; Schuster, M.; Zsigmond, A.J. Deep Learn-ing Based Pulse Shape Discrimination for Germanium Detectors. The European Physical Journal C 2019 , 79 , 450. https://doi.org/10.1140/epjc/s10052-019-6869-2. 21. Manti, S.; Yip, S.; Bazzi, M.; Bortolotti, N.; Bragadireanu, M.; Carnevali, I.; Clozza, A.; De Paolis, L.; Del Grande, R.; Guaraldo, C.; et al. Machine-Learning-Enhanced Event Selection for BEGe Detectors in the VIP Experiment. Journal of Instrumentation 2026 , 21 , P01036. https://doi.org/ 10.1088/1748-0221/21/01/P01036. 22. Foggetta, L.; et al. The Extended Operative Range of the LNF LINAC and BTF Facilities. In Proceedings of the 12th International Particle Accelerator Conference, 2021. https://doi.org/ 10.18429/JACoW-IPAC2021-THPAB113. 23. Chen, T.; Guestrin, C. XGBoost: A Scalable Tree Boosting System. In Proceedings of the Proceedings of the 22nd ACM SIGKDD International Conference on Knowledge Discovery and Data Mining. ACM, 2016, pp. 785–794. https://doi.org/10.1145/2939672.2939785. 24. Astrain, M.; Ruiz, M.; Stephen, Adam.V.; Sarwar, R.; Carpeño, A.; Esquembri, S.; Murari, A.; Belli, F.; Riva, M. Real-Time Implementation of the Neutron/Gamma Discrimination in an FPGA-Based DAQ MTCA Platform Using a Convolutional Neural Network. IEEE Transactions on Nuclear Science 2021 , 68 , 2173–2178. https://doi.org/10.1109/TNS.2021.3090670. 25. Lundberg, S.M.; Erion, G.; Chen, H.; DeGrave, A.; Prutkin, J.M.; Nair, B.; Katz, R.; Himmelfarb, J.; Bansal, N.; Lee, S.I. From Local Explanations to Global Understanding with Explainable AI for Trees. Nature Machine Intelligence 2020 , 2, 56–67. https://doi.org/10.1038/s42256-019-013 8-9. 26. Selvaraju, R.R.; Cogswell, M.; Das, A.; Vedantam, R.; Parikh, D.; Batra, D. Grad-CAM: Visual Explanations From Deep Networks via Gradient-Based Localization. In Proceedings of the Proceedings of the IEEE International Conference on Computer Vision, 2017, pp. 618–626. 27. Bettelli, M.; Amadè, N.S.; Calestani, D.; Garavelli, B.; Pozzi, P.; Macera, D.; Zanotti, L.; Gonano, C.A.; Veale, M.C.; Zappettini, A. A First Principle Method to Simulate the Spectral Response of CdZnTe-based X- and Gamma-Ray Detectors. Nuclear Instruments and Methods in Physics Re-search Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 2020 , 960 , 163663. https://doi.org/10.1016/j.nima.2020.163663. 28. Vicini, V.; Zanettini, S.; Sarzi Amadè, N.; Grill, R.; Zambelli, N.; Calestani, D.; Zappettini, A.; Abbene, L.; Bettelli, M. Optimization of Quasi-Hemispherical CdZnTe Detectors by Means of First Principles Simulation. Scientific Reports 2023 , 13 , 3212. https://doi.org/10.1038/s41598 -023-30181-2. 29. Yu, S.; He, L.; Li, Y.; Tian, Y.; Yang, M. Pulse Shape Discrimination Using a Convolutional Neural Network in an Inverted Coaxial Point Contact HPGe Detector. Nuclear Instruments and Methods in Physics Research Section A: Accelerators, Spectrometers, Detectors and Associated Equipment 2025 , 1072 , 170219. https://doi.org/10.1016/j.nima.2025.170219.

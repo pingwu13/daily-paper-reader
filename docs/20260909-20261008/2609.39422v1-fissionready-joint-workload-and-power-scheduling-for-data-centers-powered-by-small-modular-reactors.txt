@@ -1,0 +1,360 @@
+Title: FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors
+
+URL Source: https://arxiv.org/pdf/2609.39422v1
+
+Published Time: Thu, 01 Oct 2026 01:25:20 GMT
+
+Number of Pages: 10
+
+Markdown Content:
+# FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors 
+
+# Raghavendra Kanakagiri 
+
+IIT Tirupati 
+
+raghavendra@iittp.ac.in 
+
+# Rohan Basu Roy 
+
+University of Utah 
+
+rohanbasuroy@sci.utah.edu 
+
+# Yankai Jiang 
+
+Northeastern University 
+
+jiang.yank@northeastern.edu 
+
+# Pranathi Wuppuluru 
+
+Northeastern University 
+
+wuppuluru.p@northeastern.edu 
+
+# Devesh Tiwari 
+
+Northeastern University 
+
+d.tiwari@northeastern.edu 
+
+## Abstract 
+
+Data centers are increasingly exploring small modular nuclear re-actors (SMRs) as a carbon-free power source, but variable data-center demand and negative grid prices require the SMR plant to load-follow rather than run at constant output. Load following is uniquely challenging and complex for SMR plants due to un-derlying nuclear physics. We propose FissionReady, a datacenter scheduler that tracks each module’s fuel age, xenon state, and re-maining flexibility to determine per-module operating envelopes, then coordinates load-following, batch deferral, and grid purchas-ing through a two-timescale optimization. FissionReady achieves zero involuntary shutdowns and zero batch deadline misses while reducing water consumption by roughly one-third and grid cost by roughly half compared to a same-sized base configuration. 
+
+## CCS Concepts 
+
+• Computer systems organization → Cloud computing ; • 
+
+Hardware → Power and energy .
+
+## Keywords 
+
+data center scheduling, small modular reactors, load following, energy-aware computing 
+
+## 1 Introduction 
+
+Background and Motivation. Large-scale data centers and HPC sites are increasingly exploring small modular nuclear reactors (SMRs). In particular, a multi-module SMR plant consisting of sev-eral independent reactor modules at a single site can supply hun-dreds of megawatts of carbon-free electricity consistently, albeit with a significant water footprint, and can continue operating even as individual modules are refueled or taken offline. But on the de-mand side, datacenter and HPC power demand (load) is inherently variable. Batch workloads and online service arrival patterns can be irregular and bursty. An SMR plant sized for peak demand will produce more power than the datacenter consumes during off-peak hours, leading to electricity wastage, cost inefficiency, and an un-necessarily high water footprint. The surplus electricity output increases the water footprint, and exporting surplus power to the grid during periods of high renew-able generation can actually incur a cost instead of revenue as wholesale prices turn negative. An SMR plant sized for average demand avoids the surplus problem, but cannot cover the peak load without purchasing grid electricity. Therefore, an intuitive solution is for SMR plants to produce electricity in a “load-following” manner, adjusting the power output to match the combined pattern of datacenter demand. 
+
+Unfortunately, “load following” electricity production is a uniquely challenging problem for SMR plants constrained by nuclear reactor physics . When a reactor module reduces power production to match reduced load, a fission byproduct (Xenon-135) can build up for several hours and absorb neutrons, making future power maneuvering difficult and potentially unsafe. A critical in-sight is that, in a multi-module SMR plant, the physics constraints governing load following differ significantly across modules. Each module has its own fuel cycle and can be at a different stage at any given time due to staggered refueling, and hence, has different power production maneuvering margin/flexibility due to its xenon buildup history. Identical current power output does not imply identical future maneuverability. Therefore, the focus of this work is identifying a critical and timely gap and proposing a solution: ajob scheduler which is fundamentally aware of reactor physics constraints and can adapt to load changes and coordinate power production and fueling of multi-module SMR plants safely (no shutdown) and efficiently, while being cost-effective and managing water footprint. 
+
+Brief Overview of FissionReady. This work proposes FissionReady, a novel job scheduler for datacenters powered by multi-module SMR plants by integrating and systematically exploiting reactor physics knowledge, including each module’s fuel age, xenon buildup, re-cent power production history, and remaining power-production flexibility to respect nonlinear xenon dynamics. FissionReady designs a novel mechanism to coordinate load-following across SMR modules within a plant, determining when and how much each SMR module should ramp, when to purchase grid electricity, and when to defer batch work – doing this while safely respecting per-module physics constraints, maintaining workload quality of service, and reducing water consumption. FissionReady achieves this by introducing the concept of reactivity headroom , an abstraction that turns reactor state into a scheduling quantity by comparing each module’s compensation ceiling against its predicted future xenon peak, plus a safety margin. This abstrac-tion is critical since SMR modules at the same power output level can have very different safe futures due to their recent ramp-up and ramp-down history. Leveraging reactivity headroom estima-tion, FissionReady’s two-level planner derives a feasible power for each module by solving the nonlinear iodine-xenon ordinary differential equations outside the optimization, then passes linear 
+
+> 1arXiv:2609.39422v1 [cs.DC] 30 Sep 2026 Kanakagiri et al.
+
+box constraints to an outer-level planner. At a finer timescale, an inner scheduler executes the outer planner’s decisions, dispatching individual jobs while responding to short-term demand fluctuations (details in Sec. 4). 
+
+Flagship Results of FissionReady. FissionReady’s extensive ex-perimental evaluation, driven by production workload traces and a nuclear physics model, demonstrates that its physics-aware sched-uling improves cost, water, and efficiency tradeoffs while preserving service guarantees. Compared with the same-sized baselines and a competitive fixed load-following design, FissionReady safely ex-ploits module-specific flexibility to better match SMR output to datacenter demand, cutting grid electricity cost by roughly half, reducing water consumption by 31%, and reducing SMR energy waste from 29.8% to 1.7%, while preserving low batch wait and zero deadline misses. Our full framework, including the physics model and scheduling codebase, will be open-sourced to the community to accelerate future research upon acceptance. 
+
+## 2 Background 
+
+The primary metric used to describe reactor behavior (balance between neutron production and loss) is the effective multiplication factor , 𝑘 eff , which measures whether each “step of the chain reaction” produces enough new neutrons to keep the chain reaction going. More specifically, it compares the number of neutrons created by fission in one step with the number lost in the previous step through absorption or leakage. If 𝑘 eff = 1, the reactor is critical : the chain reaction “sustains” itself, and reactor power generation remains steady. If 𝑘 eff is above 1, power generation tends to rise; if it is below 1, power generation tends to fall. In practice, operators usually refer to this in terms of reactor reactivity , denoted by 𝜌 , which measures how far the reactor is from this critical state [30]. It is defined as 
+
+𝜌 = 𝑘 eff − 1
+
+𝑘 eff 
+
+(1) Reactivity is often reported in pcm (per cent mille), a unit commonly used in reactor engineering, where 1 pcm = 10 −5 [25]. 
+
+Xenon Poisoning and Excess Reactivity. Xenon-135 is produced in two ways. Some is created directly by fission, and some comes indirectly from the radioactive decay of Iodine-135 ( 135 I). Iodine-135 has a half-life of about seven hours, and Xenon-135 has a half-life of about nine hours. Because these timescales are measured in hours rather than seconds or minutes, xenon does not respond immediately to changes in reactor power. Instead, its concentration evolves gradually. This delay is what makes xenon especially important during power maneuvers. Iodine-135 acts like a reservoir that builds up while the reactor is operating, roughly in proportion to power. After power is reduced, the iodine already present in the core contin-ues decaying into Xenon-135, so xenon concentration can keep increasing for several hours even after power has been lowered due to the delayed decay of Iodine-135. The higher the power before a reduction, the larger the iodine inventory, and the more xenon will be generated afterward. When a reactor remains at a steady power level for long enough, the concentrations of 135 I and 135 Xe eventually reach equilibrium where production and loss balance out. 
+
+Load following is the practice of deliberately raising or lowering reactor power to match a changing electricity demand. It is possible only if operators have enough controllable reactivity to maintain reactor criticality throughout the maneuver. Excess reactivity is the amount of positive reactivity built into the fuel beyond what is needed to sustain one particular steady operating condition (power generation level). However, this quantity is not fully available for power maneuvering (i.e., changing the power generation level). Much of “excess reactivity” is committed to meeting safety and operational requirements that must be met before any power gen-eration level adjustment can be made. Several parasitic demands must be satisfied first. The shutdown margin is the reserve that guarantees the reactor can be made safely subcritical even if the most effective control rod fails to insert. The temperature defect is the reactivity consumed in bringing the cold core to hot operating temperature. The power defect is the additional change associated with moving from zero to full power. As discussed earlier, Xenon-135 is a strong neutron absorber whose concentration depends on reactor power history. When the reactor stays at a fixed power level long enough, iodine and xenon concentrations settle to steady values. The resulting Xenon-135 concentration ( equilibrium xenon ) imposes a continuing negative reactivity penalty that must also be offset to keep the reactor critical. After all of these demands are met, what remains is the available maneuvering margin (excess reactivity), the reactivity reserve that operators can actually use during load following to counter xenon transients while maintaining criticality. A module with more re-maining margin has greater flexibility to change power. A module with less margin may still operate safely, but has much less freedom to adjust power without violating reactor-physics limits. 
+
+## 3 FissionReady: Insights and Design Drivers 
+
+Impact of fuel cycle of a module and staggered fueling among different modules. Recall that Xenon poisoning creates a multi-hour lag between a power change and its full effect on the reactor. Also, recall that each module, in a multi-module plant, has its own fuel cycle and can be at a different stage at a given time from other modules. One may have just been refueled (beginning of cycle, BOC), another may be near spent (end of cycle, EOC), and others may be in between. Different modules may have been assigned different power changes at different times. One module might be at steady-state equilibrium while another is in the middle of a transient from a recent ramp. Even if both modules are currently producing the same power, their xenon concentrations, and therefore their remaining control authority, can differ substantially. Figure 1(a) and (b) illustrate this progression – how the excess reactivity and available margin for changing the power generation level change over the fuel cycle and capacity factor. Figure 1(a) shows a typical 18 to 24-month fuel cycle with beginning, middle, and end. A reactor’s fuel carries more reactivity than is needed for the immediate chain reaction. This excess sustains the reactor over an 18 to 24-month fuel cycle. As fissile atoms are consumed, the excess gradually depletes until the fuel must be replaced. At the same time, three of the parasitic demands (Section 2) on this excess grow. The shutdown margin, temperature defect, and power defect             
+
+> 2FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors Shutdown Margin Burnable absorbers Temperature defect Power defect Equilibrium Xe Available margin Full power ( = 1.0) 70% power ( = 0.7)
+> Criticality threshold ( keff = 1) Margin Exhausted Module A: steady at 50% for 2 days Module B: 65% 50% three hours earlier
+> EOC Compensation Ceiling ( Rcap )0 (BOC) 11 (Mid) 22 (EOC) Fuel cycle (months) 05k 10k 15k Excess Reactivity
+> ex  (pcm)
+> (a) 0300 600 Effective Full Power Days 1.00 1.05 1.10 1.15 1.20 Effective Multiplication Factor ( keff )(b) 0510 15 Hours after ramp-down from 50% to 35% power 2k 2.25k 2.5k 2.75k Xenon Reactivity (pcm) (c)
+
+Fig. 1. Fuel-cycle position and recent power history jointly determine a module’s maneuvering flexibility. (a) The reactivity budget shrinks across the fuel cycle. (b) Lower-power operation (100% capacity vs 70%) preserves maneuvering margin for longer. (c) Two end-of-cycle modules at the same current power can still have different feasible futures. The steady module (Module A, held at 50% power for two days) remains below the compensation ceiling after a further ramp-down (50% to 35%); the recently ramped module B exceeds it because of its elevated iodine-xenon state. 
+
+all increase over the cycle. Burnable absorbers, which suppress excess reactivity at the beginning of the cycle, are consumed by mid-cycle and provide no further benefit. The result is that the available margin to change power generation level changes over time for any module and depends on position in the fuel cycle. In a pressurized-water SMR, the available margin for load following shrinks from 5500 pcm at the beginning to approximately 0 pcm at the end of the fuel cycle. Figure 1(b) shows that the capacity factor significantly affects the available margin for changing the power generation level; a lower capacity factor has a much higher available margin for changing the power generation level. 
+
+Summary. Staggered refueling places modules at differ-ent points in the fuel cycle at any given time. The dou-ble squeeze of fuel depletion and growing parasitic de-mands (parasitic demands are required to operate the re-actor safely) means that a module near the beginning of the fuel cycle may have far more maneuvering margin than one near the end of the fuel cycle. Both fuel cycle position and operating capacity factor are critical for a scheduler that attempts to exploit load following. 
+
+Impact of fuel cycle history, historic power generation level, and xenon dynamics. Neither fuel cycle position (fuel age) nor recent power history alone determines whether a module can safely perform a load-following maneuver. These two interact due to xenon dynamics. To see why, it helps to define a compensation ceiling for each module: the maximum total xenon reactivity that the control rods can compensate at the module’s current fuel age (position in the fuel cycle). This quantity can be read from the reactivity budget by subtracting the non-xenon demands (shutdown margin, tempera-ture defect, power defect, burnable absorbers) from the total excess reactivity. It shrinks from roughly 8000 pcm at BOC to roughly 2500 pcm at EOC. Whether a proposed ramp will stay within this ceiling depends on how much xenon accumulates afterward, which is governed by the iodine already present in the core. The transient is described by the iodine-xenon dynamics [7, 30]: 
+
+𝑑𝐼 𝑑𝑡 = 𝛾 𝐼 Σ𝑓 𝜑 − 𝜆 𝐼 𝐼 𝑑𝑋𝑒 𝑑𝑡 = 𝛾 𝑋𝑒 Σ𝑓 𝜑 + 𝜆 𝐼 𝐼 − 𝜆 𝑋𝑒 𝑋𝑒 − 𝜎 𝑋𝑒 𝜑 · 𝑋𝑒 (2) where 𝐼 and 𝑋𝑒 are the iodine-135 and xenon-135 concentrations, 
+
+𝛾 𝐼 and 𝛾 𝑋𝑒 their fission yields, 𝜆 𝐼 and 𝜆 𝑋𝑒 their decay constants, 
+
+Σ𝑓 𝜑 the fission-rate density, and 𝜑 the neutron flux (proportional to power). The nonlinear 𝜎 𝑋𝑒 𝜑 · 𝑋𝑒 term represents xenon destruction by neutron absorption. The iodine and xenon concentrations at any moment determine the future xenon trajectory, so a module’s recent ramp history is captured without additional bookkeeping. Figure 1(c) illustrates this interaction by plotting the xenon tra-jectories of two end-of-cycle modules after the same 15-point ramp-down from 50% to 35% power, but from different recent power histories. Module A has been held steadily at 50% power for two days, so its iodine and xenon inventories are near equilibrium. Solv-ing Equation 2 forward predicts a peak xenon reactivity of roughly 2220 pcm, safely below the end-of-cycle compensation ceiling of roughly 2500 pcm. Module B is also currently at 50% power, but it was at 65% power three hours earlier. The residual iodine from that higher-power period drives a larger xenon transient after the same ramp-down, causing xenon to peak at roughly 2600 pcm and exceed the ceiling. Thus, two modules at the same current power can have different feasible futures because recent ramp history changes the iodine-xenon state. 
+
+Summary. Whether a module can safely perform a load-following maneuver depends on both its fuel age (position in the fuel cycle) and its recent power generation level his-tory. A job scheduler that aims to exploit load-following maneuvers must track both the fuel age and xenon dynam-ics (iodine and xenon concentrations from recent ramps). 
+
+> 3Kanakagiri et al.
+
+## 4 FissionReady Scheduler Design 
+
+FissionReady employs an effective design to apply load-following across a multi-module SMR plant that powers a datacenter. The dat-acenter runs latency-sensitive online services that must be served immediately and delay-tolerant batch jobs that can be deferred in time to align with favorable grid conditions or available SMR capacity. FissionReady determines when and how much each module should ramp up or down, when to purchase grid electricity, and when to defer batch work. The goal is to do this safely, respecting the per-module physics constraints from the preceding sections, while maintaining workload quality of service and reducing water consumption. Batch jobs are delay-tolerant and may run at any point before their deadline with no penalty. 
+
+One of the design challenges is to translate per-module physics constraints (fuel age, xenon dynamics, and the resulting maneuvering limits) into a form that an optimization-based scheduler can reason about and operate on. We begin by formalizing FissionReady’s key ideas that make this possible. 
+
+## 4.1 FissionReady’s Reactivity Headroom Concept 
+
+Section 3 showed that a module’s ability to change power depends on its fuel age (position in the fuel cycle), recent power history (recent power generation levels), and the resulting iodine-xenon state. Two modules at the same power and fuel age can have very different feasible futures depending on their current (𝐼, 𝑋𝑒 ) concen-trations (recall Modules A and B in Section 3). To distribute power changes intelligently across a heterogeneous fleet, the scheduler needs to first determine the maneuvering flexibility each module has at any moment. One of FissionReady’s key ideas is to identify and formally encap-sulate this flexibility as reactivity headroom of module 𝑖 , evaluated at a candidate target power 𝑃 .
+
+ℎ𝑖 (𝑃 ) = 𝑅 cap  
+
+> 𝑖
+
+(𝑏 𝑖 )
+
+| {z }
+
+> compensation ceiling
+
+− 𝜌 Xe,peak  
+
+> 𝑖
+
+(𝑃 )
+
+| {z }
+
+> predicted peak xenon
+
+− 𝜎 margin 
+
+| {z }
+
+> safety buffer
+
+(3) 
+
+ℎ𝑖 (𝑃 ) is the gap between what a module can tolerate and what it will experience. FissionReady quantifies what the module can tolerate as the compensation ceiling 𝑅 cap  
+
+> 𝑖
+
+(𝑏 𝑖 ) and what it will expe-rience as the predicted peak xenon 𝜌 Xe,peak  
+
+> 𝑖
+
+(𝑃 ). The buffer margin (𝜎 margin ) accounts for modeling uncertainty and measurement error. A module with large headroom is a rich resource. It can absorb deep ramps, take load off more constrained modules, and enable water-saving maneuvers. A module with near-zero headroom is effectively rigid and must hold its current power or risk a shutdown. FissionReady estimates reactivity headroom using two physics-derived quantities. First, FissionReady estimates how much xenon the control rods can compensate at the module’s current burnup 
+
+𝑏 𝑖 . FissionReady obtains this from the reactivity budget by sub-tracting the non-xenon demands (shutdown margin, temperature defect, power defect, burnable absorbers) from the total excess re-activity. We denote this quantity as the reactivity compensation ceiling , 𝑅 cap  
+
+> 𝑖
+
+(𝑏 𝑖 ), hereafter referred to as the compensation ceiling 
+
+for brevity. Second, FissionReady needs to predict the worst xenon the mod-ule will face if moved to power 𝑃 and held there. FissionReady computes this by setting 𝜑 = 𝜑 0 · 𝑃 /𝑃 max in the iodine-xenon ODE (Equation 2), integrating forward from the module’s current con-centrations (𝐼 𝑖 (𝑡 ), 𝑋𝑒 𝑖 (𝑡 )) over the entire transient decay window, and recording the peak. 
+
+𝜌 Xe,peak  
+
+> 𝑖
+
+(𝑃 ) = max   
+
+> 𝜏 ≥𝑡
+
+𝜌 Xe 
+
+> 𝑖
+
+ 𝜏 ; 𝜑 = 𝜑 0 𝑃 𝑃 max , 𝐼 𝑖 (𝑡 ), 𝑋𝑒 𝑖 (𝑡 ) (4) Because the current concentrations (𝐼 𝑖 , 𝑋𝑒 𝑖 ) already encode the module’s full recent power history, no additional bookkeeping is needed. FissionReady uses the worst-case future peak rather than the instantaneous value because a ramp decision made now cannot be retracted. If the committed xenon will exceed the ceiling later, the ramp must be refused now. 
+
+As flexibility erodes, options shrink. As 𝑅 cap declines across the fuel cycle, even the shallowest ramp may exhaust a module’s headroom. The minimum feasible power level for module 𝑖 is the lowest 𝑃 at which headroom remains non-negative, 
+
+𝑃 ∗ 
+
+> min ,𝑖
+
+= min 𝑃 ℎ𝑖 (𝑃 ) ≥ 0 (5) found by binary-searching over the forward-integrated xenon peak (Equation 4). Early in the fuel cycle this constraint is slack and the regulatory floor governs. Near end of the fuel cycle the physics floor may approach 100%, leaving the module no room to ramp. 
+
+## 4.2 FissionReady’s Optimization Approach and Architecture 
+
+The reactivity constraints formalized above are inherently non-linear, so the next question is how does FissionReady incorporate them into a tractable optimization while still reasoning about each module individually. Rule-based heuristics do not naturally capture the multi-hour consequences of xenon transients, aggregate fleet models lose per-module heterogeneity, and reinforcement learning does not by itself provide formal guarantees that every explored action will satisfy headroom constraints. Embedding the iodine-xenon ODE (Eq. 2) directly into the FissionReady’s planner produces a nonconvex nonlinear program due to the bilinear xenon destruction term. 
+
+FissionReady’s physics-scheduling decomposition. FissionReady de-composes the problem into a physics subproblem and a scheduling master problem . The physics subproblem solves the nonlinear ODE outside the optimization, computes the current headroom ℎ𝑖 (𝑝 𝑖 )
+
+per module (Equation 3), and determines the minimum feasible power 𝑃 min ,𝑖 by binary-searching for the zero crossing of ℎ𝑖 (𝑃 )
+
+(Equation 5). The output is a pair of linear bounds per module, 
+
+𝑃 min ,𝑖 ≤ 𝑝 𝑖 ≤ 𝑃 max ,𝑖 , encoding the full nonlinear xenon dynamics as simple box constraints. FissionReady’s scheduling master problem optimizes over these bounds without representing iodine, xenon, or the ODE. Fission-Ready’s decomposition is tight because the binary search solves the ODE at exact candidate power levels, producing the linear bound consistent with the full nonlinear physics. Because the ODE inte-gration runs independently per module, it is trivially parallelizable, and because the outer planner receives only box constraints, the problem structure remains clean and sparse. At each replanning 
+
+> 4FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors
+
+event, the physics subproblem re-evaluates all module bounds us-ing the latest measured (𝐼 𝑖 , 𝑋𝑒 𝑖 ) states, creating a feedback loop between the physics and the optimization. 
+
+FissionReady’s Two-level Architecture. FissionReady’s scheduler op-erates at two timescales. The inner scheduler dispatches individual jobs every Δ𝑡 . We refer to each such Δ𝑡 time slice as an inner bucket .The outer planner , implemented as a mixed-integer linear program, re-solves every 𝑁 plan inner buckets. At each run, FissionReady looks ahead over a rolling horizon of 𝐻 hours, divided into planning steps of duration Δ𝑇 = 𝑁 plan · Δ𝑡 . This lookahead allows the planner to account for xenon transients, batch deadlines, and changing grid conditions beyond the current decision point. FissionReady decides per-module thermal power setpoints, grid purchases, steam bypass decisions, and batch energy allocation while treating online demand as a committed parameter. Between replanning events, the inner scheduler and dispatch module operate using the most recent plan. The outer planner plans the energy budget and the inner scheduler spends it. FissionReady indexes modules by 𝑖 and outer planning steps by 𝑘 .
+
+## 4.3 FissionReady Scheduling Details 
+
+FissionReady’s outer planner minimizes a weighted sum of five terms that capture online-service shortfall, batch deadline misses, SMR-side resource use, grid-side resource use, and wasted energy. The per-module operating envelopes derived from the headroom formulation (Section 4.1) constrain each module’s power, allowing the planner to exploit each module’s full available maneuvering flexibility without representing the nonlinear xenon dynamics di-rectly.                            
+
+> min ∑︁
+> 𝑘
+> hSMR water+fuel cost
+> z}| {
+> (𝛼𝑤 smr +𝜓 )Í𝑁 𝑖 =1𝑝 𝑖 [𝑘 ]Δ𝑇 +
+> grid water+cost
+> z}| {
+> (𝛼𝑤 grid [𝑘 ]+ 𝜔 𝜋 floor [𝑘 ] ) 𝑃 grid [𝑘 ]Δ𝑇
+> +
+> online SLA
+> z}| {
+> 𝜆 𝐸 online unmet [𝑘 ] +
+> batch deadlines
+> z}| {
+> 𝛾 𝐸 batch deadline_missed [𝑘 ] +
+> energy waste
+> z}| {
+> 𝜀 𝐸 waste [𝑘 ]
+> i
+> (6)
+
+SMR-side resource use. In Equation 6, 𝑝 𝑖 [𝑘 ] is the thermal power of module 𝑖 at planning step 𝑘 and 𝑁 is the number of modules. The first term penalizes SMR generation through two marginal quantities, water intensity 𝑤 smr and fuel cost 𝜓 . A module in steam bypass still incurs this term, which correctly captures that bypassed output still consumes water and fuel even when it does not serve the datacenter. We intentionally exclude capital cost and fixed O&M from the online objective because those costs are sunk over the planner’s horizon and do not change the relative ranking of feasible dispatch actions. 
+
+Grid-side resource use. 𝑃 grid [𝑘 ] is imported electrical power from the grid at planning step 𝑘 . Wholesale electricity prices can turn negative during renewable-heavy hours. If raw negative prices entered the objective directly, a large 𝜔 could create an incentive to buy grid energy purely for arbitrage even when the datacenter has no use for it. FissionReady therefore clamps price to 𝜋 floor [𝑘 ] =
+
+max (𝜋 min , 𝜋 [𝑘 ]) , where 𝜋 min represents the minimum transmission and distribution cost that applies regardless of wholesale price. This preserves a nonnegative monetary signal while still allowing renewable-heavy hours to appear attractive through their lower water intensity 𝑤 grid [𝑘 ].
+
+Service-level and waste terms. 𝐸 online unmet [𝑘 ] is online energy that the fleet and grid together could not deliver and is penalized by 𝜆 ,the largest weight in the objective. 𝐸 batch deadline_missed [𝑘 ] is cumulative batch energy whose deadline has passed but that has not been served, penalized by 𝛾 . 𝐸 waste [𝑘 ] is surplus energy that the datacen-ter cannot consume. Penalizing waste with 𝜀 discourages overpro-duction, makes rod-based reductions preferable to steam bypass, and encourages the planner to absorb unavoidable surplus with batch work. 
+
+Flexibility induced by the objective. The waste penalty 𝜀 · 𝐸 waste [𝑘 ]
+
+drives FissionReady’s load-following to match demand by discour-aging overproduction. By itself, however, it does not create an in-centive to ramp below demand and substitute low-water grid power. The water term 𝛼𝑤 smr creates an additional incentive to ramp the SMR below instantaneous demand. This makes low-water grid sub-stitution attractive during renewable-heavy hours, provided the per-module headroom constraints allow the ramp. Larger 𝜔 makes grid power more expensive and pushes the planner toward SMR-first operation. These objective terms define the planner preferences. Next, we define which plans are physically and workload-feasible. 
+
+## 4.4 Constraints 
+
+FissionReady’s outer planner does not schedule individual jobs directly. Instead, it allocates aggregate batch energy across future planning steps while enforcing power balance, deadline feasibility, queue conservation, and per-module operating limits. The non-deferrable demand in step 𝑘 is 
+
+𝐸 commit [𝑘 ] = (𝑃 idle [𝑘 ] + 𝑃 online [𝑘 ] + 𝑃 batch running [𝑘 ]) · Δ𝑇 ,
+
+where 𝑃 idle [𝑘 ] is cluster idle power, 𝑃 online [𝑘 ] is online-service de-mand, and 𝑃 batch running [𝑘 ] is the energy consumed by batch jobs already dispatched in prior steps. For the current step these quantities are measured and for future steps they are forecast. The datacenter does not export surplus, and grid purchases are limited by the datacenter’s interconnection, 0 ≤ 𝑃 grid [𝑘 ] ≤ 𝑃 max grid ,where 𝑃 max grid is the maximum power that can be imported through the site substation or power-purchase agreement. The planner enforces aggregate power balance: 
+
+Í𝑁 𝑖 =1 (𝑝 𝑖 [𝑘 ]− 𝑞 𝑖 [𝑘 ]) Δ𝑇 + 𝑃 grid [𝑘 ] Δ𝑇 + 𝐸 online unmet [𝑘 ]
+
+= 𝐸 commit [𝑘 ] + 𝐸 batch budget [𝑘 ] + 𝐸 waste [𝑘 ]. (7) Here 𝑞 𝑖 [𝑘 ] is the portion of module 𝑖 ’s output diverted through steam bypass, so 𝑝 𝑖 [𝑘 ] − 𝑞 𝑖 [𝑘 ] is the electrical power actually de-livered to the datacenter. At optimum, at most one of 𝐸 online unmet [𝑘 ]
+
+and 𝐸 waste [𝑘 ] is nonzero. 𝐸 batch budget [𝑘 ] is the batch energy the outer planner allocates to step 𝑘 . The inner scheduler spends this budget by dispatching jobs within that step. 
+
+Putting It All Together. Briefly, at each inner step, FissionReady’s physics update advances each module’s iodine-xenon state, com-putes headroom, and produces the operating envelope. These per-module bounds feed into FissionReady’s outer optimizer, which re-solves every 𝑁 plan buckets with fresh bounds, queue data, and grid 
+
+> 5Kanakagiri et al.
+
+signals. FissionReady’s inner scheduler first serves nondeferrable demand using SMR output and grid power for any shortfall. 
+
+## 5 Evaluation Methodology 
+
+Workload and Evaluation setup. FissionReady is evaluated using a diverse set of benchmarks encompassing both batch and latency-sensitive online workloads. Batch workloads span compute-bound (NPB [3], LULESH [17]) and memory-bound (graph benchmarks from SeBS [8]) applications. Latency-sensitive services use four TailBench [18] benchmarks that operate under strict SLAs. Job arrivals follow the Alibaba clus-ter trace (v2018 [10]), which records co-located online and batch workloads over eight days. The evaluation assumes a datacenter cluster of 30,000 Xeon Platinum 8175M servers (TDP of 240 W per socket, 480 W total CPU power). All runtime and energy measure-ments were conducted on AWS m5.metal instance (96 vCPUs, 384 GB RAM), with energy measured via Likwid [29] using RAPL [19] counters. The cluster size is fixed across all policies. The workload still reaches full machine subscription during peaks, and machine capacity is enforced through batch queueing when machine slots or power are unavailable. Job scheduling decisions are made at one-minute granularity. Latency-sensitive online services are served immediately, and batch jobs may be queued up to 12 hours before a deadline miss is recorded (Section 4). 
+
+SMR plant configuration. At this cluster scale, analysis of the Alibaba trace reveals a mean power demand of 7 MW and a peak offered demand of 16.1 MW. We therefore size the SMR plant as six modules of 1.7 MW each, for a total SMR plant capacity of 10.2 MW to cover the 90th percentile of demand under normal operation. During a scheduled refueling outage, the remaining five modules provide 8.5 MW, which covers mean demand (7 MW). The grid intercon-nection, capped at one module equivalent (1.7 MW) is a regular part of the energy mix that the scheduler actively manages. Grid prices are from California ISO (CAISO) day-ahead wholesale prices for southern California, and grid water intensity is computed from CAISO five-minute generation mix [5, 6]. The nuclear physics pa-rameters follow [7] and [4]. Each module operates on a 22-month fuel cycle with staggered refueling (Section 3) and a representative 5-day outage window. 
+
+Figures of merit. We report batch deadline miss rate, batch average wait time, online SLA violation rate, water consumption, and grid electricity cost. Water consumption captures both the SMR’s direct cooling water and the indirect water embedded in grid electric-ity, computed from the grid generation mix [20]. For comparison, we evaluate three baseline configurations in which all available modules operate at full power and any shortfall is purchased from the grid, reflecting the conventional practice of operating nuclear plants as baseload sources [23]. Baseline-1 is sized to mean demand (7.0 MW), Baseline-2 to P90 demand, i.e., the 90th-percentile de-mand level (10.2 MW), and Baseline-3 to peak demand (16.1 MW). 
+
+## 6 Results and Analysis 
+
+We present and analyze results focused on three major themes: FissionReady’s effectiveness, reasons for effectiveness, and Fission-Ready’s robustness to workload forecast error and reactor model mismatch . 
+
+FissionReady’s effectiveness. Figure 2 compares FissionReady against the three baseline configurations described in Section 5. Un-like various baselines, FissionReady safely load-follows datacenter demand with zero involuntary reactor shutdowns and therefore zero deadtime and a negligible online SLA violation rate of 0.03%. FissionReady achieves this by reasoning about each module’s fuel age, xenon concentration, and reactivity headroom to exploit the fleet’s full maneuvering flexibility without pushing any module beyond its physics limits. In comparison, Baseline-1 (7.0 MW, mean-demand sizing) is undersized and incurs batch deadline misses (256k jobs, 7.8%). Baseline-3 (16.1 MW, peak-demand sizing) reduces grid dependence but wastes thermal output that still consumes cooling water and fuel. Baseline-2 (10.2 MW, P90 sizing) avoids deadline misses but cannot modulate output to match demand, so excess generation is wasted whenever datacenter load falls below plant output. At the same 10.2 MW sizing as Baseline-2, FissionReady safely ramps individual modules to match fleet output more closely to datacenter demand. Figure 2(a), (b), and (e) show the resulting gains. Relative to Baseline-2, FissionReady cuts grid electricity cost by roughly half, reduces water consumption by 31%, and reduces SMR energy waste from 29.8% to 1.7%. Figure 2(c) and (d) show that these savings preserve workload quality of service. FissionReady has zero batch deadline misses, an average batch wait of 0.78 h, and its P99 batch wait is 2.32 h, well below the 12 h deadline. We next examine how these scheduling decisions unfold over time and why per-module state tracking is the key enabler. 
+
+FissionReady in Action. Figure 3 shows a representative 36-hour slice from the 10.2 MW configuration. FissionReady shapes the datacenter’s realized load and keeps SMR output closely aligned with it over time. Two modules are highlighted to illustrate why per-module state tracking matters. Module 1 is early in its fuel cycle with substantial reactivity headroom, while Module 2 is near end of cycle with thinner margin. Figures 3(b) and (c) show that around hour 5 of the plotted win-dow, Module 2 is ramped down from about 1.65 MW to 0.80 MW and then to 0.63 MW. Over the same interval, its headroom collapses from about 750 pcm to near zero, showing how a recent ramp-down can rapidly consume the remaining turndown margin through the delayed xenon transient. FissionReady anticipates this evolving margin when the ramp is issued. Once Module 2’s margin is ex-hausted, FissionReady stops pushing it lower and shifts subsequent flexibility to the less constrained module. Around hours 8.0 to 8.2, for example, Module 1 is reduced from 0.85 MW to 0.34 MW while Module 2 remains at 1.7 MW, reflecting the much larger headroom available on Module 1. Figure 3(d) shows that FissionReady purchases grid power during favorable cost and water hours. During this window, purchased grid power averages −$1 .5/MWh, compared to $28 .5/MWh over the full window, and it comes from lower-water grid hours on average   
+
+> 6FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors Baseline-1 Baseline-2 Baseline-3 FissionReady 0.0 0.5 1.0
+> Normalized Grid Cost  14.30 1.00 0.00 0.52
+> (a)
+> Grid Cost Baseline-1 Baseline-2 Baseline-3 FissionReady 0.0 0.5 1.0
+> Normalized Water
+> 0.70 1.00 1.58
+> 31% less
+> 0.69
+> (b)
+> Water Baseline-1 Baseline-2 Baseline-3 FissionReady 0612
+> Avg Wait Time (h)
+> Batch Deadline (12h)
+> (c)
+> Avg Wait Time Baseline-1 Baseline-2 Baseline-3 FissionReady 048
+> Deadline Misses (%) (d)
+> Deadline Misses (%)
+> Baseline-1 Baseline-2 Baseline-3 FissionReady 0.0 0.5 1.0
+> Energy Share (e)
+> SMR Energy Used SMR Energy Wasted
+
+Fig. 2. FissionReady’s effectiveness: FissionReady reduces water by 31%, roughly halves grid cost, preserves low batch wait with zero deadline misses, and reduces SMR energy waste compared to same-sized baseline without load following (Baseline-2). Baseline-1 is sized to mean demand (7.0 MW), Baseline-2 to P90 demand (10.2 MW), and Baseline-3 to peak demand (16.1 MW). Panels (a) and (b) are normalized to Baseline-2. 
+
+(346 versus 475 L/MWh). Through these coordinated ramping, load-shaping, and grid-purchase decisions, FissionReady translates its scheduling choices into system-level savings. A natural question is whether per-module physics tracking is necessary for these gains, or whether one fixed module power range for all modules could suffice. 
+
+Why Per-Module State Tracking Matters. To answer this ques-tion, we compare against Fixed Load Following (F-LF). It uses the same optimization framework as FissionReady, but replaces Fission-Ready’s time-varying per-module state tracking with a uniform load-following range that applies to all modules. Without track-ing per-module xenon and iodine concentrations, a module can be commanded to ramp beyond what its current state can safely sustain. When xenon reactivity exceeds the compensation ceiling, the module can no longer maintain criticality and shuts down in-voluntarily. The module is then stranded offline until the xenon transient decays on its own timescale, which can take 20 hours or more near end of cycle. Unplanned shutdowns are among the serious operational events at a nuclear plant, carrying both safety and economic consequences. Table 1 summarizes the comparison. F-LF causes 11 involuntary shutdowns with 212 hours of cumulative deadtime, multiple days of lost module capacity. In contrast, FissionReady achieves zero shutdowns and zero deadtime because its formulation identifies which modules can safely absorb a ramp and by how much before committing to it. The cascading effects of these shutdowns are visible across every metric: F-LF’s grid costs are 30 × higher because it purchases grid power reactively during unplanned outages at unfavorable prices, and it incurs nearly 5 × more SLA violations because unexpected module outages leave the fleet unable to meet online demand. We also adapt the aggregate load-following SMR scheduler (DC-SMR) of Yang et al. [32] to the same workload, queueing, grid signals, and objective setting as FissionReady. DCSMR treats the SMR fleet as a single aggregate source and plans its output over a single day-ahead horizon, enforcing aggregate ramp-rate and stable-period constraints after ramp-down. F-LF and DCSMR achieve lower absolute water consumption (9.3 and 9.8 versus 10.2 million liters), but that reduction is an artifact of lost output. 
+
+Scheduling overhead. FissionReady’s optimizer incurs only 35 ms overhead on average for a 6-module fleet with a 48-hour horizon – less than 0.006% of each 10-minute scheduling interval (overhead dependent on number of modules, instead of cluster size). 
+
+FissionReady’s Robustness and Sensitivity. 
+
+Robustness to misalignment between the operating reactor and under-lying reactor model. Recall that FissionReady has two components: a nonlinear physics component with a xenon-iodine reactor model (the reactor model), and a scheduling optimization component, as described in Section 4.2. The scheduler component interacts with the reactor model through per-module power bounds produced by solving the xenon-iodine dynamics. The reactor models are calibrated periodically and always have sufficient safety margins. Between calibration periods, the operat-ing reactor may develop a small transient misalignment from the reactor model. Therefore, we evaluate whether this transient mis-match affects the scheduler’s effectiveness (involuntary shutdowns and water savings). To evaluate this, we artificially perturb the xenon destruction dynamics in the operating reactor so that it drifts away from the underlying reactor model – essentially emulating as if the operating reactor and reactor model were not aligned. This artificial perturba-tion removes xenon more slowly after a power reduction, so a ramp can produce a higher xenon peak and consume more headroom than expected by the scheduler component. To be even more pessimistic, we perform this sensitivity on an aged fleet, where reactivity head-room is the smallest. Table 2(a) shows the resulting involuntary shutdowns for a range of perturbations and safety reserves (since increasing safety reserve reduces involuntary shutdowns). Overall, we highlight major takeaways from our results (Ta-ble 2(a)). First, even the transient misalignment between the oper-ating reactor and reactor model does not lead to involuntary shut-downs until a significant 15% perturbation to the xenon-destruction dynamics. Only beyond 15% misalignment, we observe involun-tary shutdowns. Second, even when the misalignment is more than 15%, fortunately, one can limit or eliminate the involuntary shut-downs by increasing the safety reserve (beyond the default value of 300 pcm). 
+
+Robustness to workload forecast error. FissionReady uses a simple workload forecaster to estimate future nondeferrable demand and batch arrivals.                 
+
+> 7Kanakagiri et al. 012 24 36 Hour 4812 Power (MW) (a) Realized Load SMR Output 012 24 36 Hour 0.0 0.6 1.2 1.8 Module Power (MW) (b) Module 1 Module 2 012 24 36 Hour 02k 4k 6k Headroom (pcm)
+> Zero Headroom
+> (c) Module 1 Module 2 012 24 36 Hour 0.0 0.8 1.6 Grid Power (MW) (d) Grid Power Grid Cost 10
+> 25 60 Grid Cost ($/MWh)
+
+Fig. 3. FissionReady in action over a representative 36-hour slice from the 10.2 MW run. FissionReady shapes the datacenter’s realized load in (a), with SMR output closely tracking it, reallocates module ramps based on computed per-module headroom in (b) and (c) (module 1 is early in its fuel cycle and module 2 is near the end of cycle), and opportunistically purchases grid power during favorable cost hours in (d). 
+
+Table 1. FissionReady’s load following outperforms both a Fixed Load Following baseline and the day-ahead DCSMR baseline at the same 10.2 MW sizing. 
+
+Shutdowns Deadtime (h) Average Wait Time (h) SLA Violations (%) Deadline Misses (%) Grid Cost Water 
+
+Fixed Load Following 11 212 0.26 0.16 0.0 30.5 0.91 DCSMR 6 127 7.86 2.24 0.06 9.4 0.96 FissionReady 0 0 0.78 0.03 0.0 1.0 1.0 We evaluate robustness to forecast error by applying 10%, 25%, and 50% multiplicative noise to both forecasts before each planning solve. At dispatch time, each module remains constrained by its current physics envelope, independently of the workload forecast. The inner dispatcher observes the actual queue at each step, and the outer planner updates the remaining plan at the next replan. Table 2(b) shows that 10% forecast noise changes little. Even at 25% noise, average batch wait rises from 0.78 h to 0.96 h and the online SLA violation rate rises from 0.03% to 0.34%, while deadline misses and involuntary shutdowns remain zero. 
+
+Year-long operation. To evaluate whether the monthly results persist through reactor state evolution, refueling, workload variation, and seasonal grid conditions, we evaluate FissionReady and Baseline-2 continuously for one year. The SMR plant configuration remains unchanged, and we use a full year of CAISO price and generation mix data. Compared with Baseline-2, FissionReady reduces annual water use from 211 million liters to 139 million liters, a 34.1 percent reduction, and cuts SMR energy waste from 31.3 to 1.6 percent. Average batch wait is 0.80 h, the batch deadline miss rate is zero, and the online SLA violation rate is 0.07 percent. The fleet absorbs three staggered refueling outages without a deadline miss. The fleet ends the year with zero involuntary shutdowns and zero deadtime. 
+
+## 7 Related Work 
+
+Nuclear-powered datacenters and SMR flexibility. At the power-system level, flexible nuclear operation can lower system costs and reduce renewable curtailment [15]. Some early works have explored potential from the standpoint of technical feasi-bility, economics, and plant operation [23, 33]. Prior work has primarily investigated plant dynamics and component wear under flexible operation [4, 21], reactor-level load-follow control and flexible-operation economics [9, 24], ramp-rate and stable-period constraints [32], multi-unit SMR dispatch at the power-system level [2], and fuel-cycle-awareness in unit-commitment formula-tions [7]. Recent interest in nuclear-powered datacenters has focused on siting, sizing, and coupling scenarios for co-located nuclear and digital infrastructure [28], but fine-grained module-aware sched-ulers for SMR-powered datacenter operations remain largely un-explored. Therefore, FissionReady is naturally timely, critical, and unique in multiple ways. First, this is a novel job scheduler for emerging SMR-powered data centers that have multi-module SMR plants with staggered refueling. This naturally captures temporary module unavailability during refueling outages. Second, it tracks per-module fuel age together with iodine-xenon state to compute module-specific power ranges and headroom before each replan-ning step. Third, FissionReady is the first solution to couple physics 
+
+> 8
+
+FissionReady: Joint Workload and Power Scheduling for Data Centers Powered by Small Modular Reactors 
+
+Table 2. Robustness under reactor-model misalignment and fore-cast noise. (a) Involuntary shutdowns across xenon destruction perturbations and safety reserves. The benign case removes xenon faster than predicted, while the remaining perturbations remove it more slowly. (b) Sensitivity to workload forecast noise. Water savings in both panels are relative to SMR without load follow-ing (Baseline-2), the fixed-output SMR fleet sized to P90 demand (10.2 MW). 
+
+(a) Reactor-Model Misalignment 
+
+Reactor-model misalignment safety reserve (𝜎 margin ) (pcm) 0 150 300 450 600 Benign +5% 0 0 0 0 0Default 0 0 0 0 05% 34 0 0 0 010% 45 1 0 0 015% 36 24 0 0 020% 42 26 3 0 025% 50 43 28 3 0Water Saved (%) 30.3 29.8 28.2 27.0 25.5 
+
+(b) Forecast Quality 
+
+Forecast Water Saved (%) Wait (h) Deadline Miss (%) SLA (%) Shutdowns Default 31.0 0.78 0.0 0.03 0Noisy 10% 30.6 0.81 0.0 0.06 0Noisy 25% 29.6 0.96 0.0 0.34 0Noisy 50% 28.8 1.31 0.0 1.74 0abstraction to a two-timescale scheduler that plans fleet output and grid use over a horizon while making finer-grained online dispatch decisions, jointly accounting for batch deadlines, online-service quality of service, grid price, and water consumption. To the best of our knowledge, FissionReady is the first datacenter scheduler to integrate per-module xenon-aware SMR load following with water-aware workload shaping. 
+
+Energy-, carbon-, and water-aware datacenter scheduling. 
+
+Datacenter systems work has long exploited workload slack to fol-low external energy signals. Temporal shifting approaches defer batch jobs to periods of low carbon intensity [12, 26, 31], while spatial approaches migrate workloads across geo-distributed data centers [11]. For example, Ecovisor virtualizes energy to provide per-application carbon budgets [27], and Carbon Explorer offers a holistic framework combining renewables, batteries, and schedul-ing [1]. Water as a resource is beginning to attract more attention; recent works co-optimize water consumption, carbon emissions, and electricity cost through geographic load balancing across dis-tributed sites [13, 14, 16, 22]. These works treat the energy supply as externally given and do not address the water-consumption bur-den of SMRs. FissionReady instead schedules against a controllable on-site SMR whose feasible flexibility depends on internal reactor state, and it jointly optimizes workload quality of service, grid cost, and water consumption. 
+
+## 8 Conclusion 
+
+FissionReady is a scheduler for SMR-powered datacenters that cou-ples per-module reactor physics with datacenter workload man-agement. FissionReady tracks fuel age and iodine-xenon dynamics at the module level, exposes the resulting maneuvering flexibility through reactivity headroom, and combines this physics abstraction with two-timescale control of fleet output and workload dispatch. In the main and year-long evaluations, FissionReady achieves substan-tial water and grid-cost savings while preserving workload quality of service and completely avoiding involuntary shutdowns. More broadly, FissionReady is a case study in the unique challenges and opportunities of scheduling for SMR-powered datacenters, and it highlights the need for future work in this space to jointly consider physics, workload, and grid dynamics. 
+
+## References 
+
+[1] Bilge Acun, Benjamin Lee, Fiodar Kazhamiaka, Kiwan Maeng, Udit Gupta, Manoj Chakkaravarthy, David Brooks, and Carole-Jean Wu. 2023. Carbon Explorer: A Holistic Framework for Designing Carbon Aware Datacenters. In Proceedings of the 28th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (Vancouver, BC, Canada) (ASPLOS 2023) . Association for Computing Machinery, New York, NY, USA, 118–132. doi:10.1145/3575693.3575754 [2] Saeed Alhadhrami, Gabriel J Soto, and Ben Lindley. 2023. Dispatch analysis of flexible power operation with multi-unit small modular reactors. Energy 280 (2023), 128107. doi:10.1016/j.energy.2023.128107 [3] David H. Bailey. 2009. The NAS Parallel Benchmarks . Technical Report LBNL-3494E. Lawrence Berkeley National Laboratory. doi:10.2172/983318 [4] Una Baker, Marisol Garrouste, Sooyoung Choi, Gabriel J. Soto, Ross Snuggerud, Brendan Kochunas, and Ben Lindley. 2024. Simulation of the NuScale SMR and Investigation of the Effect of Load-Following on Component Lifetimes. Nuclear Technology 210, 1 (2024), 1–22. doi:10.1080/00295450.2023.2216973 [5] California Independent System Operator. 2026. Open Access Same-Time In-formation System (OASIS) . California Independent System Operator. https: //oasis.caiso.com/ [6] California Independent System Operator. 2026. Today’s Outlook: Supply . Cali-fornia Independent System Operator. https://www.caiso.com/todays-outlook/ supply [7] Shiny Choudhury, Michael Davidson, and George Tynan. 2025. Physics-Informed Unit Commitment Framework for Nuclear Reactors. arXiv:2507.18150 [eess.SY] https://arxiv.org/abs/2507.18150 [8] Marcin Copik, Grzegorz Kwasniewski, Maciej Besta, Michal Podstawski, and Torsten Hoefler. 2021. SeBS: A Serverless Benchmark Suite for Function-as-a-Service Computing. In Proceedings of the 22nd International Middleware Confer-ence (Québec city, Canada) (Middleware ’21) . Association for Computing Machin-ery, New York, NY, USA, 64–78. doi:10.1145/3464298.3476133 [9] Fausto Franceschini and Bojan Petrović. 2008. Advanced operational strategy for the IRIS reactor: Load follow through mechanical shim (MSHIM). Nuclear Engineering and Design 238, 12 (2008), 3240–3252. [10] Alibaba Group. 2018. Alibaba Cluster Trace Program: cluster-trace-v2018. https: //github.com/alibaba/clusterdata/tree/master/cluster-trace-v2018. [11] Viktor Urban Gsteiger, Pin Hong (Daniel) Long, Yiran (Jerry) Sun, Parshan Javanrood, and Mohammad Shahrad. 2024. Caribou: Fine-Grained Geospatial Shifting of Serverless Applications for Sustainability. In Proceedings of the ACM SIGOPS 30th Symposium on Operating Systems Principles (Austin, TX, USA) (SOSP ’24) . Association for Computing Machinery, New York, NY, USA, 403–420. doi:10. 1145/3694715.3695954 [12] Walid A Hanafy, Qianlin Liang, Noman Bashir, David Irwin, and Prashant Shenoy. 2023. CarbonScaler: Leveraging Cloud Workload Elasticity for Optimizing Carbon-Efficiency. arXiv preprint arXiv:2302.08681 (2023). [13] Mohammad A. Islam, Kishwar Ahmed, Hong Xu, Nguyen H. Tran, Gang Quan, and Shaolei Ren. 2018. Exploiting Spatio-Temporal Diversity for Water Saving in Geo-Distributed Data Centers. IEEE Transactions on Cloud Computing 6, 3 (2018), 734–746. doi:10.1109/TCC.2016.2535201 [14] Mohammad A. Islam, Shaolei Ren, Gang Quan, Muhammad Z. Shakir, and Athanasios V. Vasilakos. 2017. Water-Constrained Geographic Load Balanc-ing in Data Centers. IEEE Transactions on Cloud Computing 5, 2 (2017), 208–220. doi:10.1109/TCC.2015.2453982 [15] J.D. Jenkins, Z. Zhou, R. Ponciroli, R.B. Vilim, F. Ganda, F. de Sisternes, and A. Botterud. 2018. The benefits of nuclear flexibility in power system operations with renewable energy. Applied Energy 222 (2018), 872–884. doi:10.1016/j.apenergy. 9Kanakagiri et al. 
+
+2018.03.002 [16] Yankai Jiang, Rohan Basu Roy, Raghavendra Kanakagiri, and Devesh Tiwari. 2025. WaterWise: Co-optimizing Carbon- and Water-Footprint Toward Environ-mentally Sustainable Cloud Computing. In Proceedings of the 30th ACM SIGPLAN Annual Symposium on Principles and Practice of Parallel Programming (Las Vegas, NV, USA) (PPoPP ’25) . Association for Computing Machinery, New York, NY, USA, 297–311. doi:10.1145/3710848.3710891 [17] Ian Karlin, Jeff Keasler, and Rob Neely. 2013. LULESH 2.0 Updates and Changes .Technical Report LLNL-TR-641973. Lawrence Livermore National Laboratory, Livermore, CA, USA. 1–9 pages. doi:10.2172/1090032 [18] Harshad Kasture and Daniel Sanchez. 2016. Tailbench: a benchmark suite and evaluation methodology for latency-critical applications. In 2016 IEEE Inter-national Symposium on Workload Characterization (IISWC) . 1–10. doi:10.1109/ IISWC.2016.7581261 [19] Kashif Nizam Khan, Mikael Hirki, Tapio Niemi, Jukka K Nurminen, and Zhonghong Ou. 2018. Rapl in action: Experiences in using rapl for power measurements. ACM Transactions on Modeling and Performance Evaluation of Computing Systems (TOMPECS) 3, 2 (2018), 1–26. doi:10.1145/3177754 [20] Jordan Macknick, Robin Newmark, Garvin Heath, and K. C. Hallett. 2011. AReview of Operational Water Consumption and Withdrawal Factors for Electric-ity Generating Technologies . Technical Report NREL/TP-6A20-50900. National Renewable Energy Laboratory, Golden, Colorado. Table 2 reports median con-sumptive use of 672 gal/MWh for nuclear with cooling towers and 269 gal/MWh for nuclear with once-through cooling, implying once-through consumption is about 40% of the tower value.. doi:10.2172/1219149 [21] Anton Moisseytsev and Claudio Filippone. 2022. Load following analysis of the holos-quad 10mwe micro-reactor with plant dynamics code . Technical Report. Argonne National Laboratory (ANL), Argonne, IL (United States). doi:10.2172/ 1877020 [22] Hayden Moore, Sirui Qi, Ninad Hogade, Dejan Milojicic, Cullen Bash, and Sudeep Pasricha. 2025. Sustainable Carbon-Aware and Water-Efficient LLM Scheduling in Geo-Distributed Cloud Datacenters. In Proceedings of the Great Lakes Symposium on VLSI 2025 (GLSVLSI ’25) . Association for Computing Machinery, New York, NY, USA, 929–934. doi:10.1145/3716368.3735301 [23] OECD Nuclear Energy Agency. 2021. Technical and Economic Aspects of Load Following with Nuclear Power Plants . Technical Report. OECD Publishing, Paris. doi:10.1787/29e7df00-en [24] R. Ponciroli, Y. Wang, Z. Zhou, A. Botterud, J. Jenkins, R. B. Vilim, and F. Ganda. 2017. Profitability Evaluation of Load-Following Nuclear Units with Physics-Induced Operational Constraints. Nuclear Technology 200, 3 (2017), 189–207. doi:10.1080/00295450.2017.1388668 [25] Nuclear Power. [n. d.]. Percent mille (pcm) – unit of reactivity .https://www.nuclear-power.com/nuclear-power/reactor-physics/nuclear-fission-chain-reaction/reactivity/percent-mille-pcm-unit-of-reactivity/ [26] Ana Radovanović, Ross Koningstein, Ian Schneider, Bokan Chen, Alexandre Duarte, Binz Roy, Diyue Xiao, Maya Haridasan, Patrick Hung, Nick Care, Saurav Talukdar, Eric Mullen, Kendal Smith, MariEllen Cottman, and Walfredo Cirne. 2023. Carbon-Aware Computing for Datacenters. IEEE Transactions on Power Systems 38, 2 (2023), 1270–1280. doi:10.1109/TPWRS.2022.3173250 [27] Abel Souza, Noman Bashir, Jorge Murillo, Walid Hanafy, Qianlin Liang, David Irwin, and Prashant Shenoy. 2023. Ecovisor: A Virtual Energy System for Carbon-Efficient Applications. In Proceedings of the 28th ACM International Conference on Architectural Support for Programming Languages and Operating Systems, Volume 2 (Vancouver, BC, Canada) (ASPLOS 2023) . Association for Computing Machinery, New York, NY, USA, 252–265. doi:10.1145/3575693.3575709 [28] Nicolas E. Stauff, Jia Zhou, W. Neal Mann, David Sehloff, So-Bin Cho, Taek K. Kim, William Jenson, Botros N. Hannah, Femi Omitaomu, Brandon Miller, et al. 2025. Preliminary Analysis of Nuclear-Powered Data Center Scenarios . Technical Report. Argonne National Laboratory (ANL), Argonne, IL (United States). doi:10. 2172/3001074 [29] J. Treibig, G. Hager, and G. Wellein. 2010. LIKWID: A lightweight performance-oriented tool suite for x86 multicore environments. In Proceedings of PSTI2010, the First International Workshop on Parallel Software Tools and Tool Infrastructures .San Diego CA. doi:10.1109/ICPPW.2010.38 [30] U.S. Department of Energy. 1993. DOE Fundamentals Handbook: Nuclear Physics and Reactor Theory, Volume 2 . Technical Report DOE-HDBK-1019/2-93. U.S. Department of Energy. DOE technical handbook on reactor theory and nuclear parameters. doi:10.2172/10144945 [31] Philipp Wiesner, Ilja Behnke, Dominik Scheinert, Kordian Gontarska, and Lauritz Thamsen. 2021. Let’s wait awhile: how temporal workload shifting can reduce carbon emissions in the cloud. In Proceedings of the 22nd International Middleware Conference (Québec city, Canada) (Middleware ’21) . Association for Computing Machinery, New York, NY, USA, 260–272. doi:10.1145/3464298.3493399 [32] Yijie Yang, Dan Wang, Jian Shi, Chenye Wu, and Zhu Han. 2025. Uncertainty-Aware Day-Ahead Datacenter Workload Planning with Load-Following Small Modular Reactors. SIGENERGY Energy Inform. Rev. 5, 2 (Aug. 2025), 91–97. doi:10.1145/3757892.3757905 [33] Zhibo Zhang and Jin Jiang. 2024. On load-following operations of small modular reactors. Progress in nuclear Energy 173 (2024), 105274. doi:10.1016/j.pnucene. 2024.105274 10

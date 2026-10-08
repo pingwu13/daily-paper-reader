@@ -1,0 +1,808 @@
+Title: Latent Twin Operator
+
+URL Source: https://arxiv.org/pdf/2609.35531v1
+
+Published Time: Tue, 29 Sep 2026 04:37:11 GMT
+
+Number of Pages: 17
+
+Markdown Content:
+# LATENT TWIN OPERATOR 
+
+Deepanshu Verma 
+
+Department of Mathematical and Statistical Sciences Clemson University 
+
+dverma@clemson.edu 
+
+Riley Chen 
+
+Department of Mathematics Emory University 
+
+yizhou.chen@emory.edu 
+
+Matthias Chung 
+
+Department of Mathematics Emory University 
+
+matthias.chung@emory.edu 
+
+# ABSTRACT 
+
+Surrogate models deployed on real physical systems rarely see data at fixed reso-lutions: sensor configurations vary across deployments and may evolve over time as sensing infrastructure changes. We introduce the Latent Twin Operator (LTO), a latent-space surrogate for time-evolving PDEs with a Convolutional Conditional Neural Process (ConvCNP)-style encoder and decoder that accepts a context set of N sensor observations with arbitrary placement and can be queried at any res-olution. A learned latent evolution map advances the encoded state directly be-tween arbitrary time points, decoupling temporal evolution from the observation and query discretizations. We derive an explicit O(N −2/(3 D)) rate for the context discretization error in spatial dimension D under quasi-uniform refinement. We verify the predicted decay empirically on a 2D heat-equation benchmark. Across time-dependent PDE benchmarks, LTO achieves strong accuracy under one-step comparisons and transfers from native to coarser spatial resolutions with fixed pa-rameters. On Navier–Stokes, its direct latent evolution further reduces error over longer prediction horizons relative to recursive evaluation. 
+
+# 1 INTRODUCTION 
+
+Realistic PDE workflows rarely operate at a single fixed resolution. In simulation, adaptive meshes refine where the dynamics demand it; in experiments and deployed systems, sensor locations and densities vary across settings and may change over time. Such settings call for learned surrogates that are not tied to the discretization on which they were trained, but can accept sparse, dense, or irregular observations and return predictions at whatever resolution is required. We refer to this ability to operate consistently as the input and output discretizations change as discretization invariance .To achieve this form of discretization invariance, we introduce the Latent Twin Operator (LTO), an encode →evolve →decode surrogate in which observations are mapped to a latent state, advanced in time by a learned evolution map, and decoded at arbitrary query points. Its encoding and decoding employ parameter-free kernel-smoothing operations in the style of Convolutional Conditional Neu-ral Processes (Gordon et al., 2020), coupled to convolutional latent representations and dynamics (Definition 2.1). Two standard operator-learning architectures impose stronger discretization requirements than the LTO. The Fourier Neural Operator (FNO; Li et al., 2020) is formulated on regular grids, since its core operation uses the FFT; nonuniform Fourier transforms or interpolation can relax this requirement, but require additional machinery outside the standard formulation. DeepONet (Lu et al., 2019) allows arbitrary output query locations through its trunk network, but its branch network is tied to a fixed set of input sensor locations. Therefore, in their standard forms, neither architecture directly accepts a variable-size, irregularly placed context set without resampling or modification. More generally, evaluating learned PDE surrogates on discretizations different from those used during training can introduce discretization mismatch error (Gao et al., 2025). 1arXiv:2609.35531v1 [cs.CE] 28 Sep 2026 The LTO builds directly on the Latent Twin framework (Chung et al., 2026; 2027), which formalized the encode →evolve →decode Latent Twin formulation and established an approximation theory for latent-space surrogate models. LTO advances this framework through resolution-flexible encoding and decoding and derives a new explicit discretization-error bound, providing a theoretical guarantee of discretization invariance. Among related latent operator methods, the closest in spirit is the Latent Neural Operator (LNO; Wang & Wang, 2024). Like LTO, LNO maps a variable-size set of observations to a fixed-size latent representation and can decode at arbitrary query points. LNO achieves this flexibility through learned cross-attention over latent tokens, whereas LTO uses a spatially structured kernel-smoothing representation together with convolutional latent dynamics. The LTO construction therefore retains flexibility in the input and output discretizations while making the associated discretization error directly amenable to analysis. Other latent-space approaches, including the Latent Neural PDE Solver (Li et al., 2025) and the Physics-Informed Latent Neural Operator (Karumuri et al., 2026), share elements of the encode →evolve →decode paradigm but differ in how the latent representation, evolution, and input–output maps are realized. We discuss these connections in more detail in Section 3 and Appendix A.2. A key advantage of the LTO’s kernel-smoothing construction is its connection to the well-established theory of nonparametric regression and scattered-data approximation (Wasserman, 2006; Wendland, 2005). We use these tools to quantify how the approximation error depends on the number and placement of context points and derive an explicit convergence rate. This resolves the previously abstract spatial-discretization component of the general Latent Twin approximation theory (Chung et al., 2026) and makes its dependence on context resolution explicit. Our main contributions are: • We introduce the Latent Twin Operator, a resolution-flexible encode →evolve →decode sur-rogate that accepts context sets of varying size and placement and produces predictions at arbitrary query resolutions. For its SetConv-based realization, we prove encoder stability with a Lipschitz constant independent of context-set size and placement. • We derive an explicit spatial discretization-error bound using scattered-data approximation theory, ϵdisc (N ) = O(N −2/(3 D)), for N context points in spatial dimension D. Combined with the general Latent Twin approximation theory, this yields a discretization-invariance guarantee under quasi-uniform refinement. • We verify the predicted discretization decay on a 2D heat-equation benchmark and evalu-ate the learned LTO under matched protocols on Burgers, Navier–Stokes, and Darcy flow. On the time-dependent benchmarks, LTO transfers from the native training resolution to coarser spatial resolutions with fixed model parameters and achieves lower matched one-step errors than FNO on Burgers and than FNO and LNO on Navier–Stokes. On Navier– Stokes, direct latent evolution further reduces long-horizon error relative to recursive eval-uation. Section 2 develops the Latent Twin Operator and its discretization-invariance theory. Section 3 places the LTO in the broader operator-learning landscape. Section 4 evaluates its discretization behavior across four PDE benchmarks – the 2D heat equation, Burgers, 2D Navier–Stokes, and Darcy flow – under a common train-once, evaluate-across-resolutions protocol. Section 5 examines the scope and limitations of the regularity assumptions underlying the theory. Additional technical details, proofs, and extended comparisons with related methods are provided in the Appendix A. 
+
+# 2 THE LATENT TWIN OPERATOR 
+
+We consider time-evolving states u : T → U defined on a bounded spatial domain Ω ⊂ RD , where 
+
+T = [0 , T ] and U is a normed vector space of functions from Ω to Rp. At any time t, the state 
+
+u(t) is observed N at context locations cctx = {c1, . . . , c N } ⊂ Ω. For any state ut = u(t), we denote the corresponding observed context values by ut(cctx ) := {ut(cj )}Nj=1 . The state may be evaluated at an arbitrary set of M query locations cq = {q1, . . . , q M } ⊂ Ω, with corresponding values ut(cq) := {ut(qj )}Mj=1 . Different observations of the same underlying state may use context 2and query sets of different size and placement, precisely the multi-resolution setting motivated in Section 1. 
+
+Definition 2.1 (Latent Twin Operator) . Let Φ( · ; s, u s) : T → U denote the solution of ˙u = D(u)
+
+with u(s) = us. The Latent Twin Operator (LTO) is the surrogate 
+
+Ψs,c ctx ,u s (t, c q) := d(ms→t(e(us(cctx ), c ctx )) , c q) . (1) Here, e maps the observed context data to a latent state, ms→t : Z → Z evolves this state from time 
+
+s to time t, and d maps the evolved latent state to values at the query locations cq.The encoder e, latent evolution map ms→t, and decoder d are trainable; we suppress their learnable parameter dependence throughout for notational simplicity, writing it explicitly as Ψθ below where the discretization bound requires it. We next specify the encoder e, latent evolution map ms→t,and decoder d. The encoder and decoder are chosen to accommodate arbitrary context and query discretizations, while ms→t evolves the resulting representation entirely in latent space. 
+
+Resolution-independent encoding. To accommodate context sets of arbitrary size and placement, we construct the encoder using the Convolutional Conditional Neural Process (ConvCNP) frame-work (Gordon et al., 2020), extending Conditional Neural Processes (Garnelo et al., 2018). Given the context data  cctx , u s(cctx ), a set convolution (SetConv) maps this unordered, variable-size set to a field on a fixed spatial grid. Each observation contributes to nearby locations through a distance-based kernel, making the construction invariant to the ordering of the context points while retaining their spatial locations. We use the Gaussian kernel κℓ(x, y ) = exp 
+
+
+
+− dΩ(x,y )2
+
+> 2ℓ2
+
+
+
+, where dΩ denotes the distance on Ω and 
+
+ℓ > 0 determines the kernel length scale. For a generic spatial location x ∈ Ω, define 
+
+ˆucctx (x; us) := νcctx (x; us)
+
+ρcctx (x) , where (2) 
+
+ρcctx (x) := 
+
+> N
+
+X
+
+> j=1
+
+κℓ(x, c j ) and νcctx (x; us) := 
+
+> N
+
+X
+
+> j=1
+
+us(cj )κℓ(x, c j ). (3) The quantity ˆucctx is the Nadaraya–Watson kernel estimate of us (Nadaraya, 1964; Watson, 1964); 
+
+ρcctx measures the local concentration of context points, while νcctx is the corresponding kernel-weighted sum of state values. We evaluate ρcctx and ˆucctx on a fixed spatial grid and stack them into a (1 + p)-channel field. The encoder e maps this gridded SetConv representation to 
+
+zs = e(ρcctx , ˆucctx ( · ; us)) ∈ Z := RH×W ×k.
+
+Latent evolution. The latent evolution map ms→t : Z → Z advances the encoded state directly from time s to time t. Since ms→t acts entirely on the fixed latent representation, its input and output are independent of the context and query discretizations. 
+
+Resolution-independent decoding. Given the evolved latent state zt, the decoder d maps the latent representation back to the physical state and evaluates it at the query locations cq. Its final evaluation uses kernel-weighted interpolation on the spatial grid, so the number and placement of query points may vary independently of both the context locations and the internal grid. 
+
+Connection to the Latent Twin (Chung et al., 2026) approximation theory. The LTO extends the general Latent Twin framework (Chung et al., 2026) to settings with variable context and query discretizations. While the original framework develops its approximation theory under a fixed dis-cretization and treats the encoder, latent evolution map, and decoder abstractly, here we construct these components in a resolution-flexible form and use that theory as the basis for an explicit dis-cretization analysis. For each N , first fix a context discretization c(N )ctx and define PN : U → RN p with PN u = u(c(N )ctx )
+
+as the corresponding sampling operator. Following Chung et al. (2026, Thm. 2), the query set is 3Context data              
+
+> (cctx , u s, s )
+> Encoder
+> e
+> Latent evolution
+> ms→t(·, t )
+> Decoder
+> d(·, c q)
+> Query
+> (t, c q)Ω
+> cctx ={c1, . . . , c N}
+> ρctx
+> ˆu1ctx
+> ˆu2ctx
+> ...ˆup
+> ctx
+> ZsZt
+> Ω
+> cq = {q1, . . . , q M}
+> Latent Twin Operator (LTO): Ψs,c ctx ,u s
+> θ(t, c q) = d(ms→t(e(us(cctx ), c ctx )) , c q)
+
+Figure 1: Latent Twin Operator. Irregular context observations are mapped by SetConv to a fixed-grid representation, encoded into latent space, evolved from Zs to Zt by ms→t, and decoded at arbitrary query locations. taken equal to the context set, cq = c(N )ctx , throughout this section. Let RN : RN p → U be a lifting operator such that the pair (PN , R N ) is consistent and stable in the sense required by Chung et al. (2026, Thm. 2). The general Latent Twin theory applies to any such consistent and stable pair 
+
+(PN , R N ) for which 
+
+ϵdisc (N ) := sup 
+
+> u∈K
+
+∥RN (PN u) − u∥U −→ 0,
+
+where K ⊂ U is a compact set of admissible states. We denote by 
+
+eΨθ,N (t; s, u s) := RN
+
+
+
+Ψ s,c (N )ctx ,u s
+
+> θ
+
+ t, c (N )ctx 
+
+
+
+(4) the corresponding lifted LTO, where Ψθ is as in Definition. 2.1 with its parameter dependence made explicit. Under the additional assumptions of Chung et al. (2026, Thm. 2), the corresponding lifted Latent Twin satisfies 
+
+sup  
+
+> (s,t,u s)∈[0 ,T ]2×K
+
+eΨθ,N (t; s, u s) − Φ( t; s, u s) U
+
+≤ C
+
+
+
+ϵdisc (N ) +  1 + e LKT ϵ(N )ae + Ld,N ϵ(N )map 
+
+
+
+.
+
+(5) Here ϵ(N )ae is the autoencoder approximation error and ϵ(N )map is the latent-evolution error. The quantity 
+
+Ld,N is the decoder stability constant from Chung et al. (2026), LK controls the Lipschitz growth of the underlying dynamics on K, and C > 0 is a constant determined by the assumptions of the theo-rem. For each N , the bound applies to any fixed admissible pair (PN , R N ) satisfying the assump-tions of Chung et al. (2026, Thm. 2), regardless of the particular discretization and reconstruction operators used. For the LTO, we take PN to be sampling at the context locations and instantiate RN by the normal-ized SetConv kernel reconstruction, 
+
+RN (PN u)( x) := 
+
+PNj=1 u(cj )κℓ(x, c j )
+
+PNj=1 κℓ(x, c j ) .
+
+This is precisely the normalized kernel estimate equation 2 used in the SetConv representation. Thus, the abstract discretization term ϵdisc (N ) in equation 5 becomes a concrete scattered-data ap-proximation error. We first establish stability of this reconstruction and then derive an explicit bound on ϵdisc (N ) in terms of the number and placement of the context points. 
+
+Encoder stability. Before deriving the discretization rate, we first establish that the normalized SetConv reconstruction is stable with respect to perturbations of the observed state. For a fixed context set cctx , the Nadaraya–Watson reconstruction satisfies a Lipschitz bound whose constant does not depend on the number or placement of the context points. Hence the stability of the SetConv preprocessing is uniform across admissible context discretizations. The precise statement and proof are given in Lemma A.2 and Corollary A.3 in Appendix A.1. 4Explicit discretization error. For the LTO, the sampling operator PN records the values of u
+
+at the context locations, while the reconstruction operator RN is the normalized SetConv kernel reconstruction. Hence RN (PN u) = ˆ ucctx ( · ; u), and therefore 
+
+ϵdisc (N ) = sup 
+
+> u∈K
+
+∥ˆucctx ( · ; u) − u∥U .
+
+Thus ϵdisc (N ) is the error of kernel smoothing on scattered data. Its value depends on both the number of context points and their placement. To obtain an explicit rate, we impose the following regularity condition on the admissible states and context sets. 
+
+Assumption 2.2 (Regularity) . Assume that (a) K ⊂ C2(Ω; Rp) satisfies 
+
+sup u∈K sup x∈Ω ∥D2u(x)∥ ≤ M , (b) Ω is periodic, and (c) that each context set cctx = {c1, . . . , c N }
+
+admits a partition V1, . . . , V N of Ω such that 
+
+cj ∈ Vj , diam( Vj ) ≤ 2δ(cctx ), |Vj | = |Ω|
+
+N
+
+where δ(cctx ) := sup x∈Ω min 1≤j≤N dΩ(x, c j ) is the fill distance. Condition (a) controls the local curvature of the admissible states, while condition (c) prevents the context points from becoming arbitrarily clustered. The equal-volume partition is slightly stronger than standard quasi-uniformity assumptions in scattered-data approximation (Wendland, 2005), but is used directly in the quadrature argument of Proposition A.4. Under Assumption 2.2, we decompose the SetConv reconstruction error into a kernel-smoothing component and a finite-context component by introducing the continuous analogue 
+
+¯uℓ(x) := 
+
+R 
+
+> Ω
+
+u(y)κℓ(x, y ) d y
+
+R 
+
+> Ω
+
+κℓ(x, y ) d y .
+
+Under the periodicity assumption, the denominator is independent of x (see Lemma A.1); we denote it by ¯κ := R 
+
+> Ω
+
+κℓ(x, y ) d y. The quantity ¯uℓ is obtained by replacing the finite kernel-weighted sums in ˆucctx by their corresponding integrals. It therefore provides the decomposition 
+
+∥ˆucctx − u∥U ≤ ∥ ˆucctx − ¯uℓ∥U + ∥¯uℓ − u∥U ,
+
+where the second term is the kernel-smoothing bias and the first is the finite-context quadrature error. The smoothing error follows from a second-order Taylor expansion. Because the Gaussian kernel is symmetric about x, the first-order term vanishes after integration, leaving a contribution controlled by the Hessian of u. Under Assumption 2.2, this gives 
+
+sup 
+
+> u∈K
+
+sup 
+
+> x∈Ω
+
+∥¯uℓ(x) − u(x)∥ ≤ 12 DM ℓ 2. (6) The proof is given in Appendix A.1; see also Wasserman (2006, Ch. 5) for the corresponding clas-sical kernel-smoothing argument. It remains to control the finite-context error ∥ˆucctx − ¯uℓ∥U . Under Assumption 2.2, a scattered-data quadrature argument (Proposition A.4, Appendix A.1) shows that this error is of order δ(cctx )/ℓ .Together with the O(ℓ2) smoothing bias from equation 6, this yields the trade-off quantified in the following theorem. 
+
+Theorem 2.3 (Explicit discretization error for the SetConv instantiation) . Under Assumption 2.2, for any bandwidth ℓ > 0,
+
+ϵdisc (N ) ≤ 12 DM ℓ 2 + CK
+
+δ(cctx )
+
+ℓ ,
+
+where CK > 0 depends only on D, Ω, M , and sup u∈K ∥u∥∞.
+
+Corollary 2.4 (Optimized discretization rate) . Choosing ℓ⋆ =
+
+ CK δ(cctx )
+
+> DM
+
+1/3
+
+in Theorem 2.3 gives 
+
+ϵdisc (N ) ≤ C δ (cctx )2/3,
+
+for a constant C > 0 independent of the context resolution. 
+
+5Corollary 2.5 (Discretization invariance) . Assume that the context sets satisfy δ(cctx ) =Θ( N −1/D ). With the bandwidth choice ℓ = ℓ⋆ from Corollary 2.4, substituting the resulting dis-cretization rate into the Latent Twin Operator error bound equation 5 gives 
+
+sup  
+
+> (s,t,u s)∈[0 ,T ]2×K
+
+eΨθ,N (t; s, u s) − Φ( t; s, u s) U
+
+≤ O
+
+
+
+N −2/(3 D)
+
++C 1+e LKT ϵ(N )ae +CL d,N ϵ(N )map .
+
+For i.i.d. uniformly sampled context points, the fill-distance estimate of Penrose (2003) yields the corresponding high-probability rate 
+
+ϵdisc (N ) = O
+
+ log NN
+
+2/(3 D)!
+
+.
+
+# 3 RELATED WORK 
+
+The Latent Twin Operator sits at the intersection of four lines of work: neural operators, implicit neural representations, conditional neural processes, and the latent-space encode →evolve →decode architectures it most closely resembles. We summarize each briefly here, with an extended discus-sion in Appendix A.2. Operator learning formalizes learning a PDE’s solution operator directly (Kovachki et al., 2023; Boull´ e & Townsend, 2024); DeepONet (Lu et al., 2019) and the Fourier Neural Operator (FNO; Li et al., 2020) are its two standard instantiations, the latter requiring a regular grid via the FFT. Our encoder has no such grid dependency: it builds instead on Conditional Neural Processes and their convolutional variant, ConvCNP (Garnelo et al., 2018; Gordon et al., 2020), whose kernel-weighted SetConv embedding underlies our encoder and decoder (Section 2). Closest to our method is the Latent Neural Operator (LNO; Wang & Wang, 2024): its Physics-Cross-Attention likewise maps an arbitrary input set to a fixed-size latent state with input and output locations decoupled, but via learned cross-attention over an unstructured token set, rather than the parameter-free, spatially-structured kernel smoothing we use. A wider family of attention-based architectures tackles the same irregular-input problem by compressing to a smaller token set or by applying efficient attention over the full one (Appendix A.2 surveys this family in detail); we compare against LNO specifically because it is architecturally closest to our construction, not be-cause it is uniquely capable of cross-resolution generalization – ONO (Xiao et al., 2023) reports the same zero-shot Darcy transfer. This is what lets our latent evolution operator be a plain CNN and what admits the classical error analysis behind Theorem 2.3. No analogous discretization-error rate has been established for irregular-input encoders generally. The closest theoretical results, Calvello et al. (2025) for attention-based operators and Zhang et al. (2025) for a DeepONet-style branch-trunk construction, give universal approximation but not an explicit rate in the number of input points (Ap-pendix A.2 expands this comparison). The Latent Neural PDE Solver (Li et al., 2025) and Physics-Informed Latent Neural Operator (Karumuri et al., 2026) follow the same encode →evolve →decode shape without a comparable guarantee; and prior work, Latent Twins (Chung et al., 2026; 2027), proves the approximation bound equation 5 this paper builds on but leaves its discretization-error term ϵdisc (N ) abstract. Gao et al. (2025) and Lanthaler et al. (2024) show, empirically and theoreti-cally respectively, that FNO-style resolution-independence claims do not automatically hold. 
+
+# 4 EXPERIMENTS 
+
+We evaluate the LTO along four complementary axes: (i) whether the discretization behavior pre-dicted by Theorem 2.3 is observed empirically, (ii) one-step predictive accuracy, (iii) long-horizon behavior under direct and recursive temporal evolution, and (iv) transfer across spatial resolutions with fixed model parameters. Section 4.1 isolates the discretization effect on a smooth 2D heat equation. Sections 4.2 and 4.3 evaluate the full learned model on Burgers’ equation and 2D Navier– Stokes, respectively, while Section 4.3 additionally examines long-horizon evolution. Section 4.4 considers Darcy flow as a steady-state resolution-transfer benchmark. 6Setup. Training data consists of trajectories u observed at a fixed set of native time steps. The training objective is 
+
+L(θ) = λevol E
+
+h
+
+Ψs,c ctx ,u s 
+
+> θ
+
+(t, c q ) − ut(cq ) 22
+
+i| {z }
+
+> Levol (θ)
+
++λrecon E
+
+h
+
+dθ
+
+ eθ (cctx ; us), c q
+
+ − us(cq ) 22
+
+i| {z }
+
+> Lrecon (θ)
+
+,
+
+(7) where θ are the trainable parameters suppressed in Section 2, and Levol , Lrecon are the evolution and reconstruction (autoencoder) losses, respectively. Here, the expectation is taken over n train-ing examples {(uis, s i), (uit, t i)}ni=1 , each consisting of a trajectory ui and a source-target time pair 
+
+(si, t i) drawn from that trajectory’s native time discretization. The values of λevol , λ recon are stated for each benchmark below. All error numbers are relative L2, ∥Ψθ −u∥2/∥u∥2 (dropping Ψθ ’s argu-ments here, since they vary by evaluation setting). We additionally apply context-size augmentation, where during training we resample the context fraction cfrac ∈ [cmin , c max ] uniformly at random on every step, holding the query and target at the full native resolution throughout, and sample only the encoder’s context set. Each benchmark’s own [cmin , c max ] is stated in its subsection below. We use the standard time-evolving PDEBench (Takamoto et al., 2022) benchmarks, Burgers’ equa-tion and Navier–Stokes (Sections 4.2 and 4.3). All models are trained from a single source state 
+
+us to the corresponding target state ut, at a source-target time pair (s, t ) drawn as above from each trajectory’s native time discretization. One-step accuracy is evaluated under this same protocol; long-horizon behavior under direct and recursive evaluation is examined separately, as detailed in the relevant subsections below. 4.1 2D H EAT EQUATION : R ESOLUTION SWEEP 
+
+We test discretization invariance (Corollary 2.5) on a 2D periodic heat equation. 16 32 64 128     
+
+> N(context count)
+> 10 1
+> relative  L2 error
+> closed-form disc (N)
+> corollary rate ( N1/3 )
+> trained LTO
+
+Figure 2: Closed-form ϵdisc (N ) and trained LTO evaluated across context points N without retraining, against Corollary 2.5’s predicted rate. The ground-truth field is a sum of four Gaussian kernels (standard deviations 0.12 –0.22 ) on the periodic 2D do-main, evolved forward exactly via an FFT-based spec-tral solve. Both kernels and their heat-flow evolution are smooth by construction, so Assumption 2.2 holds. We test two related quantities against the context count 
+
+N . The first is ϵdisc (N ) itself, computed directly from the closed-form Nadaraya–Watson reconstruction equation 2, no training involved. The second is a single trained LTO’s own forecasting er-ror: given N context points sampled from us, the network encodes them, evolves the latent state to a later time t, de-codes a prediction, and we compare against the true field 
+
+ut at that time. The network is trained once, with the context count resampled at random on every batch, and evaluated at every N without retraining; the query count stays fixed throughout. We average this test over 5 runs. Both errors decrease at a rate consistent with the predicted slope, with a fitted log-log slope close to the rate in Corollary 2.5. 4.2 BURGERS ’ EQUATION 
+
+We evaluate LTO on PDEBench’s Burgers equation at ν = 0 .001 , where solutions develop steep, near-shock fronts and therefore provide a substantially more demanding test of spatial resolution than the smooth heat-equation setting. We train LTO with λevol = λrecon = 1 and context-size augmentation cfrac ∈ [0 .05 , 1.0] , and compare against a self-trained FNO baseline under a matched training protocol. Both models are evaluated across resolutions from 64 to 2048 points without retraining, including the above-native 2048 -point interpolation regime. Table 1 summarizes the results. LTO achieves lower one-step prediction error than FNO at every tested resolution, from 64 to 2048 
+
+points, including the above-native interpolated resolution. This advantage is therefore not confined to the training resolution or its immediate neighborhood. LTO also requires substantially less train-ing time: approximately one quarter of FNO’s wall-clock time, while using a comparable number 7Table 1: Burgers resolution transfer, one-shot relative L2 (a single evolution step). Resolutions at or below the native resolution (1024) use real subsampled data; above-native points are synthetic interpolation. Method Params 64 128 256 512 1024 (native) 2048 LTO (ours) 29,395 0.078 0.063 0.060 0.056 0.057 0.066 
+
+FNO 23,937 0.097 0.080 0.076 0.075 0.076 0.077 Table 2: Navier Stokes (2D) resolution transfer, one-shot relative L2, averaged over six data points. FNO’s fixed spectral mode truncation cannot run below 32 × 32 – an architectural constraint, not a missing measurement. Method Params 16 ×16 32 ×32 64 ×64 (native) 128 ×128 LTO (ours) 1,126,211 0.154 0.147 0.146 6.156 FNO 1,124,193 – 0.213 0.177 1.608 LNO 1,146,945 0.261 0.253 0.251 1.339 
+
+of parameters ( 29 ,395 versus 23 ,937 ). On this benchmark, LTO therefore combines stronger cross-resolution accuracy with lower training cost. 4.3 NAVIER –S TOKES (2D) Two-dimensional Navier–Stokes is a substantially more challenging problem than Burgers. We evaluate on PDEBench’s 2D Navier–Stokes forward benchmark, trained at resolution 64 × 64 to match LNO’s own reported setting (Wang & Wang, 2024), and compare against self-trained FNO and LNO baselines with parameter count matched to LTO’s. We train LTO with λevol = λrecon = 1 , context-size augmentation with cfrac ∈ [0 .05 , 4.0] , and the pushforward trick (Brandstetter et al., 2022): for 0.15 of training steps, the model unrolls autore-gressively under no gradient before one supervised step against the true target, exposing training to the compounding error it otherwise meets only at inference. Table 2 reports one-step relative L2 error across resolutions. At the sub-native and native resolutions (16 × 16 , 32 × 32 , 64 × 64 ), LTO has the lowest error and remains nearly insensitive to coarsening; above native, at 128 × 128 , all three models deteriorate, with LTO showing the largest increase. Thus, on this problem, the resolution flexibility of the representation translates into robust transfer to coarser discretizations, but not into reliable extrapolation to spatial resolution finer than that used for training. To assess long-horizon behavior, we recursively apply each model for k = 1 , . . . , 10 one-step in-crements. For LTO, we additionally evaluate each target time directly from the source state through 
+
+ms→t. Table 3 shows a different ordering than Table 2’s one-step comparison, since the latter aver-ages over six context start points while the former fixes context at a particular time: FNO and LNO have lower error at k = 1 but grow faster under recursive evolution, and by k = 5 and k = 10 both LTO evaluations are lower, with direct evaluation giving the lowest ten-step average and confirming that avoiding repeated re-encoding limits error growth. 4.4 DARCY FLOW 
+
+Darcy flow is a steady-state boundary-value problem mapping a piecewise-constant permeability field to the corresponding pressure field under a second-order elliptic PDE (Li et al., 2020). Unlike the preceding benchmarks, it has no temporal evolution, so we include it primarily for a matched comparison with LNO. Following Wang & Wang (2024), we train at 211 × 211 and evaluate without retraining at resolutions 85 , 106 , 141 , 211 , and 421 , using λrecon = 1 and cfrac ∈ [0 .05 , 1.0] .Because the Gaussian SetConv kernel of Section 2 imposes a strong locality bias, we also evaluate an attention-based variant with learned context weights; its definition is given in Appendix A.3. This variant is empirical and is not covered by the SetConv discretization theory. 8Table 3: Navier–Stokes long-horizon relative L2 at the native 64 × 64 resolution. All methods start from the same source state at time s. “Evolve” recursively feeds each model’s prediction back as the next source state for k steps, whereas “direct” evaluates ms→t from the original encoded source state without intermediate re-encoding. Method k = 1 k = 5 k = 10 Avg. (10 steps) LTO, evolve (ours) 0.096 0.172 0.378 0.209 LTO, direct eval (ours) 0.096 0.146 0.317 0.177 
+
+FNO, evolve 0.055 0.194 0.705 0.294 LNO, evolve 0.067 0.295 1.197 0.462 Table 4: Darcy flow: relative L2 error across evaluation resolutions, with LNO’s parameter count matched to each LTO variant. LTO variants differ in encoder (Gaussian kernel vs. learned attention). Method Params 85 106 141 211 421 LTO (ours) 29,139 0.133 0.133 0.133 0.133 0.132 LTO with attn (ours) 28,894 0.055 0.055 0.055 0.055 0.055 LNO (Wang & Wang, 2024) 29,171 0.012 0.011 0.011 0.011 0.011 
+
+Table 4 reports relative L2 errors and parameter counts. The Gaussian LTO trails LNO by 11 .80 ×
+
+on average, while the attention variant reduces this ratio to 4.86 ×, substantially narrowing the gap although remaining less accurate at every resolution. Appendix A.3 also reports comparison with LNO’s original 762 ,113 -parameter configuration. 
+
+# 5 DISCUSSION AND LIMITATIONS 
+
+An important feature of the LTO is its direct temporal formulation: given a single source state us,it maps directly to a requested target time t through ms→t. In the matched comparisons, FNO and LNO receive the same single source state. On Navier–Stokes, FNO and LNO are more accurate at the first step, while LTO gives lower long-horizon errors, with direct evaluation further improving over recursive evolution. The discretization result controls only the SetConv reconstruction error and assumes C2 states, a pe-riodic domain, and sufficiently well-distributed context points. The autoencoder and latent-evolution errors in equation 5 remain separate contributions. The sharp error increase at 128 × 128 on Navier– Stokes further shows that resolution-flexible evaluation does not by itself ensure accurate above-native resolution transfer. Finally, the SetConv analysis exploits a fixed Gaussian kernel, which restricts context weighting to physical distance. The Darcy experiment illustrates this limitation: replacing the fixed kernel with learned attention substantially reduces the approximation error, but the resulting model is no longer covered by the SetConv analysis developed here. This motivates more adaptive reconstruction operators for which quantitative discretization bounds can still be established. 
+
+# 6 CONCLUSION AND FUTURE WORK 
+
+We introduced the Latent Twin Operator, a resolution-flexible encode →evolve →decode surrogate for time-evolving PDEs. For its SetConv realization, we identified the abstract discretization term in the Latent Twin approximation theory with a concrete scattered-data reconstruction error and de-rived an explicit O(N −2/(3 D)) rate under quasi-uniform refinement. The heat equation experiment supports the predicted decay. On Burgers, LTO achieves lower one-step error than the matched FNO across all tested resolutions. On Navier–Stokes, LTO gives the lowest one-step error at native and sub-native resolutions and lower error at longer horizons, with direct temporal evaluation further reducing error accumulation. The deterioration observed above the native Navier–Stokes resolu-tion, together with the Darcy results, also identifies limitations of the current fixed-resolution latent representation and local SetConv reconstruction. 9Future work includes extending the discretization analysis to more general domains and sampling geometries, improving above-native resolution transfer, and developing adaptive or learned recon-struction operators that retain quantitative error control. Further directions include adaptive sensing and experimental design, temporal-consistency constraints for direct latent evolution, and the incor-poration of physical or stochastic structure into the latent dynamics. REPRODUCIBILITY STATEMENT 
+
+Code for the Latent Twin Operator architecture and all training and evaluation scripts used in Sec-tion 4, together with the exact PDEBench data splits for the Burgers and Navier–Stokes experiments, will be released after acceptance. All experiments use publicly available PDEBench data (Takamoto et al., 2022); the FNO baseline for Burgers is trained from scratch on the same split rather than taken from PDEBench’s own published number, which we could not independently reproduce. Hyperpa-rameters – bandwidth ℓ, latent resolution and channel count, optimizer and learning-rate schedule, epoch counts – are recorded in the released training configs rather than the main text, to stay within the page limit. For numerical stability, the implementation adds a small fixed εnum > 0 to the denominator of the normalized SetConv channel. AI U SE STATEMENT 
+
+Large language model assistance was used in revising prose and notation in the Introduction, Sec-tion 2, Related Work, Discussion, and Experiments sections. All theorem statements, proofs, exper-imental design choices, and numerical results are the authors’ own. ETHICS STATEMENT 
+
+This work concerns surrogate modeling for partial differential equations using synthetic and publicly available benchmark data (PDEBench); it does not involve human subjects, personal data, or any data collection of our own. We do not anticipate ethical concerns specific to this work beyond those generally associated with scientific machine learning research. 
+
+# REFERENCES 
+
+Nicolas Boull´ e and Alex Townsend. A mathematical guide to operator learning. In Handbook of Numerical Analysis , volume 25, pp. 83–125. Elsevier, 2024. Johannes Brandstetter, Daniel Worrall, and Max Welling. Message passing neural PDE solvers. In 
+
+International Conference on Learning Representations , 2022. arXiv:2202.03376. Edoardo Calvello, Nikola B. Kovachki, Matthew E. Levine, and Andrew M. Stuart. Continuum attention for neural operators. Journal of Machine Learning Research , 26(300):1–52, 2025. Shuhao Cao. Choose a transformer: Fourier or Galerkin. In Advances in Neural Information Pro-cessing Systems (NeurIPS) , 2021. Matthias Chung, Deepanshu Verma, Max Collins, Amit N. Subrahmanya, Varuni Katti Sastry, and Vishwas Rao. Latent twins. Machine Learning: Science and Technology , 7:025039, 2026. arXiv:2509.20615. Matthias Chung, Yutong Bu, and Deepanshu Verma. Physics-conforming latent twins. Computer Methods in Applied Mechanics and Engineering , 463:119351, 2027. Amer Essakine, Yanqi Cheng, Chun-Wun Cheng, Lipei Zhang, Zhongying Deng, Lei Zhu, Carola-Bibiane Sch¨ onlieb, and Angelica I Aviles-Rivero. Where do we stand with implicit neural repre-sentations. A technical and performance survey. Submitted to Transactions on Machine Learning Research , 2024. Jianqing Fan and Ir` ene Gijbels. Local Polynomial Modelling and Its Applications . Number 66 in Monographs on Statistics and Applied Probability. Chapman & Hall/CRC, 1996. 10 Wenhan Gao, Ruichen Xu, Yuefan Deng, and Yi Liu. Discretization-invariance? On the discretiza-tion mismatch errors in neural operators. In International Conference on Learning Representa-tions , 2025. Marta Garnelo, Dan Rosenbaum, Chris J. Maddison, Tiago Ramalho, David Saxton, Murray Shana-han, Yee Whye Teh, Danilo J. Rezende, and S. M. Ali Eslami. Conditional neural processes. In 
+
+Proceedings of the 35th International Conference on Machine Learning , volume 80, pp. 1704– 1713, 2018. Jonathan Gordon, Wessel P. Bruinsma, Andrew Y. K. Foong, James Requeima, Yann Dubois, and Richard E. Turner. Convolutional conditional neural processes. In International Conference on Learning Representations , 2020. Zhongkai Hao, Zhengyi Wang, Hang Su, Chengyang Ying, Yinpeng Dong, Songming Liu, Ze Cheng, Jian Song, and Jun Zhu. GNOT: a general neural operator Transformer for opera-tor learning. In Proceedings of the International Conference on Machine Learning (ICML) , 2023. Sharmila Karumuri, Lori Graham-Brady, and Somdatta Goswami. Physics-informed latent neu-ral operator for real-time predictions of time-dependent parametric pdes. Computer Methods in Applied Mechanics and Engineering , 450:118599, 2026. Nikola Kovachki, Zongyi Li, Burigede Liu, Kamyar Azizzadenesheli, Kaushik Bhattacharya, An-drew Stuart, and Anima Anandkumar. Neural operator: Learning maps between function spaces with applications to pdes. Journal of Machine Learning Research , 24(89):1–97, 2023. Samuel Lanthaler, Andrew M. Stuart, and Margaret Trautner. Discretization error of fourier neural operators. arXiv preprint arXiv:2405.02221 , 2024. Zijie Li, Kazem Meidani, and Amir Barati Farimani. Transformer for partial differential equations’ operator learning. arXiv preprint arXiv:2205.13671 , 2022. Zijie Li, Dule Shu, and Amir Barati Farimani. Scalable Transformer for PDE surrogate modeling. In Advances in Neural Information Processing Systems (NeurIPS) , 2023. Zijie Li, Saurabh Patil, Francis Ogoke, Dule Shu, Wilson Zhen, Michael Schneier, John R. Buchanan, and Amir Barati Farimani. Latent neural PDE solver: a reduced-order model-ing framework for partial differential equations. Journal of Computational Physics , 2025. arXiv:2402.17853. Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik Bhattacharya, An-drew Stuart, and Anima Anandkumar. Fourier neural operator for parametric partial differential equations. arXiv preprint arXiv:2010.08895 , 2020. Lu Lu, Pengzhan Jin, and George Em Karniadakis. Deeponet: Learning nonlinear operators for iden-tifying differential equations based on the universal approximation theorem of operators. arXiv preprint arXiv:1910.03193 , 2019. Elizbar A Nadaraya. On estimating regression. Theory of Probability & Its Applications , 9(1): 141–142, 1964. Mathew Penrose. Random Geometric Graphs . Number 5 in Oxford Studies in Probability. Oxford University Press, 2003. Vincent Sitzmann, Julien Martel, Alexander Bergman, David Lindell, and Gordon Wetzstein. Im-plicit neural representations with periodic activation functions. Advances in neural information processing systems , 33:7462–7473, 2020. Makoto Takamoto, Timothy Praditia, Raphael Leiteritz, Daniel MacKinlay, Francesco Alesiani, Dirk Pfl¨ uger, and Mathias Niepert. Pdebench: An extensive benchmark for scientific machine learning. Advances in neural information processing systems , 35:1596–1611, 2022. Matthew Tancik, Pratul Srinivasan, Ben Mildenhall, Sara Fridovich-Keil, Nithin Raghavan, Utkarsh Singhal, Ravi Ramamoorthi, Jonathan Barron, and Ren Ng. Fourier features let networks learn high frequency functions in low dimensional domains. Advances in neural information processing systems , 33:7537–7547, 2020. 11 Ashish Vaswani, Noam Shazeer, Niki Parmar, Jakob Uszkoreit, Llion Jones, Aidan N Gomez, Ł ukasz Kaiser, and Illia Polosukhin. Attention is all you need. In I. Guyon, U. Von Luxburg, S. Bengio, H. Wallach, R. Fergus, S. Vishwanathan, and R. Garnett (eds.), Ad-vances in Neural Information Processing Systems , volume 30. Curran Associates, Inc., 2017. URL https://proceedings.neurips.cc/paper_files/paper/2017/ file/3f5ee243547dee91fbd053c1c4a845aa-Paper.pdf .Tian Wang and Chuang Wang. Latent neural operator for solving forward and inverse PDE problems. In Advances in Neural Information Processing Systems , volume 37, 2024. arXiv:2406.03923. Larry Wasserman. All of Nonparametric Statistics . Springer Texts in Statistics. Springer, 2006. Geoffrey S Watson. Smooth regression analysis. Sankhy¯ a: The Indian Journal of Statistics, Series A, 26(4):359–372, 1964. Holger Wendland. Scattered Data Approximation . Number 17 in Cambridge Monographs on Ap-plied and Computational Mathematics. Cambridge University Press, 2005. Haixu Wu, Tengge Hu, Huakun Luo, Jianmin Wang, and Mingsheng Long. Solving high-dimensional PDEs with latent spectral models. arXiv preprint arXiv:2301.12664 , 2023. Haixu Wu, Huakun Luo, Haowen Wang, Jianmin Wang, and Mingsheng Long. Transolver: a fast Transformer solver for PDEs on general geometries. arXiv preprint arXiv:2402.02366 , 2024. Zipeng Xiao, Zhongkai Hao, Bokai Lin, Zhijie Deng, and Hang Su. Improved operator learning by orthogonal attention. arXiv preprint arXiv:2310.12487 , 2023. Zecheng Zhang, Wing Tat Leung, and Hayden Schaeffer. A discretization-invariant extension and analysis of some deep operator networks. Journal of Computational and Applied Mathematics ,456:116226, 2025. 
+
+# A APPENDIX 
+
+A.1 DEFERRED PROOFS 
+
+Lemma A.1 (Constancy of ¯κ). Under Assumption 2.2 , ¯κ(x) := R 
+
+> Ω
+
+κℓ(x, y ) d y is constant for all 
+
+x ∈ Ω.
+
+Proof of Lemma A.1 (Constancy of ¯κ). Fix x ∈ Ω and substitute z = y−x mod Ω in the integral. Because Ω is periodic, this substitution is a bijection of Ω onto itself with Jacobian 1. Further, since 
+
+dΩ(x, y ) = dΩ(0 , y − x mod Ω) = dΩ(0 , z ) then 
+
+κℓ(x, y ) = exp   − dΩ(x, y )2/(2 ℓ2) = exp   − dΩ(0 , z )2/(2 ℓ2) = κℓ(0 , z ) .
+
+Substituting, 
+
+¯κ(x) = 
+
+Z
+
+> Ω
+
+κℓ(x, y ) d y =
+
+Z
+
+> Ω
+
+κℓ(0 , z ) d z = ¯ κ(0) .
+
+Since x ∈ Ω was arbitrary, ¯κ(x) = ¯ κ(0) for every x ∈ Ω.
+
+Lemma A.2 (Encoder input stability) . For any finite context locations cctx = {c1, . . . , c N } ⊂ Ω,any bandwidth ℓ > 0, any ε > 0, and any two states u, v ∈ U ,
+
+sup 
+
+> x∈Ω
+
+ˆucctx (x; u) − ˆucctx (x; v) ≤ max  
+
+> 1≤j≤N
+
+|u(cj ) − v(cj )| ≤ ∥ u − v∥U ,
+
+i.e. u 7 → ˆucctx (· ; u) is 1-Lipschitz, uniformly over N , over ℓ, over ε, and over the placement of cctx .By contrast, the raw channel only satisfies 
+
+sup 
+
+> x∈Ω
+
+νcctx (x; u) − νcctx (x; v) ≤
+
+
+
+sup 
+
+> x∈Ω
+
+ρcctx (x)
+
+
+
+· max  
+
+> 1≤j≤N
+
+|u(cj ) − v(cj )| ,
+
+and sup cctx sup x∈Ω ρcctx (x) is unbounded as N → ∞ (e.g. placing all N context points within an 
+
+o(ℓ) neighborhood of some x0 gives ρcctx (x0) → N ), so no context-count-independent Lipschitz constant exists for the raw channel in general. 
+
+12 Dividing by the local density turns each context point’s contribution into a convex-combination weight, so the normalized channel’s output can move by no more than the largest single input per-turbation, however many context points there are or however they are placed. The raw channel skips this normalization, so an adversary who clusters points can drive ρcctx , and with it the sensitivity, arbitrarily high. 
+
+Corollary A.3 (Explicit, resolution-independent encoder Lipschitz constant) . Recall the LTO’s en-coder e(cctx ; u) = gϕ
+
+ ρcctx , ˆucctx (· ; u) from Definition 2.1. For a fixed learned network gϕ (the convolutional stack described above) with Lipschitz constant Lg in its second argument (with respect to ∥ · ∥ ∞ on the sampled channel), holding the density channel ρcctx fixed, 
+
+∥e(cctx ; u) − e(cctx ; v)∥ ≤ Lg · ∥ u − v∥U ,
+
+for every context set cctx , every N = |cctx |, and every bandwidth ℓ: the encoder is Lipschitz with a constant that does not depend on the resolution or cardinality of the context set. Feeding the raw channel νcctx (· ; u) instead of ˆucctx (· ; u) does not admit such a context-count-independent constant, by Lemma A.2: any Lipschitz bound obtained this way would need to grow with sup x ρcctx (x), and hence, in the worst case, with N . The normalized channel is what every experiment in this paper uses. 
+
+Proof of Lemma A.2 (Encoder input stability). Fix x ∈ Ω and write wj := κℓ(x, c j ) ≥ 0, so 
+
+ρcctx (x) = P 
+
+> j
+
+wj and νcctx (x; u) = P 
+
+> j
+
+u(cj )wj . Then 
+
+νcctx (x; u) − νcctx (x; v) = 
+
+> N
+
+X
+
+> j=1
+
+ u(cj ) − v(cj ) wj ,
+
+so, since wj ≥ 0,
+
+νcctx (x; u)−νcctx (x; v) ≤ max  
+
+> j
+
+|u(cj )−v(cj )|· X
+
+> j
+
+wj = max  
+
+> j
+
+|u(cj )−v(cj )|· ρcctx (x) . (∗)
+
+This proves the raw-channel bound after taking sup x. For the normalized channel, 
+
+ˆucctx (x; u) − ˆucctx (x; v) = νcctx (x; u) − νcctx (x; v)
+
+ρcctx (x) + ε ,
+
+and dividing (∗) by ρcctx (x) + ε gives 
+
+ˆucctx (x; u) − ˆucctx (x; v) ≤ max  
+
+> j
+
+|u(cj ) − v(cj )| · ρcctx (x)
+
+ρcctx (x) + ε ≤ max  
+
+> j
+
+|u(cj ) − v(cj )| ,
+
+since ρcctx (x)/(ρcctx (x) + ε) ≤ 1 for ρcctx (x) ≥ 0, ε > 0. Taking sup x∈Ω and bounding 
+
+max j |u(cj ) − v(cj )| ≤ ∥ u − v∥U gives the claim. The unboundedness of the raw bound fol-lows by placing all N locations within distance o(ℓ) of a fixed x0: each κℓ(x0, c j ) → κℓ(0 , 0) = 1 ,so ρcctx (x0) → N , which is unbounded as N → ∞ . Taking u − v ≡ 1 realizes this bound directly, 
+
+νcctx (x0; u) − νcctx (x0; v) = ρcctx (x0) → N .
+
+Proposition A.4 (Discretization/quadrature error) . Under Assumption 2.2, for every u ∈ K and 
+
+x ∈ Ω,
+
+ˆucctx (x; u) − ¯uℓ(x) ≲ CK · δ(cctx )
+
+ℓ ,
+
+for N large enough that (N/ |Ω|)¯ κ ≫ ε, where CK depends on D, Ω, the Hessian bound M of Assumption 2.2, and sup u∈K ∥u∥∞, but not on N , ℓ, or the placement of cctx .
+
+Proof of Proposition A.4 (Discretization/quadrature error). Fix x ∈ Ω. Since |Vj | = |Ω|/N 
+
+for every j,
+
+ρcctx (x) − N
+
+|Ω|
+
+Z
+
+> Ω
+
+κℓ(x, y ) d y =
+
+> N
+
+X
+
+> j=1
+
+1
+
+|Vj |
+
+Z
+
+> Vj
+
+κℓ(x, c j ) − κℓ(x, y ) dy . 
+
+Taylor-expand κℓ(x, ·) around cj : for y ∈ Vj ,
+
+κℓ(x, c j ) − κℓ(x, y ) = −∇ y κℓ(x, c j ) · (y − cj ) − 12 (y − cj )⊤D2 
+
+> y
+
+κℓ(x, ξ )( y − cj )
+
+13 for some ξ on the segment [cj , y ]. A direct computation gives D2 
+
+> y
+
+κℓ(x, y ) =   (y−x)( y−x)⊤ 
+
+> ℓ4
+
+−
+
+> Iℓ2
+
+κℓ(x, y ), hence, by the triangle inequality on its two eigenvalue directions, the pointwise (not worst-case) operator-norm bound 
+
+∥D2 
+
+> y
+
+κℓ(x, y )∥op ≤ h(y) := 
+
+ |y − x|2
+
+ℓ4 + 1
+
+ℓ2
+
+
+
+κℓ(x, y ) ,
+
+which, like κℓ itself, decays away from x; bounding each cell by its own value of h(cj ), rather than a single worst-case constant, is what makes the argument below work in every dimension D.Integrating the Taylor expansion above over y ∈ Vj (diameter ≤ 2δ) and dividing by |Vj |, writing 
+
+¯zj := 1 
+
+> |Vj|
+
+R 
+
+> Vj
+
+(y − cj ) d y for the cell’s average offset from cj (so |¯zj | ≤ 2δ, since every point of Vj
+
+lies within 2δ of cj ), then summing over j,
+
+ρcctx (x) − N
+
+|Ω|
+
+Z
+
+> Ω
+
+κℓ(x, y ) dy = −
+
+> N
+
+X
+
+> j=1
+
+∇y κℓ(x, c j ) · ¯zj − E2 , |¯zj | ≤ 2δ , 
+
+|E2| ≤ 2δ2
+
+> N
+
+X
+
+> j=1
+
+h(cj )  1 + O(δ/ℓ ) ,
+
+the O(δ/ℓ ) correction coming from replacing h(ξ), ξ ∈ [cj , y ], by h(cj ) within each cell, valid since 
+
+h is itself smooth at the scale ℓ ≫ δ. Exactly as for the linear term below, h is smooth and decays like κℓ, so the same cell-quadrature estimate applies: P 
+
+> j
+
+|Vj | h(cj ) = R 
+
+> Ω
+
+h(y) d y  1 + O(δ/ℓ ).Writing y − x = ℓw (so dy = ℓD dw) gives R 
+
+> Ω
+
+h(y) d y = K′′  
+
+> D
+
+ℓD−2, for the finite, x- and cctx -independent constant K′′  
+
+> D
+
+:= R 
+
+> RD
+
+(|w|2 + 1) e−| w|2/2dw (periodization error again negligible under Assumption 2.2). Hence 
+
+|E2| ≲ 2δ2 · N
+
+|Ω| K′′  
+
+> d
+
+ℓD−2 .
+
+For the first (linear) term, 
+
+> N
+
+X
+
+> j=1
+
+∇y κℓ(x, c j ) · ¯zj ≤ 2δ
+
+> N
+
+X
+
+> j=1
+
+∇y κℓ(x, c j ) ,
+
+using the pointwise gradient at each cj rather than a coarser cell-wide supremum, for the same reason as the curvature term above: a supremum bound would overcount cells far from x. Since g(y) := 
+
+|∇ y κℓ(x, y )| = ℓ−2|y − x| κℓ(x, y ) is itself smooth and decays like κℓ, the same cell-averaging step applied to g gives P 
+
+> j
+
+|Vj | g(cj ) = R 
+
+> Ω
+
+g(y) d y  1 + O(δ/ℓ ), a standard scattered-data quadrature estimate for a smooth, rapidly-decaying integrand (Wendland, 2005). The integral evaluates exactly, by the same substitution as above, to R 
+
+> Ω
+
+g(y) dy = Kd ℓD−1 for the finite, x- and cctx -independent constant Kd := R 
+
+> RD
+
+|w|e−| w|2/2dw (periodization error negligible under Assumption 2.2). Hence 
+
+2δ
+
+> N
+
+X
+
+> j=1
+
+|∇ y κℓ(x, c j )| = 2 δ · N
+
+|Ω| KdℓD−1 1 + O(δ/ℓ ) ,
+
+which dominates the bound on E2 above for every dimension d: comparing the two displays, E2’s contribution is smaller by a factor Θ( δ/ℓ ), with no D-dependence left in that ratio, so it suffices that 
+
+ℓ⋆ = Θ( δ1/3) ≫ δ as δ → 0, true in any dimension. Combining, 
+
+ρcctx (x) − N 
+
+> |Ω|
+
+¯κ ≲ N 
+
+> |Ω|
+
+· 2δK dℓD−1 ,
+
+i.e. a relative error of order δ/ℓ (using ¯κ ∼ ℓD ). The same argument applies to νcctx (x; u) = P 
+
+> j
+
+u(cj )κℓ(x, c j ) against its continuum counterpart N 
+
+> |Ω|
+
+¯κ¯uℓ(x), Taylor-expanding the product 
+
+u(y)κℓ(x, y ) rather than κℓ(x, y ) alone. This introduces one additional term from ∇u, absent above; bounding |∇ u| via Assumption 2.2’s Hessian bound M (a standard interpolation inequality on the compact domain Ω) shows this term is O(δ · ℓD ) after the same cell-quadrature step, strictly smaller than the O(δ · ℓD−1) kernel term as ℓ → 0, so it does not change the rate. The same relative-error conclusion follows, with an extra factor of sup u∈K ∥u∥∞. Propagating both relative errors through the ratio m = ν/ (ρ + ε) (negligible ε for N large) gives the stated bound. 14 Proof of Theorem 2.3 (Explicit discretization error for the SetConv instantiation). Triangle inequality on ˆucctx (x; u) − u(x) = ˆucctx (x; u) − ¯uℓ(x) + ¯uℓ(x) − u(x), combining equation 6 and Proposition A.4, then taking sup x,u gives the first bound. Minimizing g(ℓ) = C1ℓ2 + CKδ/ℓ 
+
+over ℓ > 0 gives ℓ⋆ = ( CKδ/ 2C1)1/3 and g(ℓ⋆) = Θ( δ2/3) by direct substitution. 
+
+Proof of the smoothing-bias bound equation 6. Fix x ∈ Ω and u ∈ K . For a symmetric, second-order kernel, a Taylor expansion of u around x has its first-order term cancel by the kernel’s z ↔ − z
+
+symmetry, leaving only curvature, at rate ℓ2 (Wasserman, 2006, Ch. 5; Fan & Gijbels, 1996). The usual design-bias term of that classical result vanishes here because ¯κ is constant in x by translation invariance (Lemma A.1). Bounding the remaining curvature term by the Hessian bound M from Assumption 2.2 and summing the kernel’s second moment over the D spatial dimensions gives, for every u ∈ K and x ∈ Ω, the stated bound sup u∈K sup x∈Ω ∥¯uℓ(x) − u(x)∥ ≤ 12 DM ℓ 2.A.2 EXTENDED RELATED WORK 
+
+Neural operators. Learning the solution operator of a family of PDEs directly, rather than solving each instance numerically, has been formalized as operator learning (Kovachki et al., 2023; Boull´ e & Townsend, 2024). DeepONet (Lu et al., 2019) represents the map via a branch/trunk decomposition; the Fourier Neural Operator (FNO; Li et al., 2020) instead parameterizes it by global convolutions computed via the FFT, which requires the input to lie on (or be resampled onto) a regular grid at both train and test time – precisely the assumption our construction is designed to avoid. 
+
+Implicit neural representations. A separate line of work represents individual functions or fields directly as coordinate networks, e.g. SIREN (Sitzmann et al., 2020) and Fourier-feature MLPs (Tan-cik et al., 2020); see Essakine et al. (2024) for a survey. These representations are discretization-agnostic for a single field, but do not by themselves give an encode →evolve →decode surrogate for a family of time-evolving states, which is the setting of this paper. 
+
+Conditional neural processes and SetConv. Conditional Neural Processes (Garnelo et al., 2018) and their convolutional variant, ConvCNP (Gordon et al., 2020), map an arbitrary, variable-size set of observations to a functional representation via a kernel-weighted embedding – the SetConv primitive underlying our encoder and decoder (Section 2). Our contribution is an explicit discretization-error rate for this construction, not the construction itself. 
+
+Latent-space operator learning. Several recent methods encode a possibly irregular input into a fixed-size latent state, evolve it, and decode back out, demonstrating multi-resolution behavior empirically without formally bounding the resulting error. The Latent Neural Operator (Wang & Wang, 2024) uses a cross-attention encoder/decoder (Physics-Cross-Attention) that decouples input and output sampling locations, closely paralleling the SetConv construction we analyze here; the Latent Neural PDE Solver (Li et al., 2025) trains an autoencoder onto a coarser latent grid before evolving there; and the Physics-Informed Latent Neural Operator (Karumuri et al., 2026) couples two DeepONets under a PDE-residual training objective rather than paired supervision. Prior work, Latent Twins (Chung et al., 2026) and Physics-conforming Latent Twins (Chung et al., 2027), intro-duces the general encode →evolve →decode pattern that the Latent Twin Operator of Definition 2.1 instantiates and proves the approximation bound equation 5 motivating this paper, but leaves its discretization-error term ϵdisc (N ) abstract for any concrete architecture, tackled in this paper. 
+
+Broader attention-based operator architectures. A larger family of Transformer-style operator-learning architectures targets the same problem – attention over an irregular, potentially large input set – by two genuinely different means. Transolver (Wu et al., 2024) and the Latent Spectral Model (Wu et al., 2023) share LNO’s idea of compressing the input into a smaller, fixed-size latent rep-resentation before mixing it: Transolver learns physics-aware “slices” that adaptively pool mesh points into a handful of tokens before attention; the Latent Spectral Model evolves a PDE’s solution in a learned, lower-dimensional spectral latent space. GNOT (Hao et al., 2023), FactFormer (Li et al., 2023), ONO (Xiao et al., 2023), and the Galerkin Transformer (Cao, 2021) instead keep a full or comparably-sized token set – one token per input point, not a compressed handful – and make attention over it affordable by other means: GNOT scales cross-attention to large point clouds via 15 heterogeneous, gated normalization; FactFormer factorizes attention along each spatial axis sepa-rately; ONO replaces softmax attention with an orthogonal, kernel-based variant; and the Galerkin Transformer replaces softmax normalization with a Petrov-Galerkin-style linear projection, explic-itly preserving sequence length rather than reducing it. Closest to our own decoupling of observation and query locations is OFormer (Li et al., 2022), which – like PhCA – uses cross-attention to map an input point set to a query set at arbitrary locations, though, like GNOT, FactFormer, and the Galerkin Transformer, without compressing to a smaller intermediate representation. None of these seven ar-chitectures reports an explicit discretization-error rate in the number of input points; we compare empirically against LNO specifically because it is architecturally closest to the SetConv construc-tion we analyze, not because it is uniquely capable of cross-resolution generalization – ONO (Xiao et al., 2023) reports the same zero-shot Darcy resolution transfer (train at one resolution, evaluate at another, unseen) that LNO does. 
+
+Discretization-invariance critiques. Gao et al. (2025) show empirically that FNO-style opera-tors trained at one resolution need not perform consistently when evaluated at another, terming the resulting gap discretization mismatch error , and propose an aliasing-free training pipeline as a fix. Lanthaler et al. (2024) instead derive an explicit O(N −s) discretization-error rate for FNO on a regular grid, in terms of the input’s Sobolev regularity s. Theorem 2.3 is the analogous explicit rate for the SetConv/ConvCNP-style construction underlying LNO-type architectures, established for arbitrary, not necessarily gridded, context sets. 
+
+How LNO differs from our construction. Physics-Cross-Attention (PhCA) and our SetConv encoder solve the same problem – map an arbitrary, variable-size input set to a fixed-size represen-tation, decoupled from the output query locations – but differ in three ways relevant to this paper’s claims. Mechanism : PhCA learns query/key/value projections and a softmax attention pattern over 
+
+M latent positions; our embedding step (the density and signal channels of equation 3–equation 2) has no learned parameters at all – only the CNN gϕ applied afterward is learned – so the encoder itself is comparatively lightweight. Latent structure : PhCA’s M latent positions form an unstruc-tured token set, whereas our latent state Z ∈ RH×W ×k is a genuine spatial grid, which is what lets the evolution operator ms→t be a plain, translation-equivariant CNN rather than a further attention or token-mixing block. Theory : kernel smoothing has a century of classical nonparametric-statistics theory behind it (Nadaraya–Watson bias, scattered-data quadrature), which is what Theorem 2.3 draws on; no comparable explicit discretization-error rate exists for attention-based encoders. The closest theoretical results, Calvello et al. (2025) for attention-based operators and Zhang et al. (2025) for a DeepONet-style branch-trunk construction, establish universal approximation but not an ex-plicit rate in the number of input points, leaving this an open question for PhCA-style architectures specifically. Time evolution : for time-dependent PDEs, Wang & Wang (2024) decode back to geo-metric space at every intermediate time step in order to compute the training loss there; our latent flow ms→t (Section 2) never leaves the latent space between the initial encode and the final decode, chaining as many steps as the rollout curriculum requires without a round trip through geomet-ric coordinates. Section 4.3 reports a direct empirical comparison against LNO on a shared 2D Navier–Stokes benchmark, where this architectural difference and the discretization-error guarantee of Theorem 2.3 can be checked against a trained baseline rather than argued from architecture alone. A.3 DARCY FLOW : A TTENTION MECAHSNISM AND NATIVE LNO P ARAMETER BUDGET 
+
+Section 4.4 additionally evaluates a learned-attention variant of the SetConv encoder. Recall from Section 2 that the fixed Gaussian kernel weights each context point cj by κℓ(x, c j ) =exp  −dΩ(x, c j )2/(2 ℓ2), a function of distance alone. The attention variant instead replaces this fixed kernel with a learned score, 
+
+α(x, c j ) = softmax j
+
+ q(x)⊤k(cj )
+
+√dk
+
+
+
+,
+
+where q, k : Ω → Rdk are learned embeddings of the query and context positions into a shared 
+
+dk-dimensional space, and the √dk scaling follows standard scaled dot-product attention (Vaswani et al., 2017). Unlike κℓ, α is free to place weight on a distant cj whenever doing so reduces training loss. 16 Table 5: Darcy flow: relative L2 error across evaluation resolutions. LTO variants differ in encoder (Gaussian kernel vs. learned attention). Method Params 85 106 141 211 421 Mean Ratio LTO (ours) 29,139 0.099 0.096 0.093 0.095 0.218 12.99 ×
+
+LTO with attn (ours) 240,594 0.035 0.035 0.035 0.035 0.035 3.69 ×
+
+LNO (Wang & Wang, 2024) 762,113 0.012 0.010 0.009 0.008 0.009 1.00 × (ref.) Finally, Table 4 of Section 4.4 matches LNO’s parameter count to each LTO variant for a controlled comparison. For reference, Table 5 reports an additional comparison using LNO’s originally re-ported 762 ,113 -parameter configuration. The resulting ratios ( 12 .99 × for the plain kernel, 3.69 ×
+
+for the attention encoder) are close to the parameter-matched ones, so the gap in Section 4.4 is not primarily an artifact of LNO’s larger parameter budget. 17

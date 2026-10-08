@@ -338,6 +338,100 @@ subscriptions:
             updated_at: '2026-08-18T02:19:55.668799+00:00'
       updated_at: '2026-08-18T02:15:41.185Z'
       paused: true
+    - tag: micro-nuc-ai
+      description: 微型核反应堆的智能建模、监测、控制与安全分析
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: transportable nuclear reactor machine learning
+          keyword_cn: ''
+          query: transportable nuclear reactor machine learning
+        - keyword: nuclear microreactor surrogate model
+          keyword_cn: ''
+          query: nuclear microreactor surrogate model
+        - keyword: nuclear microreactor fault diagnosis
+          keyword_cn: ''
+          query: nuclear microreactor fault diagnosis
+        - keyword: nuclear microreactor autonomous control
+          keyword_cn: ''
+          query: nuclear microreactor autonomous control
+        - keyword: nuclear microreactor digital twin
+          keyword_cn: ''
+          query: nuclear microreactor digital twin
+        - keyword: nuclear microreactor machine learning
+          keyword_cn: ''
+          query: nuclear microreactor machine learning
+      intent_queries:
+        - query: >-
+            Artificial intelligence for fault diagnosis, predictive maintenance, or safety analysis of transportable
+            nuclear reactors.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Intelligent control methods for safe operation or load following of nuclear microreactors.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Digital twins and surrogate models for monitoring and state estimation in nuclear microreactors.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Machine learning methods for modeling the neutronics or thermal behavior of nuclear microreactors.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-10-08T02:18:13.982Z'
+    - tag: nuc-phys-ai
+      description: 人工智能在核反应、核结构、核数据及辐射探测中的应用
+      enabled: true
+      paper_sources:
+        - arxiv
+      keywords:
+        - keyword: radiation detector machine learning
+          keyword_cn: ''
+          query: radiation detector machine learning
+        - keyword: gamma ray spectroscopy deep learning
+          keyword_cn: ''
+          query: gamma ray spectroscopy deep learning
+        - keyword: neutron transport machine learning
+          keyword_cn: ''
+          query: neutron transport machine learning
+        - keyword: nuclear data evaluation neural network
+          keyword_cn: ''
+          query: nuclear data evaluation neural network
+        - keyword: nuclear structure deep learning
+          keyword_cn: ''
+          query: nuclear structure deep learning
+        - keyword: nuclear reaction cross section machine learning
+          keyword_cn: ''
+          query: nuclear reaction cross section machine learning
+      intent_queries:
+        - query: Deep learning analysis of gamma ray or neutron detector signals for isotope identification.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Data driven evaluation of nuclear data or acceleration of neutron transport calculations.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Deep learning methods for predicting nuclear structure properties and observables.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+        - query: Machine learning models for predicting nuclear reaction cross sections and their uncertainties.
+          query_cn: ''
+          enabled: true
+          source: manual
+          note: ''
+      updated_at: '2026-10-08T02:20:16.411Z'
 source_backends:
   arxiv:
     papers_table: arxiv_papers

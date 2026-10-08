@@ -1,0 +1,1001 @@
+{
+  "top_k": 200,
+  "generated_at": "2026-10-08T02:26:51.716109+00:00",
+  "papers": [
+    {
+      "id": "openreview-iclr-2026-nolmxtqgcp",
+      "source": "ICLR-2026-Rejected-Public",
+      "title": "Decoupled-Value Attention for Prior-Data Fitted Networks: GP-Inference for Physical Equations",
+      "abstract": "Prior-data fitted networks (PFNs) are a promising alternative to time-consuming Gaussian process (GP) inference for creating fast surrogates of physical systems. PFN reduces the computational burden of GP-training by replacing Bayesian inference in GP with a single forward pass of a learned prediction model. However, with standard Transformer attention, PFNs show limited effectiveness on high-dimensional regression tasks. We introduce Decoupled-Value Attention (DVA)-- motivated by the GP property that the function space is fully characterized by the kernel over inputs and the predictive mean is a weighted sum of training targets. DVA computes similarities from inputs only and propagates labels solely through values. Thus, the proposed DVA mirrors the GP update while remaining kernel-free. We demonstrate that PFNs are backbone architecture invariant and the crucial factor for scaling PFNs is the attention rule rather than the architecture itself. Specifically, our results demonstrate that (a) localized attention consistently reduces out-of-sample validation loss in PFNs across different dimensional settings, with validation loss reduced by more than 50\\% in five- and ten-dimensional cases, and (b) the role of attention is more decisive than the choice of backbone architecture, showing that CNN, RNN and LSTM-based PFNs can perform at par with their Transformer-based counterparts. The proposed PFNs provide 64-dimensional power flow equation approximations with a mean absolute error of the order of $10^{-3}$, while being over $80\\times$ faster than exact GP inference.",
+      "authors": [
+        "Kaustubh Sharma",
+        "Simardeep Singh",
+        "Parikshit Pareek"
+      ],
+      "primary_category": "Gaussian Process",
+      "categories": [
+        "Gaussian Process",
+        "Meta-Learning",
+        "Prior-data Fitted Networks",
+        "Learning of Physics"
+      ],
+      "published": "2025-09-19T03:28:34.378+00:00",
+      "link": "https://openreview.net/forum?id=noLMXTqgCp",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ]
+    },
+    {
+      "id": "openreview-iclr-2026-4jmeuvco26",
+      "source": "ICLR-2026-Rejected-Public",
+      "title": "Surrogate Modeling of 3D Rayleigh-Bénard Convection with Equivariant Autoencoders",
+      "abstract": "The use of machine learning for modeling, understanding, and controlling large-scale physics systems is quickly gaining in popularity, with examples ranging from electromagnetism over nuclear fusion reactors and magneto-hydrodynamics to fluid mechanics and climate modeling. These systems — governed by partial differential equations — present unique challenges regarding the large number of degrees of freedom and the complex dynamics over many scales both in space and time, and additional measures to improve accuracy and sample efficiency are highly desirable. We present an end-to-end equivariant surrogate model consisting of an equivariant convolutional autoencoder and an equivariant convolutional LSTM using $G$-steerable kernels. As a case study, we consider the three-dimensional Rayleigh-Bénard convection, which describes the buoyancy-driven fluid flow between a heated bottom and a cooled top plate. While the system is E(2)-equivariant in the horizontal plane, the boundary conditions break the translational equivariance in the vertical direction. Our architecture leverages vertically stacked layers of $D_4$-steerable kernels, with additional partial kernel sharing in the vertical direction for further efficiency improvement. We demonstrate significant gains in sample and parameter efficiency, as well as a better scaling to more complex dynamics.",
+      "authors": [
+        "Fynn Fromme",
+        "Hans Harder",
+        "Christine Allen-Blanchette",
+        "Sebastian Peitz"
+      ],
+      "primary_category": "surrogate modeling",
+      "categories": [
+        "surrogate modeling",
+        "fluid mechanics",
+        "geometric deep learning",
+        "autoencoder",
+        "time series prediction",
+        "dimensionality reduction",
+        "steerable convolutions"
+      ],
+      "published": "2025-09-19T14:37:11.849+00:00",
+      "link": "https://openreview.net/forum?id=4jMeUvcO26",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:micro-nuc-ai"
+      ]
+    },
+    {
+      "id": "openreview-iclr-2026-qxzz9s3knn",
+      "source": "ICLR-2026-Rejected-Public",
+      "title": "Agentic Surrogates: Automating Proxy Models of Simulators with Compute Aware Intelligence",
+      "abstract": "Proxy (surrogate) models are indispensable for accelerating scientific computation, yet creating them remains a manual, sample-inefficient, and non-reproducible process—especially when simulators are costly and constrained by physics. We present a domain-agnostic agentic framework that automates end-to-end surrogate construction for high-fidelity simulators. At its core, a reasoning engine orchestrates the entire loop, encompassing space-filling candidate generation, batched simulator invocation, warm-start retraining, uncertainty/calibration, and dynamic acquisition switching to achieve user-specified accuracy with minimal wall-clock time and simulator calls. Crucially, this reasoning engine also intelligently constructs and orchestrates an adaptive ensemble of models, where individual components or techniques are dynamically selected based on the specific characteristics of different input and output combinations. For instance, if the agent discerns simpler dependencies, such as linear relationships or reliance on fewer inputs within a particular output ensemble, it can deploy models with reduced complexity or optimized for computational efficiency. Conversely, for complex, highly non-linear, or high-dimensional problems, it will automatically integrate and leverage more sophisticated architectures within this ensemble. This approach ensures that the overall surrogate is a finely tuned composition of expert models, each optimally suited to distinct aspects of the simulator's behavior. The controller manages acquisition rules as a portfolio of experts (residual-error, MC-Dropout variance, EI/EGO, hybrid, randomized) and optimizes a compute-aware objective (error reduction per minute), with extensible support for multi-fidelity scheduling. The framework remains neutral to underlying architecture (e.g., ANNs, PINNs, operator networks such as FNO/DeepONet) and integrates physics-aware stopping alongside MC-Dropout and conformal prediction for calibrated uncertainty.\nWe evaluate this approach on energy-related scientific modeling problems, including industrial-style flow/process simulators and a PDE proxy. Our findings reveal consistent and substantial performance improvements compared to fixed strategies, demonstrating notable advancements in both sample efficiency and time-to-target accuracy. Prior pilots in oil & gas demonstrated substantially reduced predictive errors compared to the best single acquisition policy while converging faster; here we generalize the method beyond any single domain, preserving these gains under diverse physics and cost profiles. A key novelty lies in the central contribution of introducing compute-aware regret guarantees, which are emphasized up front.",
+      "authors": [
+        "Pradeep Kumar Shetty",
+        "Antonio Massoni Abinader",
+        "Tammy Lam"
+      ],
+      "primary_category": "Agentic Surrogates",
+      "categories": [
+        "Agentic Surrogates",
+        "Science Simulators",
+        "Adaptive Ensemble Model",
+        "Proxy Models",
+        "Sample Efficient Surrogates"
+      ],
+      "published": "2025-09-19T21:08:26.723+00:00",
+      "link": "https://openreview.net/forum?id=qxZZ9s3kNN",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ]
+    },
+    {
+      "id": "openreview-iclr-2026-qai3clfsix",
+      "source": "ICLR-2026-Accepted",
+      "title": "FM4NPP: A Scaling Foundation Model for Nuclear and Particle Physics",
+      "abstract": "Large language models have revolutionized artificial intelligence by enabling large, generalizable models trained through self-supervision. This paradigm has inspired the development of scientific foundation models (FMs). However, applying this capability to experimental particle physics is challenging due to the sparse, spatially distributed nature of detector data, which differs dramatically from natural language. This work addresses if an FM for particle physics can scale and generalize across diverse tasks. We introduce a new dataset with more than 11 million particle collision events and a suite of downstream tasks and labeled data for evaluation. We propose a novel self-supervised training method for detector data and demonstrate its neural scalability with models that feature up to 188 million parameters. With frozen weights and task-specific adapters, this FM consistently outperforms baseline models across all downstream tasks. The performance also exhibits robust data-efficient adaptation. Further analysis reveals that the representations extracted by the FM are task-agnostic but can be specialized via a single linear mapping for different downstream tasks.",
+      "authors": [
+        "David Keetae Park",
+        "Shuhang Li",
+        "Yi Huang",
+        "Xihaier Luo",
+        "Haiwang Yu",
+        "Yeonju Go",
+        "Christopher Pinkenburg",
+        "Yuewei Lin",
+        "Shinjae Yoo",
+        "Joseph D. Osborn",
+        "Jin Huang",
+        "Yihui Ren"
+      ],
+      "primary_category": "Foundation Model",
+      "categories": [
+        "Foundation Model",
+        "State Space Model",
+        "Neural Scaling",
+        "Particle Tracking",
+        "Nuclear Physics",
+        "Particle Physics"
+      ],
+      "published": "2026-01-26T13:58:32.339+00:00",
+      "link": "https://openreview.net/forum?id=qaI3cLFsiX",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "keyword:nuc-phys-ai",
+        "query:nuc-phys-ai"
+      ]
+    },
+    {
+      "id": "openreview-iclr-2026-ojhj8wocnb",
+      "source": "ICLR-2026-Rejected-Public",
+      "title": "PDMBench: A Standardized Platform for Predictive Maintenance Research",
+      "abstract": "Predictive maintenance (PdM) is critical for industrial reliability and cost-efficiency, yet fragmented datasets, inconsistent evaluation protocols, and incompatible preprocessing pipelines hinder progress. We introduce PDMBench, a standardized and extensible platform for exploring and evaluating machine learning models on multimodal time-series data across diverse industrial settings. PDMBench integrates 14 curated datasets spanning bearings, motors, gearboxes, and multi-component systems, capturing real-world complexities such as irregular sampling, heterogeneous sensor modalities, and varying fault modes. To enable fair and reproducible comparison, we design a unified and configurable preprocessing pipeline that normalizes signal quality, extracts consistent features, and standardizes input representations, bridging the gap between models requiring handcrafted features and those operating on raw sequences. The benchmark covers two core tasks, fault classification and remaining useful life prediction, and includes 22 models ranging from traditional classifiers to cutting-edge transformers. Models are evaluated across three dimensions: prediction, uncertainty, and efficiency. The PDMBench web interface supports interactive dataset exploration, model comparison, and diagnostic analysis. Experimental results reveal no universal best model, with performance varying by dataset, task, and component type, underscoring the importance of standardized benchmarking. PDMBench enables rigorous, scalable, and interpretable research for real-world predictive maintenance by aligning data, models, and metrics in a reproducible platform.",
+      "authors": [
+        "Shuaicheng Zhang",
+        "Tuo Wang",
+        "Adithya Kulkarni",
+        "Stephen Adams",
+        "Sanmitra Bhattacharya",
+        "Sunil Reddy Tiyyagura",
+        "Edward Bowen",
+        "Balaji Veeramani",
+        "Dawei Zhou"
+      ],
+      "primary_category": "Predictive maintenance",
+      "categories": [
+        "Predictive maintenance",
+        "benchmark",
+        "evaluation"
+      ],
+      "published": "2025-09-18T17:13:21.553+00:00",
+      "link": "https://openreview.net/forum?id=oJhj8wOCNB",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ]
+    },
+    {
+      "id": "openreview-iclr-2026-nz7fux1cha",
+      "source": "ICLR-2026-Rejected-Public",
+      "title": "Learning-Based Autonomy from Kernel-Embedded Multi-modal Fusion to Feedback Control",
+      "abstract": "In this work, we develop an end-to-end autonomy loop that couples \\emph{kernel-embedded} multi-modal fusion with data-driven dynamics learning and feedback control. Heterogeneous sensor streams are embedded into a joint Reproducing Kernel Hilbert Space (RKHS) via additive/product kernels and conditional mean embeddings; dynamics are learned with kernel ridge regression (KRR), Deep Kernel Learning (DKL), or Bayesian deep neural networks (BDNNs); and policies are synthesized via dynamic programming (discrete and continuous-time HJB) or reinforcement learning with RKHS value functions. We present closed-form estimators, finite-sample and iteration-complexity characterizations, risk-sensitive planning with uncertainty, and safety via control barrier functions. We provide deployable algorithms, results and experiment in simulated robotics and precision irrigation.",
+      "authors": [
+        "Lakshman Mahto"
+      ],
+      "primary_category": "Learning based autonomy",
+      "categories": [
+        "Learning based autonomy",
+        "Kernel Embedded LinearModels",
+        "Deep Kernel Learning Bayesian Neural Networks"
+      ],
+      "published": "2025-09-19T01:42:07.803+00:00",
+      "link": "https://openreview.net/forum?id=nZ7fUX1cHa",
+      "pdf_url": null,
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ]
+    },
+    {
+      "id": "openreview-icml-2026-gxrcjut5a0",
+      "source": "ICML-2026-Accepted",
+      "title": "Ultrafast On-Chip Online Learning via Spline Locality in Kolmogorov–Arnold Networks",
+      "abstract": "Ultrafast online learning is essential for high-frequency systems, such as controls for quantum computing and nuclear fusion, where adaptation must occur on sub-microsecond timescales.\nMeeting these requirements demands low-latency, fixed-precision computation under strict memory constraints, a regime in which conventional Multi-Layer Perceptrons (MLPs) are both inefficient and numerically unstable.\nWe identify key properties of Kolmogorov-Arnold Networks (KANs) that align with these constraints.\nSpecifically, we show that: (i) KAN updates exploiting B-spline locality are sparse, enabling superior on-chip resource scaling, and (ii) KANs are inherently robust to fixed-point quantization.\nBy implementing fixed-point online training on Field-Programmable Gate Arrays (FPGAs), a representative platform for on-chip computation, we demonstrate that KAN-based online learners are significantly more efficient and expressive than MLPs across a range of low-latency and resource-constrained tasks.\nTo our knowledge, this work is the first to demonstrate model-free online learning at sub-microsecond latencies.",
+      "authors": [
+        "Duc Hoang",
+        "Aarush Gupta",
+        "Philip Harris"
+      ],
+      "primary_category": "Ultrafast Online Learning",
+      "categories": [
+        "Ultrafast Online Learning",
+        "Hardware-Aware Machine Learning",
+        "Low-Precision Training",
+        "Sparse Local Updates",
+        "Kolmogorov–Arnold Networks"
+      ],
+      "published": "2026-04-30T19:15:33.867+00:00",
+      "link": "https://openreview.net/forum?id=GxrcJUT5A0",
+      "pdf_url": "https://openreview.net/pdf/023bad367ce098e69fbe90c372c83e21579b4a32.pdf",
+      "tags": [
+        "keyword:micro-nuc-ai",
+        "query:micro-nuc-ai"
+      ]
+    }
+  ],
+  "queries": [
+    {
+      "type": "intent_query",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "query:micro-nuc-ai",
+      "query_text": "Artificial intelligence for fault diagnosis, predictive maintenance, or safety analysis of transportable nuclear reactors.",
+      "sim_scores": {
+        "openreview-iclr-2026-ojhj8wocnb": {
+          "score": 0.01639344262295082,
+          "rank": 1
+        },
+        "openreview-iclr-2026-nz7fux1cha": {
+          "score": 0.014285714285714285,
+          "rank": 10
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.608262108262108,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.608262108262108,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nz7fux1cha",
+          "score": 0.5213675213675214,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.3433395872420263,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.25462134764460337,
+          "star_rating": 3
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "query:micro-nuc-ai",
+      "query_text": "Digital twins and surrogate models for monitoring and state estimation in nuclear microreactors.",
+      "sim_scores": {
+        "openreview-iclr-2026-qxzz9s3knn": {
+          "score": 0.013157894736842105,
+          "rank": 16
+        },
+        "openreview-icml-2026-gxrcjut5a0": {
+          "score": 0.011627906976744186,
+          "rank": 26
+        },
+        "openreview-iclr-2026-4jmeuvco26": {
+          "score": 0.010638297872340425,
+          "rank": 34
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.8798076923076922,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.702712746191007,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nz7fux1cha",
+          "score": 0.3668882557771445,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.29792429792429775,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.2760180995475112,
+          "star_rating": 3
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "query:micro-nuc-ai",
+      "query_text": "Intelligent control methods for safe operation or load following of nuclear microreactors.",
+      "sim_scores": {
+        "openreview-iclr-2026-nz7fux1cha": {
+          "score": 0.015384615384615385,
+          "rank": 5
+        },
+        "openreview-iclr-2026-qxzz9s3knn": {
+          "score": 0.012048192771084338,
+          "rank": 23
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.9586435070306036,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nz7fux1cha",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.7703788748564866,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.5495495495495496,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.5213675213675214,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.23371647509578536,
+          "star_rating": 3
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "query:micro-nuc-ai",
+      "query_text": "Machine learning methods for modeling the neutronics or thermal behavior of nuclear microreactors.",
+      "sim_scores": {
+        "openreview-iclr-2026-4jmeuvco26": {
+          "score": 0.014084507042253521,
+          "rank": 11
+        },
+        "openreview-icml-2026-gxrcjut5a0": {
+          "score": 0.009433962264150943,
+          "rank": 46
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.3668882557771445,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.21328671328671328,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.1737891737891738,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.015799015799015898,
+          "star_rating": 2
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nz7fux1cha",
+          "score": 0.0,
+          "star_rating": 1
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "query:nuc-phys-ai",
+      "query_text": "Data driven evaluation of nuclear data or acceleration of neutron transport calculations.",
+      "sim_scores": {
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.015625,
+          "rank": 4
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.9185999185999183,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.7703788748564866,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.73604826546003,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.608262108262108,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.4411571334648256,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.2760180995475112,
+          "star_rating": 3
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "query:nuc-phys-ai",
+      "query_text": "Deep learning analysis of gamma ray or neutron detector signals for isotope identification.",
+      "sim_scores": {
+        "openreview-iclr-2026-nolmxtqgcp": {
+          "score": 0.012987012987012988,
+          "rank": 17
+        },
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.010752688172043012,
+          "rank": 33
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 1.0,
+          "star_rating": 5
+        },
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.5213675213675214,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.3433395872420263,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.23371647509578536,
+          "star_rating": 3
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.09983633387888699,
+          "star_rating": 2
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "query:nuc-phys-ai",
+      "query_text": "Deep learning methods for predicting nuclear structure properties and observables.",
+      "sim_scores": {},
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.6388587937883712,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.5495495495495496,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.49392712550607265,
+          "star_rating": 3
+        }
+      ]
+    },
+    {
+      "type": "intent_query",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "query:nuc-phys-ai",
+      "query_text": "Machine learning models for predicting nuclear reaction cross sections and their uncertainties.",
+      "sim_scores": {
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.01282051282051282,
+          "rank": 18
+        }
+      },
+      "ranked": [
+        {
+          "paper_id": "openreview-iclr-2026-qai3clfsix",
+          "score": 0.8798076923076922,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-4jmeuvco26",
+          "score": 0.8422090729783037,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+          "score": 0.6703296703296702,
+          "star_rating": 4
+        },
+        {
+          "paper_id": "openreview-icml-2026-gxrcjut5a0",
+          "score": 0.0483743061062648,
+          "star_rating": 2
+        },
+        {
+          "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+          "score": 0.015799015799015898,
+          "star_rating": 2
+        },
+        {
+          "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+          "score": 0.015799015799015898,
+          "star_rating": 2
+        }
+      ]
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "nuclear microreactor autonomous control",
+      "sim_scores": {
+        "openreview-iclr-2026-nz7fux1cha": {
+          "score": 0.016129032258064516,
+          "rank": 2
+        },
+        "openreview-iclr-2026-qxzz9s3knn": {
+          "score": 0.012195121951219513,
+          "rank": 22
+        },
+        "openreview-icml-2026-gxrcjut5a0": {
+          "score": 0.011111111111111112,
+          "rank": 30
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "nuclear microreactor digital twin",
+      "sim_scores": {
+        "openreview-icml-2026-gxrcjut5a0": {
+          "score": 0.009174311926605505,
+          "rank": 49
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "nuclear microreactor fault diagnosis",
+      "sim_scores": {
+        "openreview-iclr-2026-ojhj8wocnb": {
+          "score": 0.01282051282051282,
+          "rank": 18
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "nuclear microreactor machine learning",
+      "sim_scores": {
+        "openreview-icml-2026-gxrcjut5a0": {
+          "score": 0.015625,
+          "rank": 4
+        },
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.010752688172043012,
+          "rank": 33
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "nuclear microreactor surrogate model",
+      "sim_scores": {
+        "openreview-iclr-2026-qxzz9s3knn": {
+          "score": 0.014285714285714285,
+          "rank": 10
+        },
+        "openreview-iclr-2026-4jmeuvco26": {
+          "score": 0.012345679012345678,
+          "rank": 21
+        },
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.010309278350515464,
+          "rank": 37
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "micro-nuc-ai",
+      "paper_tag": "keyword:micro-nuc-ai",
+      "query_text": "transportable nuclear reactor machine learning",
+      "sim_scores": {
+        "openreview-iclr-2026-nolmxtqgcp": {
+          "score": 0.012987012987012988,
+          "rank": 17
+        },
+        "openreview-iclr-2026-4jmeuvco26": {
+          "score": 0.011764705882352941,
+          "rank": 25
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "gamma ray spectroscopy deep learning",
+      "sim_scores": {
+        "openreview-iclr-2026-nolmxtqgcp": {
+          "score": 0.015151515151515152,
+          "rank": 6
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "neutron transport machine learning",
+      "sim_scores": {
+        "openreview-iclr-2026-4jmeuvco26": {
+          "score": 0.012658227848101266,
+          "rank": 19
+        },
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.010101010101010102,
+          "rank": 39
+        },
+        "openreview-iclr-2026-nolmxtqgcp": {
+          "score": 0.009708737864077669,
+          "rank": 43
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "nuclear data evaluation neural network",
+      "sim_scores": {
+        "openreview-iclr-2026-nolmxtqgcp": {
+          "score": 0.016129032258064516,
+          "rank": 3
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "nuclear reaction cross section machine learning",
+      "sim_scores": {
+        "openreview-iclr-2026-qai3clfsix": {
+          "score": 0.011764705882352941,
+          "rank": 25
+        }
+      }
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "nuclear structure deep learning",
+      "sim_scores": {}
+    },
+    {
+      "type": "keyword",
+      "tag": "nuc-phys-ai",
+      "paper_tag": "keyword:nuc-phys-ai",
+      "query_text": "radiation detector machine learning",
+      "sim_scores": {}
+    }
+  ],
+  "global_candidate_ids": [
+    "openreview-iclr-2026-ojhj8wocnb",
+    "openreview-icml-2026-tkilthqncx",
+    "openreview-icml-2026-axochwlohm",
+    "openreview-iclr-2026-jzxhjepzzn",
+    "openreview-iclr-2026-c6vapnmh4z",
+    "openreview-icml-2026-klfm50q9ko",
+    "openreview-icml-2026-bn1nc3oh61",
+    "openreview-icml-2026-qc9s8guoyc",
+    "openreview-icml-2026-xaqsrbgppn",
+    "openreview-iclr-2026-hry0ytsnm0",
+    "openreview-icml-2026-ec4qut3ukg",
+    "openreview-iclr-2026-vfcajkbbwn",
+    "openreview-icml-2026-ltrbrkdurt",
+    "openreview-icml-2026-lkyd1ulxpy",
+    "openreview-iclr-2026-ytvi5hrapm",
+    "openreview-icml-2026-tdxx4ekhz1",
+    "openreview-icml-2026-xcq5ud9hdx",
+    "openreview-iclr-2026-nz7fux1cha",
+    "ieee-sp-2026-fractal-an-operating-system-designed-for-microarchitecture-reverse-engineering",
+    "openreview-iclr-2026-ql30vwgyda",
+    "ieee-sp-2026-enter-exit-page-fault-leak-testing-isolation-boundaries-for-microarchitectural-leaks",
+    "openreview-icml-2026-eosv5tlpqg",
+    "openreview-icml-2026-6qbb6iccvy",
+    "openreview-icml-2026-esb46shm3u",
+    "openreview-iclr-2026-5gtd4loozx",
+    "openreview-iclr-2026-vsljomwras",
+    "openreview-iclr-2026-yautclcgwa",
+    "openreview-icml-2026-xclfdlw3oe",
+    "openreview-iclr-2026-s77kqxyeej",
+    "openreview-iclr-2026-mqmrcx5jnk",
+    "openreview-icml-2026-yiubi9l3it",
+    "openreview-iclr-2026-0elvad3geu",
+    "openreview-iclr-2026-ebil1po0vf",
+    "openreview-iclr-2026-jq57xpa0zo",
+    "openreview-icml-2026-o2znfxqcij",
+    "openreview-iclr-2026-1dnbk58bb9",
+    "openreview-iclr-2026-uvmmnagkvk",
+    "openreview-iclr-2026-da8pjxp0js",
+    "openreview-iclr-2026-832lqtgfrm",
+    "openreview-iclr-2026-qai3clfsix",
+    "openreview-icml-2026-k8tajlxmid",
+    "openreview-iclr-2026-nolmxtqgcp",
+    "openreview-icml-2026-bdoxdopbmo",
+    "openreview-iclr-2026-p1qlqfrtgo",
+    "openreview-icml-2026-hdgbqmbass",
+    "openreview-iclr-2026-4jmeuvco26",
+    "openreview-iclr-2026-lxvl10m2z6",
+    "openreview-icml-2026-noil9l4y7s",
+    "openreview-icml-2026-ckoqwcyvvd",
+    "openreview-iclr-2026-66xvcc6n0b",
+    "openreview-icml-2026-gxrcjut5a0",
+    "openreview-icml-2026-duoajxldjk",
+    "openreview-iclr-2026-9jjcczzm0b",
+    "openreview-iclr-2026-gujp6mwpnj",
+    "openreview-iclr-2026-ydk1zrhrki",
+    "ieee-sp-2026-fuzzing-the-physical-space-physics-aware-testing-of-black-box-industrial-control-systems",
+    "openreview-iclr-2026-qxzz9s3knn",
+    "openreview-iclr-2026-hrxfxktfqk",
+    "openreview-icml-2026-jj3klnhgjj",
+    "openreview-iclr-2026-4tasfbipxp",
+    "openreview-iclr-2026-4bncxothtm",
+    "openreview-icml-2026-lzqqn9ji21",
+    "openreview-iclr-2026-cnlc4zklmw",
+    "openreview-icml-2026-lxnq36mefe",
+    "openreview-iclr-2026-ravuvpbnql",
+    "openreview-icml-2026-wbsfha8qzy",
+    "openreview-icml-2026-qijm0kpqpc",
+    "openreview-iclr-2026-7porodlss4",
+    "openreview-iclr-2026-nshbotwek4",
+    "openreview-iclr-2026-zaz5acc6cj",
+    "openreview-iclr-2026-ulmctfdbrn",
+    "openreview-iclr-2026-eb2qgp5vb0",
+    "openreview-icml-2026-9zwk6gnewq",
+    "openreview-iclr-2026-7rfyx8ezea",
+    "openreview-iclr-2026-gg09r15hhq",
+    "openreview-iclr-2026-ps1ys8wv4t",
+    "openreview-icml-2026-fhxqiit0cw",
+    "openreview-icml-2026-paohstvuit",
+    "openreview-icml-2026-xwyu5ftrxm",
+    "openreview-icml-2026-bcvb3tfpk5",
+    "openreview-iclr-2026-ua33x2ghic",
+    "openreview-iclr-2026-batdckszsh",
+    "openreview-iclr-2026-feqzmgl36g",
+    "openreview-iclr-2026-qczicjujau",
+    "openreview-iclr-2026-dz76xr7zct",
+    "openreview-iclr-2026-ifke2rjnxm",
+    "openreview-iclr-2026-nordznoou0",
+    "openreview-iclr-2026-hddkfjfezd",
+    "openreview-icml-2026-ozg9yf9dkz",
+    "openreview-icml-2026-i5qhkuczjh",
+    "openreview-icml-2026-oy7qe2zsx9",
+    "openreview-icml-2026-dvgmusgpn3",
+    "openreview-icml-2026-75aydsndhp",
+    "openreview-iclr-2026-ej58dsny4i",
+    "openreview-iclr-2026-cculvmg31m",
+    "openreview-icml-2026-s51etvglui",
+    "openreview-icml-2026-o57tteycrw",
+    "openreview-icml-2026-tlrofikila",
+    "openreview-iclr-2026-egpqkzhfvy",
+    "openreview-icml-2026-uhxt1zrplj",
+    "openreview-iclr-2026-z9tkjhlvkj",
+    "openreview-icml-2026-vjze4d2v3s",
+    "openreview-iclr-2026-rk7yola15z",
+    "openreview-icml-2026-g8op3bstr2",
+    "openreview-icml-2026-txwbgnfycr",
+    "openreview-iclr-2026-gjkpltcrxf",
+    "openreview-iclr-2026-r2p1htnzq5",
+    "openreview-iclr-2026-9lcs3o3z8m",
+    "openreview-icml-2026-0p617sk4z4",
+    "openreview-icml-2026-03q28fbsb7",
+    "openreview-icml-2026-vzia4masxk",
+    "openreview-iclr-2026-xcatvtpi4k",
+    "openreview-iclr-2026-kasbbmwk3s",
+    "openreview-iclr-2026-eishewaovx",
+    "openreview-iclr-2026-iqwf00tcmf",
+    "openreview-iclr-2026-elrm4zi91b",
+    "openreview-icml-2026-4rct2j8hpw",
+    "openreview-icml-2026-1rh9assfy5",
+    "openreview-icml-2026-ojwpa0wxo9",
+    "openreview-iclr-2026-4sf3gdzgv9",
+    "openreview-iclr-2026-ysp8favj6k",
+    "openreview-iclr-2026-wr2rplkpr8",
+    "openreview-icml-2026-bdcjunqzst",
+    "openreview-iclr-2026-po5oiiwxws",
+    "ieee-sp-2026-breakfast-confused-deputy-attack-on-infinity-fabric-to-break-amd-sev-snp",
+    "openreview-icml-2026-xeh37plps3",
+    "openreview-iclr-2026-gpvuiyylja",
+    "openreview-iclr-2026-hs4wbkjqsm"
+  ],
+  "global_pool_lane_top_k": 30,
+  "global_pool_limit": 120,
+  "global_pool_guaranteed_per_lane": 2,
+  "global_pool_effective_size": 128,
+  "reranked_at": "2026-10-08T02:29:19.024975+00:00",
+  "llm_ranked": [
+    {
+      "paper_id": "openreview-iclr-2026-qai3clfsix",
+      "score": 5.0,
+      "evidence_en": "scaling foundation model for nuclear and particle physics detector data",
+      "evidence_cn": "面向核与粒子物理探测器数据的可扩展基础模型",
+      "canonical_evidence": "面向核与粒子物理探测器数据的可扩展基础模型",
+      "tldr_en": "Scientific foundation models struggle with sparse, spatially distributed detector data. FM4NPP introduces a dataset of over 11 million particle collision events with downstream tasks and a self-supervised training method for detector data, demonstrating neural scaling and cross-task generalization for particle physics.",
+      "tldr_cn": "大语言模型启发了科学基础模型的发展，但粒子物理探测器数据稀疏且空间分布特殊，与自然语言差异巨大，难以直接套用。本文构建含1100万以上粒子碰撞事件的数据集与配套下游任务，提出面向探测器数据的自监督训练方法。实验验证了该基础模型的神经可扩展性与跨任务泛化能力，为核与粒子物理的统一建模与探测器数据分析奠定基础。",
+      "title_zh": "FM4NPP：面向核与粒子物理的可扩展基础模型",
+      "motivation_cn": "科学基础模型难以直接应用于稀疏、空间分布特殊的粒子物理探测器数据。",
+      "method_cn": "构建超1100万粒子碰撞事件数据集与下游任务，并提出面向探测器数据的自监督训练方法。",
+      "result_cn": "实验验证了该基础模型的神经可扩展性与跨任务泛化能力。",
+      "conclusion_cn": "为核与粒子物理的探测器数据分析提供了可扩展的统一基础模型范式。",
+      "matched_requirement_id": "req-composite-nuc-phys-ai",
+      "matched_query_tag": "query:nuc-phys-ai:composite",
+      "matched_query_text": "Papers central to 人工智能在核反应、核结构、核数据及辐射探测中的应用, especially work that connects or combines: radiation detector machine learning; gamma ray spectroscopy deep learning; neutron transport machine learning; nuclear data evaluation neural network; nuclear structure deep learning; nuclear reaction cross section machine learning; Deep learning analysis of gamma ray or neutron detector signals for isotope identification.; Data driven evaluation of nuclear data or acceleration of neutron transport calculations.; Deep learning methods for predicting nuclear structure properties and observables.; Machine learning models for predicting nuclear reaction cross sections and their uncertainties.."
+    },
+    {
+      "paper_id": "openreview-iclr-2026-qxzz9s3knn",
+      "score": 4.0,
+      "evidence_en": "domain-agnostic agentic framework for automating surrogate model construction of simulators",
+      "evidence_cn": "领域无关的智能体框架，自动化构建仿真器的代理模型",
+      "canonical_evidence": "领域无关的智能体框架，自动化构建仿真器的代理模型",
+      "tldr_en": "Surrogate models accelerate scientific computation but are built manually and sample-inefficiently. This paper presents a domain-agnostic agentic framework whose reasoning engine orchestrates candidate generation, batched simulator calls, warm-start retraining, uncertainty calibration and dynamic acquisition switching, achieving user-specified accuracy with minimal simulator calls.",
+      "tldr_cn": "高保真仿真器的代理模型对加速科学计算至关重要，但其构建长期依赖人工、样本效率低且难以复现，尤其在物理约束严格、仿真昂贵的场景下。本文提出一个领域无关的智能体框架，由推理引擎端到端编排候选生成、批量仿真调用、热启动重训练、不确定性与标定以及动态采集切换。实验表明该框架能以最少的墙钟时间和仿真调用次数达到用户指定的精度目标。这为科学计算中代理模型的自动化构建提供了可复用的通用范式，可迁移至核反应堆代理建模等任务。",
+      "title_zh": "智能代理代理模型：以计算感知智能自动化仿真器的代理模型",
+      "motivation_cn": "高保真仿真器代理模型的构建长期依赖人工、样本效率低且难以复现，尤其在物理约束严格、仿真昂贵的场景下。",
+      "method_cn": "提出领域无关的智能体框架，由推理引擎编排候选生成、批量仿真调用、热启动重训练、不确定性与标定以及动态采集切换。",
+      "result_cn": "该框架以最少的墙钟时间和仿真调用次数达到用户指定的精度目标。",
+      "conclusion_cn": "为科学计算中代理模型的自动化构建提供了可复用的通用范式，可迁移到核反应堆代理建模。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "nuclear microreactor surrogate model"
+    },
+    {
+      "paper_id": "openreview-iclr-2026-nolmxtqgcp",
+      "score": 4.0,
+      "evidence_en": "fast surrogates of physical systems via prior-data fitted networks",
+      "evidence_cn": "用先验数据拟合网络构建物理系统快速代理模型",
+      "canonical_evidence": "用先验数据拟合网络构建物理系统快速代理模型",
+      "tldr_en": "Decoupled-Value Attention improves prior-data fitted networks for high-dimensional regression, computing similarities from inputs only and propagating labels through values, enabling fast surrogates of physical systems.",
+      "tldr_cn": "针对高斯过程推断耗时、先验数据拟合网络在高维回归上效果受限的问题，本文提出解耦值注意力DVA。该方法仅从输入计算相似度，并让标签信息只经由值传播，以贴合高斯过程函数空间由核函数决定、预测均值为训练目标加权和的性质。实验显示其提升了先验数据拟合网络在高维回归上的表现，可作为物理系统的快速代理模型。其贡献在于为科学机器学习中的高效代理建模提供了新的注意力设计。",
+      "title_zh": "面向先验数据拟合网络的解耦值注意力：用于物理方程的GP推断",
+      "motivation_cn": "高斯过程推断耗时，先验数据拟合网络可用单次前向替代贝叶斯推断以快速构建物理系统代理模型，但标准注意力在高维回归上效果有限。",
+      "method_cn": "提出解耦值注意力DVA，仅从输入计算相似度并让标签仅通过值传播，从而更贴合核函数刻画函数空间、预测均值为训练目标加权和的高斯过程性质。",
+      "result_cn": "该设计提升了先验数据拟合网络在高维回归任务上的有效性，可作为物理系统的快速代理模型。",
+      "conclusion_cn": "为科学计算中快速代理模型的构建提供了更有效的注意力机制，可迁移到反应堆物理等需要快速代理的建模场景。",
+      "matched_requirement_id": "req-2",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "nuclear microreactor surrogate model"
+    },
+    {
+      "paper_id": "openreview-iclr-2026-nz7fux1cha",
+      "score": 4.0,
+      "evidence_en": "learning-based autonomy coupling sensor fusion with feedback control",
+      "evidence_cn": "融合多模态传感与反馈控制的基于学习自主性",
+      "canonical_evidence": "融合多模态传感与反馈控制的基于学习自主性",
+      "tldr_en": "An end-to-end autonomy loop embeds heterogeneous sensors into an RKHS, learns dynamics via kernel or Bayesian deep models, and synthesizes safe feedback policies, with finite-sample guarantees and risk-sensitive, safety-constrained planning.",
+      "tldr_cn": "针对复杂系统需将异构传感器融合、数据驱动动力学学习与反馈控制统一为端到端自主回路的问题，本文提出基于核嵌入的自主框架。该方法通过加性/乘性核与条件均值嵌入把多模态数据映射到联合再生核希尔伯特空间，用核岭回归、深度核学习或贝叶斯深度网络学习动力学，并经动态规划或强化学习合成策略。工作给出闭式估计、有限样本与迭代复杂度刻画，并支持风险敏感规划与基于控制障碍函数的安全性。其贡献在于为安全自主控制提供了统一框架。",
+      "title_zh": "从核嵌入多模态融合到反馈控制的基于学习自主性",
+      "motivation_cn": "复杂系统需要将异构传感器融合、数据驱动动力学学习与反馈控制耦合为端到端自主回路，但现有方法往往割裂处理。",
+      "method_cn": "提出端到端自主框架，用加性/乘性核与条件均值嵌入将多模态数据映射到RKHS，用核岭回归或贝叶斯深度网络学习动力学，并经动态规划或强化学习合成控制策略。",
+      "result_cn": "给出闭式估计、有限样本与迭代复杂度刻画，并支持风险敏感规划与控制障碍函数的安全性保障。",
+      "conclusion_cn": "为需要安全自主运行与闭环控制的应用提供了统一的理论与方法框架。",
+      "matched_requirement_id": "req-4",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "nuclear microreactor autonomous control"
+    },
+    {
+      "paper_id": "openreview-icml-2026-gxrcjut5a0",
+      "score": 4.0,
+      "evidence_en": "on-chip online learning for high-frequency control systems such as nuclear fusion",
+      "evidence_cn": "面向核聚变等高频控制系统的片上在线学习",
+      "canonical_evidence": "面向核聚变等高频控制系统的片上在线学习",
+      "tldr_en": "KANs exploit B-spline locality for sparse updates and robustness to fixed-point quantization, enabling sub-microsecond on-chip online learning for high-frequency control systems like nuclear fusion and quantum computing.",
+      "tldr_cn": "高频控制系统需要在亚微秒级完成在线自适应，但传统多层感知机在严格内存与定点计算约束下效率低且数值不稳定。本文发现Kolmogorov-Arnold网络的B样条局部性可产生稀疏更新，且对定点量化天然鲁棒，据此实现片上定点在线训练。实验表明该方案在资源受限条件下具有更优的片上资源扩展性，为核聚变控制等高频场景提供了低延迟在线学习方案。",
+      "title_zh": "基于样条局部性的Kolmogorov-Arnold网络超快片上在线学习",
+      "motivation_cn": "量子计算与核聚变等高频系统需要亚微秒级的在线自适应，而传统MLP在受限内存与定点计算下效率低且不稳定。",
+      "method_cn": "利用KAN的B样条局部性实现稀疏更新，并利用其对定点量化的鲁棒性，在芯片上实现定点在线训练。",
+      "result_cn": "实验显示该方法在严格资源约束下具有更优的片上资源扩展性与数值稳定性。",
+      "conclusion_cn": "为核聚变控制等高频系统提供了低延迟、可片上部署的在线学习新途径。",
+      "matched_requirement_id": "req-8",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Intelligent control methods for safe operation or load following of nuclear microreactors."
+    },
+    {
+      "paper_id": "openreview-iclr-2026-ojhj8wocnb",
+      "score": 4.0,
+      "evidence_en": "standardized platform for machine learning predictive maintenance",
+      "evidence_cn": "面向机器学习预测性维护的标准化平台",
+      "canonical_evidence": "面向机器学习预测性维护的标准化平台",
+      "tldr_en": "Predictive maintenance progress is hindered by fragmented datasets and inconsistent evaluation. PDMBench integrates 14 curated multimodal time-series datasets across bearings, motors and gearboxes with a unified, configurable preprocessing and evaluation pipeline for fair, reproducible comparison.",
+      "tldr_cn": "预测性维护对工业可靠性与成本控制至关重要，但数据集分散、评估协议不一致、预处理流程互不兼容，阻碍了方法比较与进展。本文提出PDMBench标准化可扩展平台，整合14个涵盖轴承、电机、齿轮箱及多部件系统的多模态时序数据集，并设计统一可配置的预处理与评估流程。该平台支持公平可复现的比较，为预测性维护机器学习研究提供了基准。",
+      "title_zh": "PDMBench：面向预测性维护研究的标准化平台",
+      "motivation_cn": "预测性维护研究受困于数据集碎片化、评估协议不一致与预处理流程不兼容，难以公平比较。",
+      "method_cn": "构建PDMBench平台，整合14个多模态时序工业数据集，并提供统一可配置的预处理与评估管线。",
+      "result_cn": "平台覆盖轴承、电机、齿轮箱等真实复杂场景，支持可复现的模型比较。",
+      "conclusion_cn": "为预测性维护机器学习提供了标准化基准与可扩展研究平台。",
+      "matched_requirement_id": "req-7",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Artificial intelligence for fault diagnosis, predictive maintenance, or safety analysis of transportable nuclear reactors."
+    },
+    {
+      "paper_id": "openreview-iclr-2026-4jmeuvco26",
+      "score": 4.0,
+      "evidence_en": "equivariant surrogate model for large-scale physics systems governed by PDEs",
+      "evidence_cn": "面向偏微分方程支配的大规模物理系统的等变代理模型",
+      "canonical_evidence": "面向偏微分方程支配的大规模物理系统的等变代理模型",
+      "tldr_en": "Large-scale physics systems governed by PDEs have huge degrees of freedom and complex multi-scale dynamics. This work proposes an end-to-end equivariant surrogate model combining an equivariant convolutional autoencoder with an equivariant convolutional LSTM using G-steerable kernels, validated on 3D Rayleigh-Benard convection.",
+      "tldr_cn": "大规模物理系统由偏微分方程支配，自由度大、多尺度时空动态复杂，机器学习建模面临精度与样本效率挑战。本文提出端到端等变代理模型，由等变卷积自编码器与基于G转向核的等变卷积LSTM组成。以三维Rayleigh-Bénard对流为案例验证了模型的准确性与样本效率，为流体、聚变等物理系统的代理建模提供了通用框架。",
+      "title_zh": "基于等变自编码器的三维Rayleigh-Bénard对流代理建模",
+      "motivation_cn": "偏微分方程支配的大规模物理系统自由度巨大、多尺度动态复杂，亟需更准确且样本高效的建模方法。",
+      "method_cn": "提出由等变卷积自编码器与使用G转向核的等变卷积LSTM组成的端到端等变代理模型。",
+      "result_cn": "在三维Rayleigh-Bénard对流案例上验证了代理模型的精度与样本效率。",
+      "conclusion_cn": "为流体、聚变等物理系统的代理建模提供了可迁移的通用范式。",
+      "matched_requirement_id": "req-9",
+      "matched_query_tag": "query:micro-nuc-ai",
+      "matched_query_text": "Digital twins and surrogate models for monitoring and state estimation in nuclear microreactors."
+    }
+  ],
+  "llm_ranked_at": "2026-10-08T02:31:20.021571+00:00",
+  "display_min_score": 4.0,
+  "pruned_at": "2026-10-08T02:31:20.081973+00:00"
+}

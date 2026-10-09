@@ -41,17 +41,17 @@
 <section class="dpr-home-dashboard-card dpr-home-report-card">
   <div class="dpr-home-dashboard-header">
     <div>
-      <span class="dpr-home-dashboard-kicker">2026-09-09 ~ 2026-10-08</span>
+      <span class="dpr-home-dashboard-kicker">2026-10-09</span>
       <h3 class="dpr-home-dashboard-title">今日汇总</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">共 16 篇</strong>
+    <strong class="dpr-home-dashboard-count">共 2 篇</strong>
   </div>
   <dl class="dpr-home-dashboard-stats">
     <div class="dpr-home-dashboard-stat"><dt>累计更新</dt><dd>1 次</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>5</dd></div>
-    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>11</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>精读</dt><dd>2</dd></div>
+    <div class="dpr-home-dashboard-stat"><dt>速读</dt><dd>0</dd></div>
   </dl>
-  <p class="dpr-home-dashboard-body">最近更新：2026-10-08 02:43:09 UTC<br>状态：成功</p>
+  <p class="dpr-home-dashboard-body">最近更新：2026-10-09 00:24:36 UTC<br>状态：成功</p>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-brief-card">
   <div class="dpr-home-dashboard-header">
@@ -62,7 +62,7 @@
     <strong class="dpr-home-dashboard-count">AI</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<p>2026年9月9日至10月8日共筛选16篇AI+核物理文献，精读5篇、速读11篇，聚焦AI在核结构与辐射探测中的落地。最值得看的是两篇9分精读：AI学习核半径与集体性，以及垂直双SiPM读出的全向辐射探测器结合机器学习定位放射源。普通读者可先读这两篇精读摘要，再按兴趣跟进速读中的高斯过程与β衰变半衰期工作。</p>
+<p>今天精读两篇核数据机器学习论文，聚焦多群微观截面生成与不确定性估计。最值得看的是用定向神经网络自屏蔽生成截面（9.0分），以及无需重训练即可可靠估计机器学习多群截面不确定性（8.0分）。普通读者可先读第一篇把握方法思路，再借第二篇补齐可靠性评估视角。</p>
   </div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-deep-card">
@@ -71,12 +71,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">精读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">5 篇</strong>
+    <strong class="dpr-home-dashboard-count">2 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Learning Nuclear Structure with AI: Radii and Collectivity">Learning Nuclear Structure with AI: Radii and Collectivity</span></li><li><span class="dpr-home-dashboard-paper-title" title="Omnidirectional Radiation Detector with Perpendicular Dual Silicon Photomultiplier Readout - Directional Sensitivity and Machine Learning Source Positioning">Omnidirectional Radiation Detector with Perpendicular Dual Silicon Photomultiplier Readout - Directional Sensitivity and Machine Learning Source Positioning</span></li><li><span class="dpr-home-dashboard-paper-title" title="Pulse-shape discrimination with machine learning for CZT detectors at the DA$Φ$NE beam test facility">Pulse-shape discrimination with machine learning for CZT detectors at the DA$Φ$NE beam test facility</span></li></ul>
+<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Self-Shielded Multigroup Microscopic Cross Section Generation Using Targeted Artificial Neural Networks">Self-Shielded Multigroup Microscopic Cross Section Generation Using Targeted Artificial Neural Networks</span></li><li><span class="dpr-home-dashboard-paper-title" title="Reliable Uncertainty Estimation for Machine-Learned Multigroup Cross Sections Without Retraining">Reliable Uncertainty Estimation for Machine-Learned Multigroup Cross Sections Without Retraining</span></li></ul>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">nuc-phys-ai <strong>4</strong></span><span class="dpr-home-dashboard-tag">micro-nuc-ai <strong>1</strong></span></div>
+  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">nuc-phys-ai <strong>2</strong></span></div>
 </section>
 <section class="dpr-home-dashboard-card dpr-home-skim-card">
   <div class="dpr-home-dashboard-header">
@@ -84,12 +84,12 @@
       <span class="dpr-home-dashboard-kicker">今日累计</span>
       <h3 class="dpr-home-dashboard-title">速读推荐</h3>
     </div>
-    <strong class="dpr-home-dashboard-count">11 篇</strong>
+    <strong class="dpr-home-dashboard-count">0 篇</strong>
   </div>
   <div class="dpr-home-dashboard-body">
-<ul class="dpr-home-dashboard-paper-list"><li><span class="dpr-home-dashboard-paper-title" title="Nuclear-physics-guided Gaussian Processes">Nuclear-physics-guided Gaussian Processes</span></li><li><span class="dpr-home-dashboard-paper-title" title="Machine Learning $β$-decay Half-lives and Their Application to $r$-Process Observables">Machine Learning $β$-decay Half-lives and Their Application to $r$-Process Observables</span></li><li><span class="dpr-home-dashboard-paper-title" title="Latent Twin Operator">Latent Twin Operator</span></li></ul>
+<p class="dpr-home-dashboard-empty">今日暂无推荐。</p>
   </div>
-  <div class="dpr-home-dashboard-tags"><span class="dpr-home-dashboard-tag">nuc-phys-ai <strong>6</strong></span><span class="dpr-home-dashboard-tag">micro-nuc-ai <strong>4</strong></span><span class="dpr-home-dashboard-tag">isc <strong>1</strong></span></div>
+
 </section>
 </div>
 

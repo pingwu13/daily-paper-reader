@@ -1,0 +1,41 @@
+{
+  "date": "20261009",
+  "date_label": "",
+  "generated_at": "2026-10-09 00:24:36 UTC",
+  "recommend_exists": true,
+  "run_count": 1,
+  "papers": [
+    {
+      "paper_id": "2610.10464v1",
+      "route": "202610/09/2610.10464v1-self-shielded-multigroup-microscopic-cross-section-generation-using-targeted-artificial-neural-networks",
+      "title": "Self-Shielded Multigroup Microscopic Cross Section Generation Using Targeted Artificial Neural Networks",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "nuc-phys-ai"
+        }
+      ],
+      "score": 9.0,
+      "evidence": "神经网络预测自屏蔽多群微观截面以支撑中子输运",
+      "first_seen_at": "2026-10-09 00:24:36 UTC",
+      "updated_at": "2026-10-09 00:24:36 UTC"
+    },
+    {
+      "paper_id": "2610.09231v1",
+      "route": "202610/09/2610.09231v1-reliable-uncertainty-estimation-for-machine-learned-multigroup-cross-sections-without-retraining",
+      "title": "Reliable Uncertainty Estimation for Machine-Learned Multigroup Cross Sections Without Retraining",
+      "section": "deep",
+      "tags": [
+        {
+          "kind": "query",
+          "label": "nuc-phys-ai"
+        }
+      ],
+      "score": 8.0,
+      "evidence": "核能应用中机器学习多群截面的不确定性估计",
+      "first_seen_at": "2026-10-09 00:24:36 UTC",
+      "updated_at": "2026-10-09 00:24:36 UTC"
+    }
+  ]
+}

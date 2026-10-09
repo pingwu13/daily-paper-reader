@@ -1,0 +1,39 @@
+{
+  "label": "2026-10-09",
+  "date": "2026-10-09",
+  "generated_at": "2026-10-09T00:24:37",
+  "count": 2,
+  "papers": [
+    {
+      "paper_id": "202610/09/2610.10464v1-self-shielded-multigroup-microscopic-cross-section-generation-using-targeted-artificial-neural-networks",
+      "section": "deep",
+      "title_en": "Self-Shielded Multigroup Microscopic Cross Section Generation Using Targeted Artificial Neural Networks",
+      "authors": "Joshua Nichols, Andrew Osborne, Ben Whewell, Nathan Gibson",
+      "date": "2026-10-07",
+      "pdf": "https://arxiv.org/pdf/2610.10464v1",
+      "score": "9.0",
+      "evidence": "神经网络预测自屏蔽多群微观截面以支撑中子输运",
+      "tldr": "多群中子输运模型因计算高效而被广泛使用，但其自屏核数据依赖近似方法制备，需大量人工与专业知识，且库的适用性受限。本文训练人工神经网络，仅输入燃料核素原子浓度，即可预测UO2 pin cell固定几何与温度下的自屏微观截面。在轻水堆富集度与燃耗范围内，对90种核素、CASMO-8能群结构的截面预测与1500个未见样本平均偏差0.119%，用于多群k-eff计算平均绝对误差200 pcm。该工作为多群自屏截面生成提供了自动化替代途径。",
+      "tags": "query:nuc-phys-ai",
+      "abstract_en": "Multigroup neutron transport models are used widely in simulation codes due to their memory and compute efficiency compared to continuous energy methods. However, multigroup codes rely on nuclear data prepared using approximate methods that require significant manual effort and expertise to account for self-shielding effects. In addition, multigroup nuclear data libraries prepared in this way can be limited in their applicability for modeling diverse reactors and operating conditions. Here we show that trained artificial neural networks can predict self-shielded microscopic cross sections accurately in pincell simulations containing uranium dioxide fuel with a fixed geometry and temperature. The model's predictive accuracy remains high across fuel enrichment and burnup ranges encountered in light water reactors. Critically, the neural networks' predictions require only the atomic concentration of the fuel's constituent nuclides as inputs. The networks are trained using 8,704 samples of training and validation data generated using continuous energy OpenMC pincell simulations. The trained neural networks predict self-shielded total, fission, absorption, elastic, and total scattering cross sections for combinations of 90 nuclides in the CASMO-8 energy group structure. The neural networks' predictions of self-shielded cross sections are validated by comparison with 1,500 samples of reference cross sections unseen during training and tallied using OpenMC simulations. The predicted and ground truth cross sections in the test data set agree to within 0.119% on average. When the predicted cross sections are used in a multigroup eigenvalue run, they achieve a mean absolute error in keff of 200 pcm.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    },
+    {
+      "paper_id": "202610/09/2610.09231v1-reliable-uncertainty-estimation-for-machine-learned-multigroup-cross-sections-without-retraining",
+      "section": "deep",
+      "title_en": "Reliable Uncertainty Estimation for Machine-Learned Multigroup Cross Sections Without Retraining",
+      "authors": "Joshua Nichols, Andrew Osborne, Valerio Mascolino",
+      "date": "2026-10-06",
+      "pdf": "https://arxiv.org/pdf/2610.09231v1",
+      "score": "8.0",
+      "evidence": "核能应用中机器学习多群截面的不确定性估计",
+      "tldr": "核能应用中机器学习多群截面需可靠不确定性量化，但联合训练点预测与不确定性模型代价高。本文在不重训预训练屏蔽因子网络的前提下，用同一OpenMC数据训练残差标准差模型，分离模型与计数不确定性，并以正交合成方差作为split conformal prediction的归一化因子。该方法给出逐样本自适应预测区间，并与Mondrian conformal及真实OpenMC不确定性归一化基线对比。结果显示区间宽度和预测越界程度均大幅降低，为免重训的可靠不确定性估计提供方案。",
+      "tags": "query:nuc-phys-ai",
+      "abstract_en": "Uncertainty quantification in machine learning models is essential for nuclear energy applications. While machine learning models can make both uncertainty and point predictions, these models are often significantly more difficult to train jointly than models that make point predictions alone. Split conformal prediction is a family of methods for computing distribution-free prediction intervals by calculating nonconformity scores corresponding to a target quantile in a calibration dataset. Although conformal prediction only guarantees marginal coverage, normalizing nonconformity scores enables predictive interval widths to be calculated on a per-sample basis, providing an approximation to conditional coverage. In this work, we connect uncertainty predicting neural networks to pre-trained networks that estimate shielding factors in multigroup neutron cross sections. We train the uncertainty models on the same OpenMC data used by the pre-trained models, whose weights and biases remain fixed. The outputs of the uncertainty models are the standard deviations of the residual, separated into contributions from the model and tally uncertainty. Their corresponding variances are combined in quadrature to provide a normalizing factor for conformal prediction, providing interval widths that are adaptive on a per-sample basis. Baselines for comparison are established using Mondrian conformal prediction, and by using the ground truth OpenMC uncertainties as normalizers in the conformal framework. We use predicted uncertainty interval widths and the severity of predictions that overshoot the interval widths as bases for comparing our normalizer with the baselines. We find that our method dramatically reduces both interval widths and the degree to which predictions fall outside these widths.",
+      "source": "arxiv",
+      "selection_source": "fresh_fetch"
+    }
+  ],
+  "errors": []
+}
